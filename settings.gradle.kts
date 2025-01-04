@@ -9,3 +9,5 @@ plugins {
 }
 
 rootProject.name = "knio"
+include("core")
+include("io")
