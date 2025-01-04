@@ -11,7 +11,7 @@ Reader Example:
 // Read lines from a file using NIO and coroutines
 suspend fun main() {
 
-    val path = Path("C:\\Users\\isaiah\\Documents\\git\\isaiah-v\\middleman\\LICENSE")
+    val path = Path("/path/to/file.txt")
     val inputStream = KFileInputStream(path)
     val reader = KInputStreamReader(inputStream)
     val bufferedReader = KBufferedReader(reader)
