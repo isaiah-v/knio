@@ -1,9 +1,9 @@
 # knio
-A Kotlin Coroutine NIO library. Rebuilding the `java.io` API with asynchronous Kotlin Coroutines using NIO.
+A Kotlin Coroutine NIO library. Rebuilding the java APIs with asynchronous Kotlin Coroutines using NIO.
 
 Kotlin Coroutines allows for asynchronous programming in a synchronous style without blocking threads, similar to
-async/await in C# or JavaScript. This library attempts to reimplement the `java.io` API using NIO and Kotlin Coroutines.
-Non-blocking I/O with a familiar API.
+async/await in C# or JavaScript. This library attempts to reimplement some of the java I/O API (`java.io`, `java.net`)
+using NIO and Kotlin Coroutines. Non-blocking I/O with a familiar APIs.
 
 
 Reader Example:
@@ -25,3 +25,28 @@ suspend fun main() {
     } // close resources [non-blocking]
 }
 ```
+
+# Roadmap
+### v0.1.0
+The first release will focus on getting code complete for core I/O classes.
+
+I/O Classes:
+- [x] `FileInputStream`
+- [ ] `FileOutputStream`
+- [ ] `SeverSocket`
+- [ ] `SSLServerSocket`
+- [x] `Socket`
+- [ ] `SSLSocket`
+- [ ] `DatagramSocket`
+
+Supporting Classes:
+- [x] `InputStream`
+- [x] `OutputStream`
+- [x] `Reader`
+- [ ] `Writer`
+- [ ] `BufferedInputStream`
+- [ ] `BufferedOutputStream`
+- [x] `BufferedReader`
+- [ ] `BufferedWriter`
+- [x] `InputStreamReader`
+- [ ] `OutputStreamWriter`
