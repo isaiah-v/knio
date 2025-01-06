@@ -1,5 +1,6 @@
 package org.ivcode.knio.io
 
+import org.ivcode.knio.lang.KAutoCloseable
 import java.nio.ByteBuffer
 
 abstract class KOutputStream: KAutoCloseable {

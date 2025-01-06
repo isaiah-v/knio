@@ -1,17 +1,42 @@
 package org.ivcode
 
-import org.ivcode.knio.io.KFileInputStream
+import kotlinx.coroutines.*
 import org.ivcode.knio.io.KInputStreamReader
 import org.ivcode.knio.io.KBufferedReader
+import org.ivcode.knio.lang.use
+import org.ivcode.knio.net.KServerSocket
 import org.ivcode.knio.net.KSocket
-import org.ivcode.knio.system.use
 import java.net.InetSocketAddress
-import java.nio.file.Path
+import java.nio.ByteBuffer
 
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-suspend fun main() {
+suspend fun main() = coroutineScope {
+    launch {
+        KServerSocket.open(8080).use { serverSocket ->
+            val socket = serverSocket.accept()
+            socket.use {
+                it.getInputStream().use {
+                    val buffer = ByteBuffer.allocate(1024)
+                    while (it.read(buffer) != -1) {
+                        buffer.flip()
+                        print(String(buffer.array(), 0, buffer.limit()))
+                        buffer.clear()
+                    }
+                }
+
+
+                it.getOutputStream().use {
+                    it.write("HTTP/1.1 200 OK\r\n".toByteArray())
+                    it.write("Content-Type: text/plain\r\n".toByteArray())
+                    it.write("\r\n".toByteArray())
+                    it.write("Hello, World!".toByteArray())
+                }
+            } // close the socket
+        } // close the serverSocket
+    }
+
 
     KSocket.open(InetSocketAddress("localhost", 8080)).use {
         val inputStream = it.getInputStream()
