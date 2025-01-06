@@ -33,7 +33,7 @@ The first release will focus on getting code complete for core I/O classes.
 I/O Classes:
 - [x] `FileInputStream`
 - [ ] `FileOutputStream`
-- [ ] `SeverSocket`
+- [x] `SeverSocket`
 - [ ] `SSLServerSocket`
 - [x] `Socket`
 - [ ] `SSLSocket`
