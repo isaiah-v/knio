@@ -5,7 +5,12 @@ import java.io.IOException
 import java.nio.CharBuffer
 import kotlin.math.min
 
-
+/**
+ * A buffered reader that reads characters from a KReader.
+ *
+ * @param reader The KReader to read characters from.
+ * @param bufferSize The size of the buffer to use.
+ */
 class KBufferedReader(
     reader: KReader,
     bufferSize: Int = DEFAULT_CHAR_BUFFER_SIZE,
@@ -40,6 +45,8 @@ class KBufferedReader(
 
     /**
      * Fills the input buffer, taking the mark into account if it is valid.
+     *
+     * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
     private suspend fun fill() {
@@ -87,10 +94,8 @@ class KBufferedReader(
     /**
      * Reads a single character.
      *
-     * @return The character read, as an integer in the range
-     * 0 to 65535 (<tt>0x00-0xffff</tt>), or -1 if the
-     * end of the stream has been reached
-     * @exception  IOException  If an I/O error occurs
+     * @return The character read, as an integer in the range 0 to 65535 (0x00-0xffff), or -1 if the end of the stream has been reached.
+     * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
     override suspend fun read(): Int {
@@ -114,17 +119,17 @@ class KBufferedReader(
     }
 
     /**
-     * Reads characters into a portion of an array, reading from the underlying
-     * stream if necessary.
+     * Reads characters into a portion of an array, reading from the underlying stream if necessary.
+     *
+     * @param cbuf The destination buffer.
+     * @param off The offset at which to start storing characters.
+     * @param len The maximum number of characters to read.
+     * @return The number of characters read, or -1 if the end of the stream has been reached.
+     * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
     private suspend fun read1(cbuf: CharArray, off: Int, len: Int): Int {
         if (nextChar >= nChars) {
-            /* If the requested length is at least as large as the buffer, and
-               if there is no mark/reset activity, and if line feeds are not
-               being skipped, do not bother to copy the characters into the
-               local buffer.  In this way buffered streams will cascade
-               harmlessly. */
             if (len >= cb!!.size && markedChar <= UNMARKED && !skipLF) {
                 return inStream!!.read(cbuf, off, len)
             }
@@ -148,50 +153,11 @@ class KBufferedReader(
     /**
      * Reads characters into a portion of an array.
      *
-     *
-     *  This method implements the general contract of the corresponding
-     * `[read][Reader.read]` method of the
-     * `[Reader]` class.  As an additional convenience, it
-     * attempts to read as many characters as possible by repeatedly invoking
-     * the `read` method of the underlying stream.  This iterated
-     * `read` continues until one of the following conditions becomes
-     * true:
-     *
-     *  *  The specified number of characters have been read,
-     *
-     *  *  The `read` method of the underlying stream returns
-     * `-1`, indicating end-of-file, or
-     *
-     *  *  The `ready` method of the underlying stream
-     * returns `false`, indicating that further input requests
-     * would block.
-     *
-     *  If the first `read` on the underlying stream returns
-     * `-1` to indicate end-of-file then this method returns
-     * `-1`.  Otherwise this method returns the number of characters
-     * actually read.
-     *
-     *
-     *  Subclasses of this class are encouraged, but not required, to
-     * attempt to read as many characters as possible in the same fashion.
-     *
-     *
-     *  Ordinarily this method takes characters from this stream's character
-     * buffer, filling it from the underlying stream as necessary.  If,
-     * however, the buffer is empty, the mark is not valid, and the requested
-     * length is at least as large as the buffer, then this method will read
-     * characters directly from the underlying stream into the given array.
-     * Thus redundant `BufferedReader`s will not copy data
-     * unnecessarily.
-     *
-     * @param      cbuf  Destination buffer
-     * @param      off   Offset at which to start storing characters
-     * @param      len   Maximum number of characters to read
-     *
-     * @return     The number of characters read, or -1 if the end of the
-     * stream has been reached
-     *
-     * @exception  IOException  If an I/O error occurs
+     * @param cbuf The destination buffer.
+     * @param off The offset at which to start storing characters.
+     * @param len The maximum number of characters to read.
+     * @return The number of characters read, or -1 if the end of the stream has been reached.
+     * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
     override suspend fun read(cbuf: CharArray, off: Int, len: Int): Int {
@@ -216,23 +182,23 @@ class KBufferedReader(
         }
     }
 
+    /**
+     * Reads characters into a CharBuffer.
+     *
+     * @param b The CharBuffer to read characters into.
+     * @return The number of characters read, or -1 if the end of the stream has been reached.
+     * @throws IOException If an I/O error occurs.
+     */
     override suspend fun read(b: CharBuffer): Int {
         return TODO()
     }
 
     /**
-     * Reads a line of text.  A line is considered to be terminated by any one
-     * of a line feed ('\n'), a carriage return ('\r'), or a carriage return
-     * followed immediately by a linefeed.
+     * Reads a line of text. A line is considered to be terminated by any one of a line feed ('\n'), a carriage return ('\r'), or a carriage return followed immediately by a linefeed.
      *
-     * @param      ignoreLF  If true, the next '\n' will be skipped
-     *
-     * @return     A String containing the contents of the line, not including
-     * any line-termination characters, or null if the end of the
-     * stream has been reached
-     *
-     * @see java.io.LineNumberReader.readLine
-     * @exception  IOException  If an I/O error occurs
+     * @param ignoreLF If true, the next '\n' will be skipped.
+     * @return A String containing the contents of the line, not including any line-termination characters, or null if the end of the stream has been reached.
+     * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
     suspend fun readLine(ignoreLF: Boolean = false): String? {
@@ -292,12 +258,10 @@ class KBufferedReader(
     /**
      * Skips characters.
      *
-     * @param  n  The number of characters to skip
-     *
-     * @return    The number of characters actually skipped
-     *
-     * @exception  IllegalArgumentException  If `n` is negative.
-     * @exception  IOException  If an I/O error occurs
+     * @param n The number of characters to skip.
+     * @return The number of characters actually skipped.
+     * @throws IllegalArgumentException If `n` is negative.
+     * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
     override suspend fun skip(n: Long): Long {
@@ -331,24 +295,16 @@ class KBufferedReader(
     }
 
     /**
-     * Tells whether this stream is ready to be read.  A buffered character
-     * stream is ready if the buffer is not empty, or if the underlying
-     * character stream is ready.
+     * Tells whether this stream is ready to be read. A buffered character stream is ready if the buffer is not empty, or if the underlying character stream is ready.
      *
-     * @exception  IOException  If an I/O error occurs
+     * @return True if the stream is ready to be read, false otherwise.
+     * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
     override suspend fun ready(): Boolean {
         lock.withLock {
             ensureOpen()
-            /*
-             * If newline needs to be skipped and the next char to be read
-             * is a newline character, then just skip it right away.
-             */
             if (skipLF) {
-                /* Note that in.ready() will return true if and only if the next
-                 * read on the stream will not block.
-                 */
                 if (nextChar >= nChars && inStream!!.ready()) {
                     fill()
                 }
@@ -363,24 +319,17 @@ class KBufferedReader(
 
     /**
      * Tells whether this stream supports the mark() operation, which it does.
+     *
+     * @return True if the stream supports the mark() operation, false otherwise.
      */
     override suspend fun markSupported(): Boolean = true
 
     /**
-     * Marks the present position in the stream.  Subsequent calls to reset()
-     * will attempt to reposition the stream to this point.
+     * Marks the present position in the stream. Subsequent calls to reset() will attempt to reposition the stream to this point.
      *
-     * @param readLimit   Limit on the number of characters that may be
-     * read while still preserving the mark. An attempt
-     * to reset the stream after reading characters
-     * up to this limit or beyond may fail.
-     * A limit value larger than the size of the input
-     * buffer will cause a new buffer to be allocated
-     * whose size is no smaller than limit.
-     * Therefore large values should be used with care.
-     *
-     * @exception  IllegalArgumentException  If readAheadLimit is < 0
-     * @exception  IOException  If an I/O error occurs
+     * @param readLimit Limit on the number of characters that may be read while still preserving the mark.
+     * @throws IllegalArgumentException If readAheadLimit is < 0.
+     * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
     override suspend fun mark(readLimit: Int) {
@@ -397,8 +346,7 @@ class KBufferedReader(
     /**
      * Resets the stream to the most recent mark.
      *
-     * @exception  IOException  If the stream has never been marked,
-     * or if the mark has been invalidated
+     * @throws IOException If the stream has never been marked, or if the mark has been invalidated.
      */
     @Throws(IOException::class)
     override suspend fun reset() {
@@ -415,6 +363,11 @@ class KBufferedReader(
         }
     }
 
+    /**
+     * Closes the stream and releases any system resources associated with it.
+     *
+     * @throws IOException If an I/O error occurs.
+     */
     @Throws(IOException::class)
     override suspend fun close() {
         lock.withLock {

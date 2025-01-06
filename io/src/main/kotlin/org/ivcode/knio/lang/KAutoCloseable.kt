@@ -1,9 +1,14 @@
-package org.ivcode.knio.io
+package org.ivcode.knio.lang
 
 import kotlin.Throws
 
 /**
  * An interface representing a closeable resource that can be closed asynchronously.
+ *
+ * Similar to [AutoCloseable], but with a suspendable [close] method.
+ *
+ * @See [AutoCloseable]
+ * @See [use]
  */
 interface KAutoCloseable {
     /**

@@ -1,6 +1,4 @@
-package org.ivcode.knio.system
-
-import org.ivcode.knio.io.KAutoCloseable
+package org.ivcode.knio.lang
 
 /**
  * Executes the given block function on this resource and then closes it.

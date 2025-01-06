@@ -2,6 +2,7 @@ package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.ivcode.knio.lang.KAutoCloseable
 import java.io.IOException
 import java.nio.CharBuffer
 import kotlin.jvm.Throws
