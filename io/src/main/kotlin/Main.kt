@@ -7,6 +7,7 @@ import org.ivcode.knio.lang.use
 import org.ivcode.knio.net.KServerSocket
 import org.ivcode.knio.net.KSocket
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
@@ -16,17 +17,15 @@ suspend fun main() = coroutineScope {
         KServerSocket.open(8080).use { serverSocket ->
             val socket = serverSocket.accept()
             socket.use {
-                val inputStream = it.getInputStream()
-                val reader = KInputStreamReader(inputStream)
-                val bufferedReader = KBufferedReader(reader)
-
-                bufferedReader.use { r ->
-                    var line: String? = r.readLine()   // read the first line using nio (suspends instead of blocking)
-                    while (line != null) {
-                        println(line)                   // print the line
-                        line = r.readLine()            // read the next line using nio (suspends instead of blocking)
+                it.getInputStream().use {
+                    val buffer = ByteBuffer.allocate(1024)
+                    while (it.read(buffer) != -1) {
+                        buffer.flip()
+                        print(String(buffer.array(), 0, buffer.limit()))
+                        buffer.clear()
                     }
-                } // close the bufferedReader and underlying reader and input stream
+                }
+
 
                 it.getOutputStream().use {
                     it.write("HTTP/1.1 200 OK\r\n".toByteArray())

@@ -17,6 +17,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.InterruptedByTimeoutException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
@@ -54,22 +55,21 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
     /** The underlying AsynchronousSocketChannel. */
     private val channel = channel
 
-    /** The read mutex for synchronization. */
-    private val readMutex = Mutex()
     /** The read timeout in milliseconds. */
     private var readTimeout: Long? = null
     /** The input shutdown flag. */
-    private var isInputShutdown: Boolean = false
+    private var isInputShutdown = AtomicBoolean(false)
 
-    /** The write mutex for synchronization. */
-    private val writeMutex = Mutex()
     /** The write timeout in milliseconds. */
     private var writeTimeout: Long? = null
     /** The output shutdown flag. */
-    private var isOutputShutdown: Boolean = false
+    private var isOutputShutdown = AtomicBoolean(false)
 
     /** The input stream of the socket. */
     private val inputStream = object : KInputStream() {
+        /** read mutex */
+        private val readMutex = Mutex()
+
         /**
          * Reads data into the provided ByteBuffer.
          *
@@ -77,6 +77,8 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
          * @return The number of bytes read.
          */
         override suspend fun read(b: ByteBuffer): Int = readMutex.withLock {
+            // only one thread can read at a time to avoid ReadPendingException
+
             val result = read0(b)
             if (result == -1) {
                 close()
@@ -86,7 +88,7 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
         }
 
         /**
-         * Performs the actual read operation.
+         * Performs the actual read operation, without synchronization.
          *
          * @param b The ByteBuffer to read data into.
          * @return The number of bytes read.
@@ -113,14 +115,20 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
 
     /** The output stream of the socket. */
     private val outputStream = object : KOutputStream() {
+        /** write mutex */
+        private val writeMutex = Mutex()
+
         /**
          * Writes data from the provided ByteBuffer.
          *
          * @param b The ByteBuffer containing data to write.
          */
         override suspend fun write(b: ByteBuffer):Unit = writeMutex.withLock {
+            // only one thread can write at a time to avoid WritePendingException
+
             while(b.hasRemaining()) {
                 val result = write0(b)
+
                 if (result == -1) {
                     close()
                     break
@@ -129,7 +137,7 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
         }
 
         /**
-         * Performs the actual write operation.
+         * Performs the actual write operation, without synchronization.
          *
          * @param b The ByteBuffer containing data to write.
          */
@@ -381,14 +389,14 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      *
      * @return True if the input is shutdown, false otherwise.
      */
-    suspend fun isInputShutdown(): Boolean = readMutex.withLock { isInputShutdown }
+    suspend fun isInputShutdown(): Boolean = isInputShutdown.get()
 
     /**
      * Checks if the output is shutdown.
      *
      * @return True if the output is shutdown, false otherwise.
      */
-    suspend fun isOutputShutdown(): Boolean = writeMutex.withLock { isOutputShutdown }
+    suspend fun isOutputShutdown(): Boolean = isOutputShutdown.get()
 
     /**
      * Sets the SO_KEEPALIVE option.
@@ -491,11 +499,11 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      */
     @Throws(IOException::class)
     suspend fun shutdownInput():Unit = withContext(Dispatchers.IO) {
-        readMutex.withLock {
-            isInputShutdown = true
+        if(!isInputShutdown.getAndSet(true)) {
             channel.shutdownInput()
         }
     }
+
 
     /**
      * Shuts down the output side of the socket.
@@ -504,8 +512,7 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      */
     @Throws(IOException::class)
     suspend fun shutdownOutput():Unit = withContext(Dispatchers.IO) {
-        writeMutex.withLock {
-            isOutputShutdown = true
+        if(!isOutputShutdown.getAndSet(true)) {
             channel.shutdownOutput()
         }
     }
