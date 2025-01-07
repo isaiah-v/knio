@@ -1,110 +1,52 @@
 package org.ivcode.knio.net
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import org.ivcode.knio.lang.KAutoCloseable
-import org.ivcode.knio.utils.asCompletionHandler
-import org.ivcode.knio.utils.timeout
+import java.io.IOException
 import java.net.InetAddress
-import java.net.InetSocketAddress
 import java.net.SocketAddress
-import java.net.SocketTimeoutException
-import java.nio.channels.AsynchronousServerSocketChannel
-import java.nio.channels.AsynchronousSocketChannel
-import kotlin.coroutines.suspendCoroutine
+import kotlin.jvm.Throws
 
-class KServerSocket: KAutoCloseable {
-    companion object {
-        suspend fun open(port: Int, backlog: Int=0, bindAddress: InetAddress? = null): KServerSocket {
-            val serverSocket = KServerSocket()
-            try {
-                require(port in 1..0xfffe) { "Port value out of range: $port" }
+interface KServerSocket: KAutoCloseable {
 
+    @Throws(IOException::class)
+    suspend fun accept(): KSocket
 
-                val bkLog = if (backlog < 1) 50 else backlog
-                val local = InetSocketAddress(bindAddress, port)
+    @Throws(IOException::class)
+    suspend fun bind(endpoint: SocketAddress, backlog: Int = 0)
 
-                serverSocket.bind(local, bkLog)
-            } catch  (th: Throwable) {
-                serverSocket.close()
-            }
+    @Throws(IOException::class)
+    override suspend fun close()
 
-            return serverSocket
-        }
-    }
+    @Throws(IOException::class)
+    suspend fun getInetAddress(): InetAddress?
 
-    private val acceptMutex = Mutex()
+    @Throws(IOException::class)
+    suspend fun getLocalPort(): Int
 
-    private val channel = AsynchronousServerSocketChannel.open()
-    private var acceptTimeout: Long? = null
+    @Throws(IOException::class)
+    suspend fun getLocalSocketAddress(): SocketAddress?
 
-    suspend fun accept(): KSocket {
-        acceptMutex.withLock {
-            return accept0()
-        }
-    }
+    @Throws(IOException::class)
+    suspend fun setAcceptTimeout(timeout: Long)
 
-    private suspend fun accept0(): KSocket = suspendCoroutine { continuation ->
-        val transformer = {
-            r: AsynchronousSocketChannel -> KSocket(r)
-        }
+    @Throws(IOException::class)
+    suspend fun getAcceptTimeout(): Long
 
-        val timeout = acceptTimeout
-        val handler = if(timeout != null) {
-            val timeoutJob = continuation.timeout(timeout) { SocketTimeoutException() }
-            transformer.asCompletionHandler(timeoutJob = timeoutJob)
-        } else {
-            transformer.asCompletionHandler()
-        }
+    @Throws(IOException::class)
+    suspend fun setReuseAddress(on: Boolean)
 
-        channel.accept(continuation, handler)
-    }
+    @Throws(IOException::class)
+    suspend fun getReuseAddress(): Boolean
 
-    suspend fun bind(local: SocketAddress, backlog: Int = 0): Unit = withContext(Dispatchers.IO) {
-        channel.bind(local, backlog)
-    }
+    @Throws(IOException::class)
+    suspend fun setReceiveBufferSize(size: Int)
 
-    override suspend fun close(): Unit = acceptMutex.withLock {
-        channel.close()
-        acceptTimeout = null
-    }
+    @Throws(IOException::class)
+    suspend fun getReceiveBufferSize(): Int
 
-    fun getChannel(): AsynchronousServerSocketChannel = channel
+    @Throws(IOException::class)
+    suspend fun isBound(): Boolean
 
-    fun getInetAddress(): InetAddress?  {
-        val address = channel.localAddress ?: return null
-        return if(address is InetSocketAddress) {
-            address.address
-        } else {
-            null
-        }
-    }
-
-    fun getLocalPort(): Int {
-        val address = channel.localAddress ?: return -1
-        return if(address is InetSocketAddress) {
-            address.port
-        } else {
-            -1
-        }
-    }
-
-    fun getLocalSocketAddress(): SocketAddress? = channel.localAddress
-    fun getReceiveBufferSize(): Int? = channel.getOption(java.net.StandardSocketOptions.SO_RCVBUF)
-    fun getReuseAddress(): Boolean? = channel.getOption(java.net.StandardSocketOptions.SO_REUSEADDR)
-    fun getAcceptTimeout(): Long? = acceptTimeout
-    fun isBound(): Boolean = channel.localAddress != null
-    fun isClosed(): Boolean = !channel.isOpen
-    fun setReceiveBufferSize(size: Int) {
-        channel.setOption(java.net.StandardSocketOptions.SO_RCVBUF, size)
-    }
-    fun setReuseAddress(reuse: Boolean) {
-        channel.setOption(java.net.StandardSocketOptions.SO_REUSEADDR, reuse)
-    }
-    fun setAcceptTimeout(timeout: Long) {
-        require(timeout >= 0) { "timeout value is negative" }
-        this.acceptTimeout = timeout
-    }
+    @Throws(IOException::class)
+    suspend fun isClosed(): Boolean
 }

@@ -4,9 +4,8 @@ import kotlinx.coroutines.*
 import org.ivcode.knio.io.KInputStreamReader
 import org.ivcode.knio.io.KBufferedReader
 import org.ivcode.knio.lang.use
-import org.ivcode.knio.net.KServerSocket
-import org.ivcode.knio.net.KSocket
-import java.net.InetSocketAddress
+import org.ivcode.knio.net.KSocketFactory
+import org.ivcode.knio.net.KServerSocketFactory
 import java.nio.ByteBuffer
 
 
@@ -14,7 +13,7 @@ import java.nio.ByteBuffer
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 suspend fun main() = coroutineScope {
     launch {
-        KServerSocket.open(8080).use { serverSocket ->
+        KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
             val socket = serverSocket.accept()
             socket.use {
                 it.getInputStream().use {
@@ -37,8 +36,7 @@ suspend fun main() = coroutineScope {
         } // close the serverSocket
     }
 
-
-    KSocket.open(InetSocketAddress("localhost", 8080)).use {
+    KSocketFactory.getDefault().createSocket("localhost", 8080).use {
         val inputStream = it.getInputStream()
         val reader = KInputStreamReader(inputStream)
         val bufferedReader = KBufferedReader(reader)

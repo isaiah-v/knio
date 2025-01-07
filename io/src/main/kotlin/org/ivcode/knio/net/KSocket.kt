@@ -24,142 +24,8 @@ import kotlin.coroutines.suspendCoroutine
 /**
  * A coroutine-based socket implementation using AsynchronousSocketChannel.
  */
-class KSocket internal constructor(channel: AsynchronousSocketChannel = AsynchronousSocketChannel.open()) : KAutoCloseable {
+interface KSocket: KAutoCloseable {
 
-    companion object {
-        /**
-         * Opens a new KSocket and connects it to the specified address.
-         *
-         * @param address The address to connect to.
-         * @return A connected KSocket instance.
-         */
-        suspend fun open(address: SocketAddress): KSocket {
-            return KSocket().connect(address)
-        }
-
-        /**
-         * Handles asynchronous failures.
-         *
-         * @param e The throwable to handle.
-         * @return The result of the failure handling.
-         */
-        private fun <T> handleAyncFailure(e: Throwable): T {
-            throw if (e is InterruptedByTimeoutException) {
-                SocketTimeoutException("Connection timed out")
-            } else {
-                e
-            }
-        }
-    }
-
-    /** The underlying AsynchronousSocketChannel. */
-    private val channel = channel
-
-    /** The read timeout in milliseconds. */
-    private var readTimeout: Long? = null
-    /** The input shutdown flag. */
-    private var isInputShutdown = AtomicBoolean(false)
-
-    /** The write timeout in milliseconds. */
-    private var writeTimeout: Long? = null
-    /** The output shutdown flag. */
-    private var isOutputShutdown = AtomicBoolean(false)
-
-    /** The input stream of the socket. */
-    private val inputStream = object : KInputStream() {
-        /** read mutex */
-        private val readMutex = Mutex()
-
-        /**
-         * Reads data into the provided ByteBuffer.
-         *
-         * @param b The ByteBuffer to read data into.
-         * @return The number of bytes read.
-         */
-        override suspend fun read(b: ByteBuffer): Int = readMutex.withLock {
-            // only one thread can read at a time to avoid ReadPendingException
-
-            val result = read0(b)
-            if (result == -1) {
-                close()
-            }
-
-            result
-        }
-
-        /**
-         * Performs the actual read operation, without synchronization.
-         *
-         * @param b The ByteBuffer to read data into.
-         * @return The number of bytes read.
-         */
-        suspend fun read0 (b: ByteBuffer): Int = suspendCoroutine { co ->
-            try {
-                val handler = fromResult<Int> (onFail=::handleAyncFailure)
-
-                if (readTimeout != null) {
-                    channel.read(b, readTimeout!!, TimeUnit.MILLISECONDS, co, handler)
-                } else {
-                    channel.read(b, co, handler)
-                }
-            } catch (e: Throwable) {
-                co.resumeWithException(e)
-            }
-        }
-
-        /**
-         * Closes the input stream.
-         */
-        override suspend fun close() = this@KSocket.shutdownInput()
-    }
-
-    /** The output stream of the socket. */
-    private val outputStream = object : KOutputStream() {
-        /** write mutex */
-        private val writeMutex = Mutex()
-
-        /**
-         * Writes data from the provided ByteBuffer.
-         *
-         * @param b The ByteBuffer containing data to write.
-         */
-        override suspend fun write(b: ByteBuffer):Unit = writeMutex.withLock {
-            // only one thread can write at a time to avoid WritePendingException
-
-            while(b.hasRemaining()) {
-                val result = write0(b)
-
-                if (result == -1) {
-                    close()
-                    break
-                }
-            }
-        }
-
-        /**
-         * Performs the actual write operation, without synchronization.
-         *
-         * @param b The ByteBuffer containing data to write.
-         */
-        suspend fun write0(b: ByteBuffer): Int = suspendCoroutine { co ->
-            try {
-                val handler = fromResult<Int> (onFail=::handleAyncFailure)
-
-                if(writeTimeout!=null) {
-                    channel.write(b, writeTimeout!!, TimeUnit.MILLISECONDS, co, handler)
-                } else {
-                    channel.write(b, co, handler)
-                }
-            } catch (e: Throwable) {
-                co.resumeWithException(e)
-            }
-        }
-
-        /**
-         * Closes the output stream.
-         */
-        override suspend fun close() = this@KSocket.shutdownOutput()
-    }
 
     /**
      * Binds the socket to a local address.
@@ -169,21 +35,13 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      * @throws IOException if an I/O error occurs
      */
     @Throws(IOException::class)
-    fun bind(local: SocketAddress? = null) {
-        channel.bind(local)
-    }
+    fun bind(local: SocketAddress? = null)
 
     /**
      * Closes the socket.
      */
-    override suspend fun close() = withContext(Dispatchers.IO) {
-        if (!channel.isOpen) return@withContext
-        try {
-            channel.close()
-        } catch (e: IOException) {
-            // Log or handle the close exception if necessary
-        }
-    }
+    @Throws(IOException::class)
+    override suspend fun close()
 
     /**
      * Connects this channel.
@@ -192,211 +50,168 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      * @param timeout The timeout in milliseconds, or 0 for no timeout
      * @throws IOException if an I/O error occurs
      */
-    suspend fun connect(endpoint: SocketAddress, timeout: Long = 0): KSocket = suspendCoroutine {
-        try {
-            val timoutJob = if (timeout > 0) {
-                it.timeout(timeout) { SocketTimeoutException("Connection timed out") }
-            } else if (timeout<0) {
-                throw IllegalArgumentException("Timeout must be greater than or equal to 0")
-            } else {
-                null
-            }
-
-            // returns "this" upon completion
-            channel.connect(endpoint, it, this.asCompletionHandler(timoutJob))
-        } catch (e: Throwable) {
-            it.resumeWithException(e)
-        }
-    }
+    suspend fun connect(endpoint: SocketAddress, timeout: Long = 0)
 
     /**
      * Gets the underlying AsynchronousSocketChannel.
      *
      * @return The AsynchronousSocketChannel.
      */
-    fun getChannel(): AsynchronousSocketChannel = channel
+    fun getChannel(): AsynchronousSocketChannel
 
     /**
      * Gets the remote InetAddress.
      *
      * @return The remote InetAddress, or null if not connected.
      */
-    fun getInetAddress(): java.net.InetAddress? {
-        val address = channel.remoteAddress ?: return null
-        return if(address is java.net.InetSocketAddress) {
-            address.address
-        } else {
-            null
-        }
-    }
+    fun getInetAddress(): java.net.InetAddress?
 
     /**
      * Gets the input stream of the socket.
      *
      * @return The KInputStream.
      */
-    fun getInputStream(): KInputStream = this.inputStream
+    fun getInputStream(): KInputStream
 
     /**
      * Gets the SO_KEEPALIVE option.
      *
      * @return The value of the SO_KEEPALIVE option.
      */
-    fun getKeepAlive(): Boolean = channel.getOption(java.net.StandardSocketOptions.SO_KEEPALIVE)
+    fun getKeepAlive(): Boolean
 
     /**
      * Gets the local InetAddress.
      *
      * @return The local InetAddress, or null if not bound.
      */
-    fun getLocalAddress(): java.net.InetAddress? {
-        val address = channel.localAddress ?: null
-        return if(address is java.net.InetSocketAddress) {
-            address.address
-        } else {
-            null
-        }
-    }
+    fun getLocalAddress(): java.net.InetAddress?
 
     /**
      * Gets the local port number.
      *
      * @return The local port number, or -1 if not bound.
      */
-    fun getLocalPort(): Int {
-        val address = channel.localAddress ?: return -1
-        return if(address is java.net.InetSocketAddress) {
-            address.port
-        } else {
-            -1
-        }
-    }
+    fun getLocalPort(): Int
 
     /**
      * Gets the local socket address.
      *
      * @return The local SocketAddress.
      */
-    fun getLocalSocketAddress(): SocketAddress? = channel.localAddress
+    fun getLocalSocketAddress(): SocketAddress?
 
     /**
      * Gets the output stream of the socket.
      *
      * @return The KOutputStream.
      */
-    fun getOutputStream(): KOutputStream = outputStream
+    fun getOutputStream(): KOutputStream
 
     /**
      * Gets the remote port number.
      *
      * @return The remote port number, or -1 if not connected.
      */
-    fun getPort(): Int {
-        val address = channel.remoteAddress ?: return -1
-        return if(address is java.net.InetSocketAddress) {
-            address.port
-        } else {
-            -1
-        }
-    }
+    fun getPort(): Int
 
     /**
      * Gets the SO_RCVBUF option.
      *
      * @return The value of the SO_RCVBUF option.
      */
-    fun getReceiveBufferSize(): Int = channel.getOption(java.net.StandardSocketOptions.SO_RCVBUF)
+    fun getReceiveBufferSize(): Int
 
     /**
      * Gets the remote socket address.
      *
      * @return The remote SocketAddress.
      */
-    fun getRemoteSocketAddress(): SocketAddress = channel.remoteAddress
+    fun getRemoteSocketAddress(): SocketAddress
 
     /**
      * Gets the SO_REUSEADDR option.
      *
      * @return The value of the SO_REUSEADDR option.
      */
-    fun getReuseAddress(): Boolean = channel.getOption(java.net.StandardSocketOptions.SO_REUSEADDR)
+    fun getReuseAddress(): Boolean
 
     /**
      * Gets the SO_SNDBUF option.
      *
      * @return The value of the SO_SNDBUF option.
      */
-    fun getSendBufferSize(): Int = channel.getOption(java.net.StandardSocketOptions.SO_SNDBUF)
+    fun getSendBufferSize(): Int
 
     /**
      * Gets the SO_LINGER option.
      *
      * @return The value of the SO_LINGER option.
      */
-    fun getSoLinger(): Int = channel.getOption(java.net.StandardSocketOptions.SO_LINGER)
+    fun getSoLinger(): Int
 
     /**
      * Gets the read timeout.
      *
      * @return The read timeout in milliseconds.
      */
-    fun getReadTimeout(): Long = this.readTimeout ?: 0
+    fun getReadTimeout(): Long
 
     /**
      * Gets the write timeout.
      *
      * @return The write timeout in milliseconds.
      */
-    fun getWriteTimeout(): Long = this.writeTimeout ?: 0
+    fun getWriteTimeout(): Long
 
     /**
      * Gets the TCP_NODELAY option.
      *
      * @return The value of the TCP_NODELAY option.
      */
-    fun getTcpNoDelay(): Boolean = channel.getOption(java.net.StandardSocketOptions.TCP_NODELAY)
+    fun getTcpNoDelay(): Boolean
 
     /**
      * Gets the IP_TOS option.
      *
      * @return The value of the IP_TOS option.
      */
-    fun getTrafficClass(): Int = channel.getOption(java.net.StandardSocketOptions.IP_TOS)
+    fun getTrafficClass(): Int
 
     /**
      * Checks if the socket is bound.
      *
      * @return True if the socket is bound, false otherwise.
      */
-    fun isBound(): Boolean = channel.localAddress != null
+    fun isBound(): Boolean
 
     /**
      * Checks if the socket is closed.
      *
      * @return True if the socket is closed, false otherwise.
      */
-    fun isClosed(): Boolean = !channel.isOpen
+    fun isClosed(): Boolean
 
     /**
      * Checks if the socket is connected.
      *
      * @return True if the socket is connected, false otherwise.
      */
-    fun isConnected(): Boolean = channel.remoteAddress != null
+    fun isConnected(): Boolean
 
     /**
      * Checks if the input is shutdown.
      *
      * @return True if the input is shutdown, false otherwise.
      */
-    suspend fun isInputShutdown(): Boolean = isInputShutdown.get()
+    suspend fun isInputShutdown(): Boolean
 
     /**
      * Checks if the output is shutdown.
      *
      * @return True if the output is shutdown, false otherwise.
      */
-    suspend fun isOutputShutdown(): Boolean = isOutputShutdown.get()
+    suspend fun isOutputShutdown(): Boolean
 
     /**
      * Sets the SO_KEEPALIVE option.
@@ -404,9 +219,7 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      * @param keepAlive The value to set.
      */
     @Throws(IOException::class)
-    suspend fun setKeepAlive(keepAlive: Boolean) = withContext(Dispatchers.IO) {
-        channel.setOption(java.net.StandardSocketOptions.SO_KEEPALIVE, keepAlive)
-    }
+    suspend fun setKeepAlive(keepAlive: Boolean)
 
     /**
      * Sets the SO_RCVBUF option.
@@ -414,9 +227,7 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      * @param size The buffer size to set.
      */
     @Throws(IOException::class)
-    suspend fun setReceiveBufferSize(size: Int) = withContext(Dispatchers.IO) {
-        channel.setOption(java.net.StandardSocketOptions.SO_RCVBUF, size)
-    }
+    suspend fun setReceiveBufferSize(size: Int)
 
     /**
      * Sets the SO_REUSEADDR option.
@@ -425,9 +236,7 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      * @throws IOException if an I/O error occurs.
      */
     @Throws(IOException::class)
-    suspend fun setReuseAddress(reuse: Boolean):Unit = withContext(Dispatchers.IO) {
-        channel.setOption(java.net.StandardSocketOptions.SO_REUSEADDR, reuse)
-    }
+    suspend fun setReuseAddress(reuse: Boolean)
 
     /**
      * Sets the SO_SNDBUF option.
@@ -436,39 +245,21 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      * @throws IOException if an I/O error occurs.
      */
     @Throws(IOException::class)
-    suspend fun setSendBufferSize(size: Int):Unit = withContext(Dispatchers.IO) {
-        channel.setOption(java.net.StandardSocketOptions.SO_SNDBUF, size)
-    }
+    suspend fun setSendBufferSize(size: Int)
 
     /**
      * Sets the read timeout.
      *
      * @param timeout The timeout in milliseconds, or null to disable.
      */
-    fun setReadTimeout(timeout: Long?) {
-        if(timeout==null || timeout==0L) {
-            this.readTimeout = null
-        } else if(timeout<0) {
-            throw IllegalArgumentException("Timeout must be greater than or equal to 0")
-        } else {
-            this.readTimeout = timeout
-        }
-    }
+    fun setReadTimeout(timeout: Long?)
 
     /**
      * Sets the write timeout.
      *
      * @param timeout The timeout in milliseconds, or null to disable.
      */
-    fun setWriteTimeout(timeout: Long?) {
-        if(timeout==null || timeout==0L) {
-            this.writeTimeout = null
-        } else if(timeout<0) {
-            throw IllegalArgumentException("Timeout must be greater than or equal to 0")
-        } else {
-            this.writeTimeout = timeout
-        }
-    }
+    fun setWriteTimeout(timeout: Long?)
 
     /**
      * Sets the TCP_NODELAY option.
@@ -477,9 +268,7 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      * @throws IOException if an I/O error occurs.
      */
     @Throws(IOException::class)
-    suspend fun setTcpNoDelay(on: Boolean):Unit = withContext(Dispatchers.IO) {
-        channel.setOption(java.net.StandardSocketOptions.TCP_NODELAY, on)
-    }
+    suspend fun setTcpNoDelay(on: Boolean)
 
     /**
      * Sets the IP_TOS option.
@@ -488,9 +277,7 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      * @throws IOException if an I/O error occurs.
      */
     @Throws(IOException::class)
-    suspend fun setTrafficClass(tc: Int):Unit = withContext(Dispatchers.IO) {
-        channel.setOption(java.net.StandardSocketOptions.IP_TOS, tc)
-    }
+    suspend fun setTrafficClass(tc: Int)
 
     /**
      * Shuts down the input side of the socket.
@@ -498,11 +285,7 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      * @throws IOException if an I/O error occurs.
      */
     @Throws(IOException::class)
-    suspend fun shutdownInput():Unit = withContext(Dispatchers.IO) {
-        if(!isInputShutdown.getAndSet(true)) {
-            channel.shutdownInput()
-        }
-    }
+    suspend fun shutdownInput()
 
 
     /**
@@ -511,9 +294,5 @@ class KSocket internal constructor(channel: AsynchronousSocketChannel = Asynchro
      * @throws IOException if an I/O error occurs.
      */
     @Throws(IOException::class)
-    suspend fun shutdownOutput():Unit = withContext(Dispatchers.IO) {
-        if(!isOutputShutdown.getAndSet(true)) {
-            channel.shutdownOutput()
-        }
-    }
+    suspend fun shutdownOutput()
 }
