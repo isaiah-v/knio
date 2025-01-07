@@ -5,11 +5,9 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
-import org.ivcode.knio.utils.asCompletionHandler
+import org.ivcode.org.ivcode.knio.nio.readSuspend
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * A coroutine-based asynchronous equivalent of [java.io.FileInputStream].
@@ -34,14 +32,6 @@ class KFileInputStream (
 
     /** The mark limit for the read-ahead limit. */
     private var markLimit: Int = 0
-
-    /** The completion handler for asynchronous read operations. */
-    private val callback = { result: Int ->
-        if(result > 0) {
-            position += result
-        }
-        result
-    }.asCompletionHandler()
 
 
     /**
@@ -117,12 +107,13 @@ class KFileInputStream (
      *
      * @return The number of bytes read, or -1 if the end of the file is reached.
      */
-    private suspend fun doRead(buffer: ByteBuffer): Int = suspendCoroutine { continuation ->
-        try {
-            channel.read(buffer, position, continuation, callback)
-        } catch (e: Throwable) {
-            continuation.resumeWithException(e)
+    private suspend fun doRead(buffer: ByteBuffer): Int {
+        val count = channel.readSuspend(buffer, position)
+        if(count > 0) {
+            position += count
         }
+
+        return count
     }
 
     /**
