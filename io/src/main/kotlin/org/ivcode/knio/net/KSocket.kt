@@ -218,6 +218,7 @@ interface KSocket: KAutoCloseable {
      *
      * @param keepAlive The value to set.
      */
+
     @Throws(IOException::class)
     suspend fun setKeepAlive(keepAlive: Boolean)
 

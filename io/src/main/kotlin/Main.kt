@@ -6,6 +6,7 @@ import org.ivcode.knio.io.KBufferedReader
 import org.ivcode.knio.lang.use
 import org.ivcode.knio.net.KSocketFactory
 import org.ivcode.knio.net.KServerSocketFactory
+
 import java.nio.ByteBuffer
 
 
@@ -14,6 +15,7 @@ import java.nio.ByteBuffer
 suspend fun main() = coroutineScope {
     launch {
         KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+
             val socket = serverSocket.accept()
             socket.use {
                 it.getInputStream().use {
@@ -24,7 +26,6 @@ suspend fun main() = coroutineScope {
                         buffer.clear()
                     }
                 }
-
 
                 it.getOutputStream().use {
                     it.write("HTTP/1.1 200 OK\r\n".toByteArray())
