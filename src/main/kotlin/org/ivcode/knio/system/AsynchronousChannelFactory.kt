@@ -9,8 +9,7 @@ import java.nio.file.Path
 interface AsynchronousChannelFactory {
 
     companion object {
-        var DEFAULT: AsynchronousChannelFactory = AsynchronousChannelFactoryDefault()
-
+        private var DEFAULT: AsynchronousChannelFactory = AsynchronousChannelFactoryDefault()
 
         fun getDefault(): AsynchronousChannelFactory = DEFAULT
         fun setDefault(factory: AsynchronousChannelFactory) {
@@ -21,4 +20,5 @@ interface AsynchronousChannelFactory {
     fun openAsynchronousFileChannel(file: Path, vararg options: OpenOption): AsynchronousFileChannel
     fun openAsynchronousServerSocketChannel(): AsynchronousServerSocketChannel
     fun openAsynchronousSocketChannel(): AsynchronousSocketChannel
+    fun shutdown()
 }

@@ -49,4 +49,9 @@ class AsynchronousChannelFactoryDefault(
     override fun openAsynchronousSocketChannel(): AsynchronousSocketChannel {
         return AsynchronousSocketChannel.open(group)
     }
+
+    override fun shutdown() {
+        group.shutdown()
+        executor.shutdown()
+    }
 }

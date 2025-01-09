@@ -1,5 +1,8 @@
 package org.ivcode.knio.lang
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
+
 /**
  * Executes the given block function on this resource and then closes it.
  *
@@ -17,3 +20,16 @@ suspend inline fun <T : KAutoCloseable, R> T.use(block: (T) -> R): R {
         close()
     }
 }
+
+@Throws(Exception::class)
+suspend inline fun <T : KAutoCloseable, R> T.use(
+    dispatcher: CoroutineDispatcher,
+    crossinline block: suspend (T) -> R
+): R = withContext(dispatcher) {
+    return@withContext try {
+        block(this@use)
+    } finally {
+        close()
+    }
+}
+
