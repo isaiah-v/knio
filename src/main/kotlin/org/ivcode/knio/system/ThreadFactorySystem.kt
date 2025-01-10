@@ -3,19 +3,17 @@ package org.ivcode.org.ivcode.knio.system
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicLong
 
-class NamedThreadFactory(
+class ThreadFactorySystem (
     private val name: String,
-    private val virtual: Boolean = true
+    private val daemon: Boolean,
+    private val priority: Int
 ): ThreadFactory {
     private val counter = AtomicLong(1)
 
     override fun newThread(r: Runnable): Thread {
-        val thread = if(virtual) {
-            Thread.ofVirtual().unstarted(r)
-        } else {
-            Thread(r)
-        }
-        thread.name = "$name-${counter.getAndIncrement()}"
+        val thread = Thread(r, "$name-${counter.getAndIncrement()}")
+        thread.isDaemon = daemon
+        thread.priority = priority
 
         return thread
     }

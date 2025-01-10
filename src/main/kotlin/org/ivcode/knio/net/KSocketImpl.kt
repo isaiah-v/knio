@@ -1,14 +1,11 @@
 package org.ivcode.knio.net
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
-import org.ivcode.knio.io.KInputStream
-import org.ivcode.knio.io.KOutputStream
-import org.ivcode.knio.nio.readSuspend
 import org.ivcode.knio.nio.writeSuspend
 import org.ivcode.org.ivcode.knio.net.KSocketAbstract
+import org.ivcode.org.ivcode.knio.net.KSocketOutputStream
+import org.jetbrains.annotations.Blocking
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
@@ -16,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 internal class KSocketImpl internal constructor(
     /** The underlying AsynchronousSocketChannel. */
-    channel: AsynchronousSocketChannel = AsynchronousSocketChannel.open()
+    channel: AsynchronousSocketChannel
 ): KSocketAbstract(channel) {
 
     /** The input shutdown flag. */
@@ -26,7 +23,7 @@ internal class KSocketImpl internal constructor(
     private var isOutputShutdown = AtomicBoolean(false)
 
     /** The input stream of the socket. */
-    private val inputStream = object : KInputStream() {
+    private val inputStream = object : KSocketInputStream() {
         /** read mutex */
         private val readMutex = Mutex()
 
@@ -37,24 +34,42 @@ internal class KSocketImpl internal constructor(
          * @return The number of bytes read.
          */
         override suspend fun read(b: ByteBuffer): Int = readMutex.withLock {
-            // only one thread can read at a time to avoid ReadPendingException
+            return read0(b)
+        }
 
-            val result = channel.readSuspend(b, rTimeout)
-            if (result == -1) {
-                close()
+        private suspend fun read0(b: ByteBuffer): Int {
+            var total = 0
+
+            while (b.hasRemaining()) {
+                repeat(3) {
+                    val result = read(b)
+
+                    if (result == -1) {
+                        // Blocking
+                        close()
+                        return -1
+                    } else if (result > 0) {
+                        total += result
+                        return@repeat
+                    }
+                }
             }
 
-            result
+            return total
         }
 
         /**
          * Closes the input stream.
          */
-        override suspend fun close() = this@KSocketImpl.shutdownInput()
+        @Blocking
+        override suspend fun close() {
+            @Suppress("BlockingMethodInNonBlockingContext")
+            this@KSocketImpl.shutdownInput()
+        }
     }
 
     /** The output stream of the socket. */
-    private val outputStream = object : KOutputStream() {
+    private val outputStream = object : KSocketOutputStream() {
         /** write mutex */
         private val writeMutex = Mutex()
 
@@ -63,6 +78,7 @@ internal class KSocketImpl internal constructor(
          *
          * @param b The ByteBuffer containing data to write.
          */
+        @Blocking
         override suspend fun write(b: ByteBuffer):Unit = writeMutex.withLock {
             // only one thread can write at a time to avoid WritePendingException
 
@@ -79,7 +95,11 @@ internal class KSocketImpl internal constructor(
         /**
          * Closes the output stream.
          */
-        override suspend fun close() = this@KSocketImpl.shutdownOutput()
+        @Blocking
+        override suspend fun close() {
+            @Suppress("BlockingMethodInNonBlockingContext")
+            this@KSocketImpl.shutdownOutput()
+        }
     }
 
 
@@ -89,7 +109,7 @@ internal class KSocketImpl internal constructor(
      *
      * @return The KInputStream.
      */
-    override fun getInputStream(): KInputStream = this.inputStream
+    override fun getInputStream(): KSocketInputStream = this.inputStream
 
 
 
@@ -98,7 +118,7 @@ internal class KSocketImpl internal constructor(
      *
      * @return The KOutputStream.
      */
-    override fun getOutputStream(): KOutputStream = outputStream
+    override fun getOutputStream(): KSocketOutputStream = outputStream
 
     /**
      * Checks if the input is shutdown.
@@ -119,9 +139,11 @@ internal class KSocketImpl internal constructor(
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Blocking
     @Throws(IOException::class)
-    override suspend fun shutdownInput():Unit = withContext(Dispatchers.IO) {
+    override suspend fun shutdownInput() {
         if(!isInputShutdown.getAndSet(true)) {
+            @Suppress("BlockingMethodInNonBlockingContext")
             ch.shutdownInput()
         }
     }
@@ -132,9 +154,11 @@ internal class KSocketImpl internal constructor(
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Blocking
     @Throws(IOException::class)
-    override suspend fun shutdownOutput():Unit = withContext(Dispatchers.IO) {
+    override suspend fun shutdownOutput() {
         if(!isOutputShutdown.getAndSet(true)) {
+            @Suppress("BlockingMethodInNonBlockingContext")
             ch.shutdownOutput()
         }
     }

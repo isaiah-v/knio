@@ -11,13 +11,14 @@ import java.util.concurrent.Executors
 
 /**
  * Default implementation of the AsynchronousChannelFactory interface.
+ *
  * This factory creates various types of asynchronous channels using a provided executor service.
  *
  * @property executor The executor service used to manage asynchronous tasks.
  */
-class AsynchronousChannelFactoryDefault(
-    private val executor: ExecutorService = Executors.newCachedThreadPool(NamedThreadFactory("Kino"))
-) : AsynchronousChannelFactory {
+class ChannelFactoryDefault(
+    private val executor: ExecutorService = Executors.newCachedThreadPool(ThreadFactoryVirtual("Kino"))
+) : ChannelFactory {
 
     private val group: AsynchronousChannelGroup = AsynchronousChannelGroup.withThreadPool(executor)
 
@@ -28,7 +29,7 @@ class AsynchronousChannelFactoryDefault(
      * @param options The options specifying how the file is opened.
      * @return An AsynchronousFileChannel for the specified file.
      */
-    override fun openAsynchronousFileChannel(file: Path, vararg options: OpenOption): AsynchronousFileChannel {
+    override fun openFileChannel(file: Path, vararg options: OpenOption): AsynchronousFileChannel {
         return AsynchronousFileChannel.open(file, options.toSet(), executor)
     }
 
@@ -37,7 +38,7 @@ class AsynchronousChannelFactoryDefault(
      *
      * @return An AsynchronousServerSocketChannel.
      */
-    override fun openAsynchronousServerSocketChannel(): AsynchronousServerSocketChannel {
+    override fun openServerSocketChannel(): AsynchronousServerSocketChannel {
         return AsynchronousServerSocketChannel.open(group)
     }
 
@@ -46,7 +47,7 @@ class AsynchronousChannelFactoryDefault(
      *
      * @return An AsynchronousSocketChannel.
      */
-    override fun openAsynchronousSocketChannel(): AsynchronousSocketChannel {
+    override fun openSocketChannel(): AsynchronousSocketChannel {
         return AsynchronousSocketChannel.open(group)
     }
 

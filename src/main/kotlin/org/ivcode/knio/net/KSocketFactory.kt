@@ -1,5 +1,6 @@
 package org.ivcode.knio.net
 
+import org.ivcode.org.ivcode.knio.system.ChannelFactory
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -28,22 +29,24 @@ interface KSocketFactory {
     @Throws(IOException::class)
     suspend fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int): KSocket
 
-    private class DefaultKSocketFactory: KSocketFactory {
-        override suspend fun createSocket() = KSocketImpl()
+    private class DefaultKSocketFactory(
+        private val channelFactory: ChannelFactory = ChannelFactory.getDefault()
+    ): KSocketFactory {
+        override suspend fun createSocket() = KSocketImpl(channel = channelFactory.openSocketChannel())
 
         override suspend fun createSocket(host: String, port: Int) =
-            KSocketImpl().apply { connect(InetSocketAddress(host, port)) }
+            createSocket().apply { connect(InetSocketAddress(host, port)) }
 
-        override suspend fun createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int) = KSocketImpl().apply {
+        override suspend fun createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int) = createSocket().apply {
             connect(InetSocketAddress(host, port))
             bind(InetSocketAddress(localHost, localPort))
         }
 
-        override suspend fun createSocket(host: InetAddress, port: Int) = KSocketImpl().apply {
+        override suspend fun createSocket(host: InetAddress, port: Int) = createSocket().apply {
             connect(InetSocketAddress(host, port))
         }
 
-        override suspend fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int) = KSocketImpl().apply {
+        override suspend fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int) = createSocket().apply {
             connect(InetSocketAddress(address, port))
             bind(InetSocketAddress(localAddress, localPort))
         }

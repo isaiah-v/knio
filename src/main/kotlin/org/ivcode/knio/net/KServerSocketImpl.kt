@@ -11,10 +11,11 @@ import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel
 import kotlin.coroutines.suspendCoroutine
 
-internal class KServerSocketImpl: KServerSocket {
+internal class KServerSocketImpl(
+    private val channel: AsynchronousServerSocketChannel
+): KServerSocket {
     private val acceptMutex = Mutex()
 
-    private val channel = AsynchronousServerSocketChannel.open()
     private var acceptTimeout: Long? = null
 
     override suspend fun accept(): KSocket {

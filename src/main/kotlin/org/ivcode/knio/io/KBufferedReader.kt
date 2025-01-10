@@ -241,6 +241,8 @@ class KBufferedReader(
                     } else {
                         s!!.append(cb!!, startChar, i - startChar)
                         str = s.toString()
+
+
                     }
                     nextChar++
                     if (c == '\r') {

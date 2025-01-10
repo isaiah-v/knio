@@ -1,29 +1,21 @@
 package org.ivcode.knio.net
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import org.ivcode.knio.lang.KAutoCloseable
-import org.ivcode.knio.io.KInputStream
-import org.ivcode.knio.io.KOutputStream
-import org.ivcode.knio.utils.asCompletionHandler
-import org.ivcode.knio.utils.fromResult
-import org.ivcode.knio.utils.timeout
+import org.ivcode.org.ivcode.knio.net.KSocketOutputStream
+import org.jetbrains.annotations.Blocking
 import java.io.IOException
 import java.net.SocketAddress
-import java.net.SocketTimeoutException
-import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
-import java.nio.channels.InterruptedByTimeoutException
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * A coroutine-based socket implementation using AsynchronousSocketChannel.
+ *
+ * [Blocking] - Though the underlying nio implementation is non-blocking, some operations may block briefly. In most
+ * cases this will be negligible. It's important to note the underlying does not set the dispatcher for operations.
+ * It is up to the user to decide the appropriate dispatcher.
+ *
  */
+@Blocking
 interface KSocket: KAutoCloseable {
 
 
@@ -35,7 +27,7 @@ interface KSocket: KAutoCloseable {
      * @throws IOException if an I/O error occurs
      */
     @Throws(IOException::class)
-    fun bind(local: SocketAddress? = null)
+    suspend fun bind(local: SocketAddress? = null)
 
     /**
      * Closes the socket.
@@ -50,6 +42,7 @@ interface KSocket: KAutoCloseable {
      * @param timeout The timeout in milliseconds, or 0 for no timeout
      * @throws IOException if an I/O error occurs
      */
+    @Throws(IOException::class)
     suspend fun connect(endpoint: SocketAddress, timeout: Long = 0)
 
     /**
@@ -57,147 +50,154 @@ interface KSocket: KAutoCloseable {
      *
      * @return The AsynchronousSocketChannel.
      */
-    fun getChannel(): AsynchronousSocketChannel
+    suspend fun getChannel(): AsynchronousSocketChannel
 
     /**
      * Gets the remote InetAddress.
      *
      * @return The remote InetAddress, or null if not connected.
      */
-    fun getInetAddress(): java.net.InetAddress?
+    suspend fun getInetAddress(): java.net.InetAddress?
 
     /**
      * Gets the input stream of the socket.
      *
      * @return The KInputStream.
      */
-    fun getInputStream(): KInputStream
+    fun getInputStream(): KSocketInputStream
 
     /**
      * Gets the SO_KEEPALIVE option.
      *
      * @return The value of the SO_KEEPALIVE option.
      */
-    fun getKeepAlive(): Boolean
+    @Throws(IOException::class)
+    suspend fun getKeepAlive(): Boolean
 
     /**
      * Gets the local InetAddress.
      *
      * @return The local InetAddress, or null if not bound.
      */
-    fun getLocalAddress(): java.net.InetAddress?
+    suspend fun getLocalAddress(): java.net.InetAddress?
 
     /**
      * Gets the local port number.
      *
      * @return The local port number, or -1 if not bound.
      */
-    fun getLocalPort(): Int
+    suspend fun getLocalPort(): Int
 
     /**
      * Gets the local socket address.
      *
      * @return The local SocketAddress.
      */
-    fun getLocalSocketAddress(): SocketAddress?
+    suspend fun getLocalSocketAddress(): SocketAddress?
 
     /**
      * Gets the output stream of the socket.
      *
-     * @return The KOutputStream.
+     * @return The KOutputStream.a
      */
-    fun getOutputStream(): KOutputStream
+    fun getOutputStream(): KSocketOutputStream
 
     /**
      * Gets the remote port number.
      *
      * @return The remote port number, or -1 if not connected.
      */
-    fun getPort(): Int
+    suspend fun getPort(): Int
 
     /**
      * Gets the SO_RCVBUF option.
      *
      * @return The value of the SO_RCVBUF option.
      */
-    fun getReceiveBufferSize(): Int
+    @Throws(IOException::class)
+    suspend fun getReceiveBufferSize(): Int
 
     /**
      * Gets the remote socket address.
      *
      * @return The remote SocketAddress.
      */
-    fun getRemoteSocketAddress(): SocketAddress
+    suspend fun getRemoteSocketAddress(): SocketAddress
 
     /**
      * Gets the SO_REUSEADDR option.
      *
      * @return The value of the SO_REUSEADDR option.
      */
-    fun getReuseAddress(): Boolean
+    @Throws(IOException::class)
+    suspend fun getReuseAddress(): Boolean
 
     /**
      * Gets the SO_SNDBUF option.
      *
      * @return The value of the SO_SNDBUF option.
      */
-    fun getSendBufferSize(): Int
+    @Throws(IOException::class)
+    suspend fun getSendBufferSize(): Int
 
     /**
      * Gets the SO_LINGER option.
      *
      * @return The value of the SO_LINGER option.
      */
-    fun getSoLinger(): Int
+    @Throws(IOException::class)
+    suspend fun getSoLinger(): Int
 
     /**
      * Gets the read timeout.
      *
      * @return The read timeout in milliseconds.
      */
-    fun getReadTimeout(): Long
+    suspend fun getReadTimeout(): Long
 
     /**
      * Gets the write timeout.
      *
      * @return The write timeout in milliseconds.
      */
-    fun getWriteTimeout(): Long
+    suspend fun getWriteTimeout(): Long
 
     /**
      * Gets the TCP_NODELAY option.
      *
      * @return The value of the TCP_NODELAY option.
      */
-    fun getTcpNoDelay(): Boolean
+    @Throws(IOException::class)
+    suspend fun getTcpNoDelay(): Boolean
 
     /**
      * Gets the IP_TOS option.
      *
      * @return The value of the IP_TOS option.
      */
-    fun getTrafficClass(): Int
+    @Throws(IOException::class)
+    suspend fun getTrafficClass(): Int
 
     /**
      * Checks if the socket is bound.
      *
      * @return True if the socket is bound, false otherwise.
      */
-    fun isBound(): Boolean
+    suspend fun isBound(): Boolean
 
     /**
      * Checks if the socket is closed.
      *
      * @return True if the socket is closed, false otherwise.
      */
-    fun isClosed(): Boolean
+    suspend fun isClosed(): Boolean
 
     /**
      * Checks if the socket is connected.
      *
      * @return True if the socket is connected, false otherwise.
      */
-    fun isConnected(): Boolean
+    suspend fun isConnected(): Boolean
 
     /**
      * Checks if the input is shutdown.
@@ -218,7 +218,6 @@ interface KSocket: KAutoCloseable {
      *
      * @param keepAlive The value to set.
      */
-
     @Throws(IOException::class)
     suspend fun setKeepAlive(keepAlive: Boolean)
 
@@ -253,14 +252,14 @@ interface KSocket: KAutoCloseable {
      *
      * @param timeout The timeout in milliseconds, or null to disable.
      */
-    fun setReadTimeout(timeout: Long?)
+    suspend fun setReadTimeout(timeout: Long?)
 
     /**
      * Sets the write timeout.
      *
      * @param timeout The timeout in milliseconds, or null to disable.
      */
-    fun setWriteTimeout(timeout: Long?)
+    suspend fun setWriteTimeout(timeout: Long?)
 
     /**
      * Sets the TCP_NODELAY option.

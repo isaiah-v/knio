@@ -6,6 +6,7 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import org.ivcode.knio.nio.readSuspend
+import org.ivcode.org.ivcode.knio.system.ChannelFactory
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 
@@ -18,11 +19,12 @@ import java.nio.file.StandardOpenOption
  * @param path The path to the file to read.
  */
 class KFileInputStream (
-    path: Path
+    path: Path,
+    channelFactory: ChannelFactory = ChannelFactory.getDefault()
 ): KInputStream() {
 
     /** The asynchronous file channel for reading data. */
-    private val channel: AsynchronousFileChannel = AsynchronousFileChannel.open(path, StandardOpenOption.READ)
+    private val channel: AsynchronousFileChannel = channelFactory.openFileChannel(path, StandardOpenOption.READ)
 
     /** The current position in the file. */
     private var position: Long = 0

@@ -1,25 +1,24 @@
 package org.ivcode.knio.net.ssl
 
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
-import org.ivcode.knio.io.KInputStream
-import org.ivcode.knio.io.KOutputStream
+import org.ivcode.knio.net.KSocketInputStream
 import org.ivcode.knio.nio.readSuspend
 import org.ivcode.knio.nio.writeSuspend
 import org.ivcode.knio.system.ByteBufferPool
-import org.ivcode.org.ivcode.knio.system.AsynchronousChannelFactory
-import org.ivcode.org.ivcode.knio.system.AsynchronousChannelFactoryDefault
+import org.ivcode.org.ivcode.knio.net.KSocketOutputStream
 import org.ivcode.org.ivcode.knio.utils.compactOrIncreaseSize
+import org.jetbrains.annotations.Blocking
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
+import java.nio.channels.ClosedChannelException
 import javax.net.ssl.*
 import kotlin.math.min
 
-
 internal class KSSLSocketImpl (
-    channel: AsynchronousSocketChannel = AsynchronousChannelFactory.getDefault().openAsynchronousSocketChannel(),
+    channel: AsynchronousSocketChannel,
     sslEngine: SSLEngine,
     useClientMode: Boolean,
     private val bufferPool: ByteBufferPool = ByteBufferPool.getDefault()
@@ -45,19 +44,50 @@ internal class KSSLSocketImpl (
         applicationRead = bufferPool.acquire(sslEngine.session.applicationBufferSize)
     }
 
-    private val inputStream = object : KInputStream() {
-        override suspend fun read(b: ByteBuffer): Int = this@KSSLSocketImpl.read(b)
-        override suspend fun close() = this@KSSLSocketImpl.shutdownInput()
+    private val inputStream = object : KSocketInputStream() {
+
+        @Blocking
+        override suspend fun read(b: ByteBuffer): Int {
+            @Suppress("BlockingMethodInNonBlockingContext")
+            return this@KSSLSocketImpl.read(b)
+        }
+
+        @Blocking
+        override suspend fun close() {
+            @Suppress("BlockingMethodInNonBlockingContext")
+            this@KSSLSocketImpl.shutdownInput()
+        }
     }
 
-    private val outputStream = object : KOutputStream() {
-        override suspend fun write(b: ByteBuffer) = this@KSSLSocketImpl.write(b)
-        override suspend fun close() = this@KSSLSocketImpl.shutdownOutput()
+    private val outputStream = object : KSocketOutputStream() {
+
+        @Blocking
+        override suspend fun write(b: ByteBuffer) {
+            @Suppress("BlockingMethodInNonBlockingContext")
+            this@KSSLSocketImpl.write(b)
+        }
+
+        @Blocking
+        override suspend fun close() {
+            @Suppress("BlockingMethodInNonBlockingContext")
+            this@KSSLSocketImpl.shutdownOutput()
+        }
     }
 
-    private suspend fun startHandshake0() = withContext(Dispatchers.IO) {
-        if(isHandshakeCompleted) return@withContext
+    override fun getInputStream(): KSocketInputStream = inputStream
+    override fun getOutputStream(): KSocketOutputStream = outputStream
 
+    @Blocking
+    override suspend fun startHandshake() = handshakeMutex.withLock {
+        startHandshake0()
+    }
+
+
+    @Blocking
+    private suspend fun startHandshake0() {
+        if(isHandshakeCompleted) return
+
+        @Suppress("BlockingMethodInNonBlockingContext")
         sslEngine.beginHandshake()
 
         networkRead!!.clear().flip()
@@ -69,10 +99,12 @@ internal class KSSLSocketImpl (
                     runHandshakeTasks()
                 }
                 SSLEngineResult.HandshakeStatus.NEED_WRAP -> {
+                    @Suppress("BlockingMethodInNonBlockingContext")
                     wrapHandshake()
                 }
                 SSLEngineResult.HandshakeStatus.NEED_UNWRAP,
                 SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN-> {
+                    @Suppress("BlockingMethodInNonBlockingContext")
                     unwrapHandshake()
                 }
                 SSLEngineResult.HandshakeStatus.FINISHED,
@@ -99,11 +131,14 @@ internal class KSSLSocketImpl (
         }
     }
 
-    private suspend fun wrapHandshake() = withContext(Dispatchers.IO) {
+    @Blocking
+    private suspend fun wrapHandshake() {
         val dummyBuffer = ByteBuffer.allocate(0)
 
         while (true) {
             networkWrite!!.clear()
+
+            @Suppress("BlockingMethodInNonBlockingContext")
             val result = sslEngine.wrap(dummyBuffer, networkWrite)
 
             when (result.status!!) {
@@ -145,11 +180,13 @@ internal class KSSLSocketImpl (
         }
     }
 
-    private suspend fun unwrapHandshake() = withContext(Dispatchers.IO) {
+    @Blocking
+    private suspend fun unwrapHandshake() {
         val dummyBuffer = ByteBuffer.allocate(0)
 
         while (true) {
             // try to unwrap data from the network buffer
+            @Suppress("BlockingMethodInNonBlockingContext")
             val result = sslEngine.unwrap(networkRead, dummyBuffer)
 
             when (result.status!!) {
@@ -194,48 +231,121 @@ internal class KSSLSocketImpl (
         }
     }
 
-    val SSLEngine.isHandshakeRequired: Boolean
+    private val SSLEngine.isHandshakeRequired: Boolean
         get() = this.handshakeStatus != SSLEngineResult.HandshakeStatus.FINISHED
                 && this.handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING
 
-    val SSLEngine.isHandshakeUnwrap: Boolean
-        get() = this.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_UNWRAP
-                || this.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN
-
-    val SSLEngine.isHandshakeWrap: Boolean
-        get() = this.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_WRAP
-
-    override suspend fun startHandshake() = handshakeMutex.withLock {
-        startHandshake0()
-    }
-
-    override fun getInputStream(): KInputStream = inputStream
-    override fun getOutputStream(): KOutputStream = outputStream
 
     override suspend fun isInputShutdown(): Boolean {
-        TODO("Not yet implemented")
+        return isInputShutdown
     }
 
     override suspend fun isOutputShutdown(): Boolean {
-        TODO("Not yet implemented")
+        return isOutputShutdown
     }
 
+    @Blocking
     override suspend fun shutdownInput() {
-        this.networkRead = null
-        this.applicationRead = null
+        val netBuff = networkRead ?: return
+        networkRead = null
+
+        try {
+            try {
+                @Suppress("BlockingMethodInNonBlockingContext")
+                sslEngine.closeInbound()
+            } catch (e: SSLException) {
+                // ignore
+            }
+
+            // Clear buffer for reuse or release
+            netBuff.clear()
+        } finally {
+            isInputShutdown = true
+            bufferPool.release(netBuff)
+        }
     }
 
+    @Blocking
     override suspend fun shutdownOutput() {
-        TODO("Not yet implemented")
+        var netBuff = networkWrite ?: return
+        networkWrite = null
+
+        try {
+            sslEngine.closeOutbound()
+
+            netBuff.clear()
+            out@ while (true) {
+                @Suppress("BlockingMethodInNonBlockingContext")
+                val result = sslEngine.wrap(ByteBuffer.allocate(0), netBuff)
+
+                when (result.status!!) {
+
+                    SSLEngineResult.Status.BUFFER_OVERFLOW -> {
+                        // increase network buffer size
+                        netBuff = netBuff.compactOrIncreaseSize(
+                            sslEngine.session.packetBufferSize,
+                            bufferPool
+                        )
+                    }
+
+                    SSLEngineResult.Status.OK -> {
+                        try {
+                            netBuff.flip()
+                            while (netBuff.hasRemaining()) {
+                                var written = 0;
+                                repeat(3) { attempt ->
+                                    written = ch.writeSuspend(netBuff)
+                                    if (written > 0) return@repeat
+                                    delay(100L * attempt) // Backoff delay
+                                }
+
+                                if (written <= 0) {
+                                    break@out
+                                }
+                            }
+                            netBuff.clear()
+                            break
+                        } catch (e: ClosedChannelException) {
+                            // ignore
+                        } catch (e: IOException) {
+                            throw e
+                        }
+                    }
+
+                    SSLEngineResult.Status.CLOSED -> {
+                        // closed
+                        break@out
+                    }
+
+                    else -> {
+                        throw SSLException("Unexpected SSL wrap status: ${result.status}")
+                    }
+                }
+            }
+
+            try {
+                @Suppress("BlockingMethodInNonBlockingContext")
+                ch.shutdownOutput()
+            } catch (e: ClosedChannelException) {
+                // ignore
+            } catch (e: IOException) {
+                throw e
+            }
+        } finally {
+            isOutputShutdown = true
+            bufferPool.release(netBuff)
+        }
     }
 
-    private suspend fun read(b: ByteBuffer): Int = withContext(Dispatchers.IO) {
+    @Blocking
+    private suspend fun read(b: ByteBuffer): Int {
         if(!isHandshakeCompleted) {
+            @Suppress("BlockingMethodInNonBlockingContext")
             startHandshake()
         }
 
-        var app = this@KSSLSocketImpl.applicationRead ?: return@withContext -1
-        var net = this@KSSLSocketImpl.networkRead ?: return@withContext -1
+        var app = this@KSSLSocketImpl.applicationRead ?: return -1
+        var net = this@KSSLSocketImpl.networkRead ?: return -1
 
         val start = b.position()
 
@@ -253,6 +363,8 @@ internal class KSSLSocketImpl (
             if(net.hasRemaining()) {
                 app.clear()
                 while(true) {
+
+                    @Suppress("BlockingMethodInNonBlockingContext")
                     val result = sslEngine.unwrap(net, app)
                     when (result.status!!) {
                         SSLEngineResult.Status.BUFFER_UNDERFLOW -> {
@@ -268,6 +380,7 @@ internal class KSSLSocketImpl (
                             break
                         }
                         SSLEngineResult.Status.CLOSED -> {
+                            @Suppress("BlockingMethodInNonBlockingContext")
                             shutdownInput()
                             break@input
                         }
@@ -277,6 +390,7 @@ internal class KSSLSocketImpl (
                 net.clear()
                 val count = ch.readSuspend(net)
                 if(count == -1) {
+                    @Suppress("BlockingMethodInNonBlockingContext")
                     shutdownInput()
                     break@input
                 }
@@ -288,19 +402,22 @@ internal class KSSLSocketImpl (
             }
         }
 
-        return@withContext if(b.position() == start) {
+        return if(b.position() == start) {
             if(isInputShutdown) -1 else 0
         } else {
             b.position() - start
         }
     }
 
-    private suspend fun write(b: ByteBuffer) = withContext(Dispatchers.IO) {
+    @Blocking
+    private suspend fun write(b: ByteBuffer) {
         if(!isHandshakeCompleted) {
+            @Suppress("BlockingMethodInNonBlockingContext")
             startHandshake()
         }
 
         while(b.hasRemaining()) {
+            @Suppress("BlockingMethodInNonBlockingContext")
             val result = sslEngine.wrap(b, networkWrite)
 
             when (result.status!!) {

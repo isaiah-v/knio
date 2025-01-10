@@ -1,6 +1,7 @@
 package org.ivcode.knio.io
 
 import org.ivcode.knio.lang.KAutoCloseable
+import org.jetbrains.annotations.Blocking
 import java.io.IOException
 import java.nio.ByteBuffer
 import kotlin.math.min

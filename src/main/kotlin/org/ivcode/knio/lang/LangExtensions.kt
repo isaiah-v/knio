@@ -10,7 +10,7 @@ import kotlinx.coroutines.withContext
  * @param R the return type of the block function
  * @param block a function to process this resource
  * @return the result of the block function
- * @throws Exception if an error occurs during closing
+ * @throws Exception if an exception occurs during execution or closing
  */
 @Throws(Exception::class)
 suspend inline fun <T : KAutoCloseable, R> T.use(block: (T) -> R): R {
@@ -21,6 +21,16 @@ suspend inline fun <T : KAutoCloseable, R> T.use(block: (T) -> R): R {
     }
 }
 
+/**
+ * Executes the given block function on this resource within the provided dispatcher context and then closes it.
+ *
+ * @param T the type of the resource
+ * @param R the return type of the block function
+ * @param dispatcher the coroutine dispatcher to run the block function
+ * @param block a suspend function to process this resource
+ * @return the result of the block function
+ * @throws Exception if an exception occurs during execution or closing
+ */
 @Throws(Exception::class)
 suspend inline fun <T : KAutoCloseable, R> T.use(
     dispatcher: CoroutineDispatcher,

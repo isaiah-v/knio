@@ -1,10 +1,9 @@
 package org.ivcode.org.ivcode.knio.net
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.ivcode.knio.net.KSocket
 import org.ivcode.knio.utils.asCompletionHandler
 import org.ivcode.knio.utils.timeout
+import org.jetbrains.annotations.Blocking
 import java.io.IOException
 import java.net.SocketAddress
 import java.net.SocketTimeoutException
@@ -29,21 +28,23 @@ internal abstract class KSocketAbstract(
      * @param local the SocketAddress to bind to
      * @throws IOException if an I/O error occurs
      */
+    @Blocking
     @Throws(IOException::class)
-    override fun bind(local: SocketAddress?) {
+    override suspend fun bind(local: SocketAddress?) {
+        @Suppress("BlockingMethodInNonBlockingContext")
         ch.bind(local)
     }
 
     /**
      * Closes the socket.
      */
-    override suspend fun close() = withContext(Dispatchers.IO) {
-        if (!ch.isOpen) return@withContext
-        try {
-            ch.close()
-        } catch (e: IOException) {
-            // Log or handle the close exception if necessary
-        }
+    @Blocking
+    @Throws(IOException::class)
+    override suspend fun close() {
+        if (!ch.isOpen) return
+
+        @Suppress("BlockingMethodInNonBlockingContext")
+        ch.close()
     }
 
     /**
@@ -75,14 +76,14 @@ internal abstract class KSocketAbstract(
      *
      * @return The AsynchronousSocketChannel.
      */
-    override fun getChannel(): AsynchronousSocketChannel = ch
+    override suspend fun getChannel(): AsynchronousSocketChannel = ch
 
     /**
      * Gets the remote InetAddress.
      *
      * @return The remote InetAddress, or null if not connected.
      */
-    override fun getInetAddress(): java.net.InetAddress? {
+    override suspend fun getInetAddress(): java.net.InetAddress? {
         val address = ch.remoteAddress ?: return null
         return if(address is java.net.InetSocketAddress) {
             address.address
@@ -96,14 +97,19 @@ internal abstract class KSocketAbstract(
      *
      * @return The value of the SO_KEEPALIVE option.
      */
-    override fun getKeepAlive(): Boolean = ch.getOption(java.net.StandardSocketOptions.SO_KEEPALIVE)
+    @Blocking
+    @Throws(IOException::class)
+    override suspend fun getKeepAlive(): Boolean {
+        @Suppress("BlockingMethodInNonBlockingContext")
+        return ch.getOption(java.net.StandardSocketOptions.SO_KEEPALIVE)
+    }
 
     /**
      * Gets the local InetAddress.
      *
      * @return The local InetAddress, or null if not bound.
      */
-    override fun getLocalAddress(): java.net.InetAddress? {
+    override suspend fun getLocalAddress(): java.net.InetAddress? {
         val address = ch.localAddress ?: null
         return if(address is java.net.InetSocketAddress) {
             address.address
@@ -117,7 +123,7 @@ internal abstract class KSocketAbstract(
      *
      * @return The local port number, or -1 if not bound.
      */
-    override fun getLocalPort(): Int {
+    override suspend fun getLocalPort(): Int {
         val address = ch.localAddress ?: return -1
         return if(address is java.net.InetSocketAddress) {
             address.port
@@ -131,7 +137,7 @@ internal abstract class KSocketAbstract(
      *
      * @return The local SocketAddress.
      */
-    override fun getLocalSocketAddress(): SocketAddress? = ch.localAddress
+    override suspend fun getLocalSocketAddress(): SocketAddress? = ch.localAddress
 
 
 
@@ -140,7 +146,7 @@ internal abstract class KSocketAbstract(
      *
      * @return The remote port number, or -1 if not connected.
      */
-    override fun getPort(): Int {
+    override suspend fun getPort(): Int {
         val address = ch.remoteAddress ?: return -1
         return if(address is java.net.InetSocketAddress) {
             address.port
@@ -154,92 +160,124 @@ internal abstract class KSocketAbstract(
      *
      * @return The value of the SO_RCVBUF option.
      */
-    override fun getReceiveBufferSize(): Int = ch.getOption(java.net.StandardSocketOptions.SO_RCVBUF)
+    @Blocking
+    @Throws(IOException::class)
+    override suspend fun getReceiveBufferSize(): Int {
+        @Suppress("BlockingMethodInNonBlockingContext")
+        return ch.getOption(java.net.StandardSocketOptions.SO_RCVBUF)
+    }
 
     /**
      * Gets the remote socket address.
      *
      * @return The remote SocketAddress.
      */
-    override fun getRemoteSocketAddress(): SocketAddress = ch.remoteAddress
+    override suspend fun getRemoteSocketAddress(): SocketAddress = ch.remoteAddress
 
     /**
      * Gets the SO_REUSEADDR option.
      *
      * @return The value of the SO_REUSEADDR option.
      */
-    override fun getReuseAddress(): Boolean = ch.getOption(java.net.StandardSocketOptions.SO_REUSEADDR)
+    @Blocking
+    @Throws(IOException::class)
+    override suspend fun getReuseAddress(): Boolean {
+        @Suppress("BlockingMethodInNonBlockingContext")
+        return ch.getOption(java.net.StandardSocketOptions.SO_REUSEADDR)
+    }
 
     /**
      * Gets the SO_SNDBUF option.
      *
      * @return The value of the SO_SNDBUF option.
      */
-    override fun getSendBufferSize(): Int = ch.getOption(java.net.StandardSocketOptions.SO_SNDBUF)
+    @Blocking
+    @Throws(IOException::class)
+    override suspend fun getSendBufferSize(): Int{
+        @Suppress("BlockingMethodInNonBlockingContext")
+        return ch.getOption(java.net.StandardSocketOptions.SO_SNDBUF)
+    }
 
     /**
      * Gets the SO_LINGER option.
      *
      * @return The value of the SO_LINGER option.
      */
-    override fun getSoLinger(): Int = ch.getOption(java.net.StandardSocketOptions.SO_LINGER)
+    @Blocking
+    @Throws(IOException::class)
+    override suspend fun getSoLinger(): Int {
+        @Suppress("BlockingMethodInNonBlockingContext")
+        return ch.getOption(java.net.StandardSocketOptions.SO_LINGER)
+    }
 
     /**
      * Gets the read timeout.
      *
      * @return The read timeout in milliseconds.
      */
-    override fun getReadTimeout(): Long = this.rTimeout ?: 0
+    override suspend fun getReadTimeout(): Long = this.rTimeout ?: 0
 
     /**
      * Gets the write timeout.
      *
      * @return The write timeout in milliseconds.
      */
-    override fun getWriteTimeout(): Long = this.wTimeout ?: 0
+    override suspend fun getWriteTimeout(): Long = this.wTimeout ?: 0
 
     /**
      * Gets the TCP_NODELAY option.
      *
      * @return The value of the TCP_NODELAY option.
      */
-    override fun getTcpNoDelay(): Boolean = ch.getOption(java.net.StandardSocketOptions.TCP_NODELAY)
+    @Blocking
+    @Throws(IOException::class)
+    override suspend fun getTcpNoDelay(): Boolean {
+        @Suppress("BlockingMethodInNonBlockingContext")
+        return ch.getOption(java.net.StandardSocketOptions.TCP_NODELAY)
+    }
 
     /**
      * Gets the IP_TOS option.
      *
      * @return The value of the IP_TOS option.
      */
-    override fun getTrafficClass(): Int = ch.getOption(java.net.StandardSocketOptions.IP_TOS)
+    @Blocking
+    @Throws(IOException::class)
+    override suspend fun getTrafficClass(): Int {
+        @Suppress("BlockingMethodInNonBlockingContext")
+        return ch.getOption(java.net.StandardSocketOptions.IP_TOS)
+    }
 
     /**
      * Checks if the socket is bound.
      *
      * @return True if the socket is bound, false otherwise.
      */
-    override fun isBound(): Boolean = ch.localAddress != null
+    override suspend fun isBound(): Boolean = ch.localAddress != null
 
     /**
      * Checks if the socket is closed.
      *
      * @return True if the socket is closed, false otherwise.
      */
-    override fun isClosed(): Boolean = !ch.isOpen
+    override suspend fun isClosed(): Boolean = !ch.isOpen
 
     /**
      * Checks if the socket is connected.
      *
      * @return True if the socket is connected, false otherwise.
      */
-    override fun isConnected(): Boolean = ch.remoteAddress != null
+    override suspend fun isConnected(): Boolean = ch.remoteAddress != null
 
     /**
      * Sets the SO_KEEPALIVE option.
      *
      * @param keepAlive The value to set.
      */
+    @Blocking
     @Throws(IOException::class)
-    override suspend fun setKeepAlive(keepAlive: Boolean): Unit = withContext(Dispatchers.IO) {
+    override suspend fun setKeepAlive(keepAlive: Boolean) {
+        @Suppress("BlockingMethodInNonBlockingContext")
         ch.setOption(java.net.StandardSocketOptions.SO_KEEPALIVE, keepAlive)
     }
 
@@ -248,8 +286,10 @@ internal abstract class KSocketAbstract(
      *
      * @param size The buffer size to set.
      */
+    @Blocking
     @Throws(IOException::class)
-    override suspend fun setReceiveBufferSize(size: Int): Unit = withContext(Dispatchers.IO) {
+    override suspend fun setReceiveBufferSize(size: Int) {
+        @Suppress("BlockingMethodInNonBlockingContext")
         ch.setOption(java.net.StandardSocketOptions.SO_RCVBUF, size)
     }
 
@@ -259,8 +299,10 @@ internal abstract class KSocketAbstract(
      * @param reuse The value to set.
      * @throws IOException if an I/O error occurs.
      */
+    @Blocking
     @Throws(IOException::class)
-    override suspend fun setReuseAddress(reuse: Boolean):Unit = withContext(Dispatchers.IO) {
+    override suspend fun setReuseAddress(reuse: Boolean) {
+        @Suppress("BlockingMethodInNonBlockingContext")
         ch.setOption(java.net.StandardSocketOptions.SO_REUSEADDR, reuse)
     }
 
@@ -270,8 +312,10 @@ internal abstract class KSocketAbstract(
      * @param size The buffer size to set.
      * @throws IOException if an I/O error occurs.
      */
+    @Blocking
     @Throws(IOException::class)
-    override suspend fun setSendBufferSize(size: Int):Unit = withContext(Dispatchers.IO) {
+    override suspend fun setSendBufferSize(size: Int) {
+        @Suppress("BlockingMethodInNonBlockingContext")
         ch.setOption(java.net.StandardSocketOptions.SO_SNDBUF, size)
     }
 
@@ -280,7 +324,7 @@ internal abstract class KSocketAbstract(
      *
      * @param timeout The timeout in milliseconds, or null to disable.
      */
-    override fun setReadTimeout(timeout: Long?) {
+    override suspend fun setReadTimeout(timeout: Long?) {
         if(timeout==null || timeout==0L) {
             this.rTimeout = null
         } else if(timeout<0) {
@@ -295,7 +339,7 @@ internal abstract class KSocketAbstract(
      *
      * @param timeout The timeout in milliseconds, or null to disable.
      */
-    override fun setWriteTimeout(timeout: Long?) {
+    override suspend fun setWriteTimeout(timeout: Long?) {
         if(timeout==null || timeout==0L) {
             this.wTimeout = null
         } else if(timeout<0) {
@@ -311,8 +355,10 @@ internal abstract class KSocketAbstract(
      * @param on The value to set.
      * @throws IOException if an I/O error occurs.
      */
+    @Blocking
     @Throws(IOException::class)
-    override suspend fun setTcpNoDelay(on: Boolean):Unit = withContext(Dispatchers.IO) {
+    override suspend fun setTcpNoDelay(on: Boolean) {
+        @Suppress("BlockingMethodInNonBlockingContext")
         ch.setOption(java.net.StandardSocketOptions.TCP_NODELAY, on)
     }
 
@@ -322,8 +368,10 @@ internal abstract class KSocketAbstract(
      * @param tc The value to set.
      * @throws IOException if an I/O error occurs.
      */
+    @Blocking
     @Throws(IOException::class)
-    override suspend fun setTrafficClass(tc: Int):Unit = withContext(Dispatchers.IO) {
+    override suspend fun setTrafficClass(tc: Int) {
+        @Suppress("BlockingMethodInNonBlockingContext")
         ch.setOption(java.net.StandardSocketOptions.IP_TOS, tc)
     }
 }
