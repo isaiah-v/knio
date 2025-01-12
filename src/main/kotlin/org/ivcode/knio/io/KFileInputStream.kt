@@ -6,7 +6,7 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import org.ivcode.knio.nio.readSuspend
-import org.ivcode.org.ivcode.knio.system.ChannelFactory
+import org.ivcode.knio.system.ChannelFactory
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 

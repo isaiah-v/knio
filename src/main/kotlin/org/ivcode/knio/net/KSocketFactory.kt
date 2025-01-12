@@ -1,6 +1,6 @@
 package org.ivcode.knio.net
 
-import org.ivcode.org.ivcode.knio.system.ChannelFactory
+import org.ivcode.knio.system.ChannelFactory
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress

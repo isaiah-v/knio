@@ -1,9 +1,6 @@
-package org.ivcode.org.ivcode.knio.net
+package org.ivcode.knio.net
 
-import org.ivcode.knio.net.KServerSocket
-import org.ivcode.knio.net.KServerSocketFactory
-import org.ivcode.knio.net.KServerSocketImpl
-import org.ivcode.org.ivcode.knio.system.ChannelFactory
+import org.ivcode.knio.system.ChannelFactory
 import java.net.InetAddress
 import java.net.InetSocketAddress
 

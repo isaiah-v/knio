@@ -7,8 +7,8 @@ import org.ivcode.knio.net.KSocketInputStream
 import org.ivcode.knio.nio.readSuspend
 import org.ivcode.knio.nio.writeSuspend
 import org.ivcode.knio.system.ByteBufferPool
-import org.ivcode.org.ivcode.knio.net.KSocketOutputStream
-import org.ivcode.org.ivcode.knio.utils.compactOrIncreaseSize
+import org.ivcode.knio.net.KSocketOutputStream
+import org.ivcode.knio.utils.compactOrIncreaseSize
 import org.jetbrains.annotations.Blocking
 import java.io.IOException
 import java.nio.ByteBuffer

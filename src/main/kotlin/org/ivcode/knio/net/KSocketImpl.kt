@@ -3,8 +3,8 @@ package org.ivcode.knio.net
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.ivcode.knio.nio.writeSuspend
-import org.ivcode.org.ivcode.knio.net.KSocketAbstract
-import org.ivcode.org.ivcode.knio.net.KSocketOutputStream
+import org.ivcode.knio.net.KSocketAbstract
+import org.ivcode.knio.net.KSocketOutputStream
 import org.jetbrains.annotations.Blocking
 import java.io.IOException
 import java.nio.ByteBuffer

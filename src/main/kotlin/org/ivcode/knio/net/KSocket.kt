@@ -1,7 +1,6 @@
 package org.ivcode.knio.net
 
 import org.ivcode.knio.lang.KAutoCloseable
-import org.ivcode.org.ivcode.knio.net.KSocketOutputStream
 import org.jetbrains.annotations.Blocking
 import java.io.IOException
 import java.net.SocketAddress

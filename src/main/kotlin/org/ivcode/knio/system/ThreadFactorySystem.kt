@@ -1,4 +1,4 @@
-package org.ivcode.org.ivcode.knio.system
+package org.ivcode.knio.system
 
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicLong

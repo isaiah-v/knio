@@ -1,4 +1,4 @@
-package org.ivcode.org.ivcode.knio.net
+package org.ivcode.knio.net
 
 import org.ivcode.knio.net.KSocket
 import org.ivcode.knio.utils.asCompletionHandler

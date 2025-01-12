@@ -1,6 +1,6 @@
 package org.ivcode.knio.net.ssl
 
-import org.ivcode.org.ivcode.knio.system.ChannelFactory
+import org.ivcode.knio.system.ChannelFactory
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import javax.net.ssl.SSLContext

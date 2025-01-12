@@ -1,7 +1,5 @@
 package org.ivcode.knio.net.ssl
 
-import org.ivcode.knio.io.KInputStream
-import org.ivcode.knio.net.KSocket
 import org.ivcode.knio.net.KSocketFactory
 import java.io.IOException
 import java.net.InetAddress

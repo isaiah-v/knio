@@ -4,12 +4,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import org.ivcode.knio.utils.asCompletionHandler
-import org.ivcode.knio.utils.timeout
+import org.ivcode.knio.nio.acceptSuspend
 import java.net.*
 import java.nio.channels.AsynchronousServerSocketChannel
-import java.nio.channels.AsynchronousSocketChannel
-import kotlin.coroutines.suspendCoroutine
 
 internal class KServerSocketImpl(
     private val channel: AsynchronousServerSocketChannel
@@ -24,20 +21,9 @@ internal class KServerSocketImpl(
         }
     }
 
-    private suspend fun accept0(): KSocket = suspendCoroutine { continuation ->
-        val transformer = {
-                r: AsynchronousSocketChannel -> KSocketImpl(r)
-        }
-
-        val timeout = acceptTimeout
-        val handler = if(timeout != null) {
-            val timeoutJob = continuation.timeout(timeout) { SocketTimeoutException() }
-            transformer.asCompletionHandler(timeoutJob = timeoutJob)
-        } else {
-            transformer.asCompletionHandler()
-        }
-
-        channel.accept(continuation, handler)
+    private suspend fun accept0(): KSocket {
+        val acceptChannel = channel.acceptSuspend(acceptTimeout)
+        return KSocketImpl(acceptChannel)
     }
 
     override suspend fun bind(endpoint: SocketAddress, backlog: Int): Unit = withContext(Dispatchers.IO) {

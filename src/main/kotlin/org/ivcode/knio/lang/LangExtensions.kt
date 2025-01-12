@@ -13,7 +13,7 @@ import kotlinx.coroutines.withContext
  * @throws Exception if an exception occurs during execution or closing
  */
 @Throws(Exception::class)
-suspend inline fun <T : KAutoCloseable, R> T.use(block: (T) -> R): R {
+suspend inline fun <T : KAutoCloseable, R> T.use(crossinline block: suspend (T) -> R): R {
     return try {
         block(this)
     } finally {

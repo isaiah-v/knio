@@ -1,4 +1,4 @@
-package org.ivcode.org.ivcode.knio.net
+package org.ivcode.knio.net
 
 import org.ivcode.knio.io.KOutputStream
 import org.jetbrains.annotations.Blocking

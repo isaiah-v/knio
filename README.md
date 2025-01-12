@@ -1,26 +1,37 @@
 # knio
-A Kotlin Coroutine NIO library. Rebuilding the java APIs with asynchronous Kotlin Coroutines using NIO.
+A Kotlin Coroutine NIO Library. Rebuilding Java's I/O APIs with asynchronous Kotlin Coroutines powered by NIO.
 
-Kotlin Coroutines allows for asynchronous programming in a synchronous style without blocking threads, similar to
-async/await in C# or JavaScript. This library attempts to reimplement some of the java I/O API (`java.io`, `java.net`)
-using NIO and Kotlin Coroutines. Non-blocking I/O with a familiar APIs.
+I/O and asynchronous programming have come a long way. The original Java I/O APIs relied on blocking operations, using
+threads to handle I/O tasks. This approach, while functional and easy to read, was inefficient due to thread overhead
+and frequent context switching. The introduction of NIO and NIO2 brought significant improvements by enabling
+non-blocking I/O, but the APIs were less intuitive and harder to work with. Kotlin Coroutines offer a modern solution by
+allowing us to write asynchronous code in a more simple synchronous style using suspending functions. This approach
+avoids blocking threads while maintaining code clarity.
+
+It's time to bring the simplicity of the classic blocking Java I/O APIs back with the of benefits of non-blocking I/O
+using Kotlin Coroutines.
 
 
-Reader Example:
+### Reader Example
+In this example we read from a file in a way that syntactically looks like blocking I/O, but is actually non-blocking.
 ```kotlin
 // Read lines from a file using NIO and coroutines
 suspend fun main() {
 
+    // Create a buffered reader for a file, in a similar fashion to Java's BufferedReader
     val path = Path("/path/to/file.txt")
     val inputStream = KFileInputStream(path)
     val reader = KInputStreamReader(inputStream)
     val bufferedReader = KBufferedReader(reader)
 
     bufferedReader.use {
-        var line: String? = it.readLine()   // read the first line using nio [non-blocking]
+        // Suspend on the I/O operation
+        // Though this looks like a blocking call, it's actually non-blocking. The thread is released to do other work
+        // while waiting for the nio operation to complete. Not an offload, but a true non-blocking operation.
+        var line: String? = it.readLine()
         while (line != null) {
-            println(line)                   // print the line
-            line = it.readLine()            // read the next line using nio [non-blocking]
+            println(line)                 // print the line
+            line = it.readLine()          // Another suspend on I/O [non-blocking]
         }
     } // close resources [non-blocking]
 }
@@ -34,9 +45,9 @@ I/O Classes:
 - [x] `FileInputStream`
 - [ ] `FileOutputStream`
 - [x] `SeverSocket`
-- [ ] `SSLServerSocket`
+- [x] `SSLServerSocket`
 - [x] `Socket`
-- [ ] `SSLSocket`
+- [x] `SSLSocket`
 - [ ] `DatagramSocket`
 
 Supporting Classes:

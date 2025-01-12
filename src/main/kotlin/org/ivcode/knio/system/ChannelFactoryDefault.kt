@@ -1,4 +1,4 @@
-package org.ivcode.org.ivcode.knio.system
+package org.ivcode.knio.system
 
 import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousFileChannel

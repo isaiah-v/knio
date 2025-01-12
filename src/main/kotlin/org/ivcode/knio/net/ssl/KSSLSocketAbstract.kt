@@ -1,6 +1,6 @@
 package org.ivcode.knio.net.ssl
 
-import org.ivcode.org.ivcode.knio.net.KSocketAbstract
+import org.ivcode.knio.net.KSocketAbstract
 import java.nio.channels.AsynchronousSocketChannel
 import javax.net.ssl.HandshakeCompletedListener
 import javax.net.ssl.SSLEngine
