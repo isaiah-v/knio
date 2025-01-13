@@ -21,3 +21,11 @@ internal suspend fun AsynchronousFileChannel.readSuspend(dst: ByteBuffer, positi
         it.resumeWithException(e)
     }
 }
+
+internal suspend fun AsynchronousFileChannel.writeSuspend(src: ByteBuffer, position: Long): Int = suspendCoroutine {
+    try {
+        write(src, position, it, fromResult())
+    } catch (e: Throwable) {
+        it.resumeWithException(e)
+    }
+}

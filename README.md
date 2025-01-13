@@ -12,28 +12,23 @@ It's time to bring the simplicity of the classic blocking Java I/O APIs back wit
 using Kotlin Coroutines.
 
 
-### Reader Example
+### Buffered Reader Example
 In this example we read from a file in a way that syntactically looks like blocking I/O, but is actually non-blocking.
 ```kotlin
 // Read lines from a file using NIO and coroutines
 suspend fun main() {
 
     // Create a buffered reader for a file, in a similar fashion to Java's BufferedReader
-    val path = Path("/path/to/file.txt")
-    val inputStream = KFileInputStream(path)
-    val reader = KInputStreamReader(inputStream)
-    val bufferedReader = KBufferedReader(reader)
-
-    bufferedReader.use {
+    File(file).knioInputStream().bufferedReader().use { reader ->
         // Suspend on the I/O operation
         // Though this looks like a blocking call, it's actually non-blocking. The thread is released to do other work
         // while waiting for the nio operation to complete. Not an offload, but a true non-blocking operation.
-        var line: String? = it.readLine()
+        var line: String? = reader.readLine()
         while (line != null) {
-            println(line)                 // print the line
-            line = it.readLine()          // Another suspend on I/O [non-blocking]
-        }
-    } // close resources [non-blocking]
+            print(line)                      // print the line
+            line = reader.readLine()         // Another suspend on I/O [non-blocking]
+        } // close resources [non-blocking]
+    }
 }
 ```
 

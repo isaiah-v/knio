@@ -1,15 +1,14 @@
-package org.ivcode.org.ivcode.knio.io
+package org.ivcode.knio.io
 
 import org.ivcode.knio.annotations.LegacyDependency
-import org.ivcode.knio.io.KInputStream
-import org.ivcode.knio.io.KInputStreamReader
-import org.ivcode.knio.io.KOutputStream
-import org.ivcode.knio.io.KReader
 import java.io.OutputStream
 import java.nio.charset.Charset
 
 suspend fun KInputStream.reader(charset: Charset = Charsets.UTF_8): KReader =
     KInputStreamReader.open(this, charset)
+
+suspend fun KInputStream.bufferedReader(charset: Charset = Charsets.UTF_8): KBufferedReader =
+    KBufferedReader(this.reader(charset))
 
 /**
  * Copies this input stream to the specified output stream.
