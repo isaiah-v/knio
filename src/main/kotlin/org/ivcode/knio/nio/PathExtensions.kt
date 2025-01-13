@@ -1,16 +1,19 @@
-package org.ivcode.org.ivcode.knio.nio
+package org.ivcode.knio.nio
 
-import org.ivcode.knio.io.KFileInputStream
-import org.ivcode.knio.io.KInputStream
-import org.ivcode.knio.io.KInputStreamReader
-import org.ivcode.knio.io.KReader
+import org.ivcode.knio.io.*
 import java.nio.file.Path
 
-suspend fun Path.inputStream(): KInputStream {
+
+suspend fun Path.knioInputStream(): KInputStream {
     return KFileInputStream.open(this)
 }
 
-suspend fun Path.reader(): KReader {
-    val inputStream = inputStream()
+suspend fun Path.knioReader(): KReader {
+    val inputStream = knioInputStream()
     return KInputStreamReader.open(inputStream)
+}
+
+suspend fun Path.knioBufferedReader(): KBufferedReader {
+    val reader = knioReader()
+    return KBufferedReader(reader)
 }

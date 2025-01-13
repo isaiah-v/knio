@@ -34,6 +34,10 @@ class KFileInputStream private constructor(
             val channel = knioContext().channelFactory.openFileChannel(path, StandardOpenOption.READ)
             return KFileInputStream(path, channel)
         }
+
+        suspend fun open(path: String): KFileInputStream {
+            return open(Path.of(path))
+        }
     }
 
     /** The current position in the file. */
