@@ -1,4 +1,4 @@
-package org.ivcode.knio.system
+package org.ivcode.knio.context
 
 import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousFileChannel
@@ -17,7 +17,7 @@ import java.util.concurrent.Executors
  * @property executor The executor service used to manage asynchronous tasks.
  */
 class ChannelFactoryDefault(
-    private val executor: ExecutorService = Executors.newCachedThreadPool(ThreadFactoryVirtual("Kino"))
+    private val executor: ExecutorService = Executors.newCachedThreadPool(ThreadFactoryNamed("Kino"))
 ) : ChannelFactory {
 
     private val group: AsynchronousChannelGroup = AsynchronousChannelGroup.withThreadPool(executor)

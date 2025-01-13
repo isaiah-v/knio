@@ -1,12 +1,12 @@
-package org.ivcode.knio.system
+package org.ivcode.knio.context
 
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicLong
 
-class ThreadFactorySystem (
+internal class ThreadFactoryNamed (
     private val name: String,
-    private val daemon: Boolean,
-    private val priority: Int
+    private val daemon: Boolean = true,
+    private val priority: Int = Thread.NORM_PRIORITY,
 ): ThreadFactory {
     private val counter = AtomicLong(1)
 

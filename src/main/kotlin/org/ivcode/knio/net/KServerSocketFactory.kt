@@ -1,6 +1,6 @@
 package org.ivcode.knio.net
 
-import org.ivcode.knio.system.knioContext
+import org.ivcode.knio.context.knioContext
 import java.io.IOException
 import java.net.InetAddress
 

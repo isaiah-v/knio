@@ -1,7 +1,6 @@
 package org.ivcode
 
 import org.ivcode.knio.lang.use
-import org.ivcode.knio.nio.knioBufferedReader
 import kotlin.io.path.Path
 
 
@@ -76,19 +75,4 @@ suspend fun main() = coroutineScope {
 */
 
 
-suspend fun main() {
 
-    // Create a buffered reader for a file, in a similar fashion to Java's BufferedReader
-
-
-    Path("src/test/resources/test.txt").knioBufferedReader().use {
-        // Suspend on the I/O operation
-        // Though this looks like a blocking call, it's actually non-blocking. The thread is released to do other work
-        // while waiting for the nio operation to complete. Not an offload, but a true non-blocking operation.
-        var line: String? = it.readLine()
-        while (line != null) {
-            println(line)                 // print the line
-            line = it.readLine()          // Another suspend on I/O [non-blocking]
-        }
-    } // close resources [non-blocking]
-}

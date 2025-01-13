@@ -1,9 +1,15 @@
 package org.ivcode.org.ivcode.knio.io
 
+import org.ivcode.knio.annotations.LegacyDependency
 import org.ivcode.knio.io.KInputStream
+import org.ivcode.knio.io.KInputStreamReader
 import org.ivcode.knio.io.KOutputStream
-import org.jetbrains.annotations.Blocking
+import org.ivcode.knio.io.KReader
 import java.io.OutputStream
+import java.nio.charset.Charset
+
+suspend fun KInputStream.reader(charset: Charset = Charsets.UTF_8): KReader =
+    KInputStreamReader.open(this, charset)
 
 /**
  * Copies this input stream to the specified output stream.
@@ -35,7 +41,7 @@ suspend fun KInputStream.copyTo(output: KOutputStream, bufferSize: Int = DEFAULT
  * @param bufferSize The buffer size to use when copying.
  * @return The number of bytes copied.
  */
-@Blocking
+@LegacyDependency
 suspend fun KInputStream.copyTo(output: OutputStream, bufferSize: Int = DEFAULT_BUFFER_SIZE): Long {
     var bytesCopied: Long = 0
     val buffer = ByteArray(bufferSize)

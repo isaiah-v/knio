@@ -15,27 +15,31 @@ class KFileInputStreamTest {
     @ValueSource(strings = [
         "src/test/resources/test.txt",
     ])
-    fun `compare java io to knio`(file: String) {
+    fun `FileInputStream - java vs knio`(file: String) {
 
         // read file with java.io
-        val expected = ByteArrayOutputStream().use {
-            FileInputStream(file).use { fis ->
-                fis.copyTo(it)
-            }
-
-            it.toByteArray()
-        }
-
-        // read file with knio
-        val actual = runBlocking {
-            ByteArrayOutputStream().use {
-                KFileInputStream.open(file).use { fis ->
-                    fis.copyTo(it)
+        val expectedExec = {
+            ByteArrayOutputStream().use { outputStream ->
+                FileInputStream(file).use { fis ->
+                    fis.copyTo(outputStream)
                 }
 
-                it.toByteArray()
+                outputStream.toByteArray()
             }
         }
+
+        val actualExec = suspend {
+            ByteArrayOutputStream().use { outputStream ->
+                KFileInputStream.open(file).use { fis ->
+                    fis.copyTo(outputStream)
+                }
+
+                outputStream.toByteArray()
+            }
+        }
+
+        val expected = expectedExec()
+        val actual = runBlocking { actualExec() }
 
         assertTrue(expected.contentEquals(actual))
     }

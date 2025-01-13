@@ -1,8 +1,8 @@
 package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.withLock
-import org.ivcode.knio.system.KnioContext
-import org.ivcode.knio.system.knioContext
+import org.ivcode.knio.context.KnioContext
+import org.ivcode.knio.context.knioContext
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
@@ -32,7 +32,7 @@ class KInputStreamReader private constructor (
         }
     }
 
-    private val buffer: ByteBuffer = context.byteBufferPool.acquire(bufferSize)
+    private val buffer: ByteBuffer = context.byteBufferPool.acquire(bufferSize).flip()
     private val decoder = charset.newDecoder()
     private var eof = false
     private var isClosed = false

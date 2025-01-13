@@ -1,6 +1,6 @@
 package org.ivcode.knio.net.ssl
 
-import org.ivcode.knio.system.knioContext
+import org.ivcode.knio.context.knioContext
 import javax.net.ssl.SSLContext
 
 // Related Extension Functions:

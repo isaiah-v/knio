@@ -1,6 +1,6 @@
 package org.ivcode.knio.utils
 
-import org.ivcode.knio.system.ByteBufferPool
+import org.ivcode.knio.context.ByteBufferPool
 import java.nio.ByteBuffer
 
 /**

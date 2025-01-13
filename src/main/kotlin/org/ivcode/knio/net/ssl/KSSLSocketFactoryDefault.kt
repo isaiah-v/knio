@@ -1,6 +1,6 @@
 package org.ivcode.knio.net.ssl
 
-import org.ivcode.knio.system.KnioContext
+import org.ivcode.knio.context.KnioContext
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import javax.net.ssl.SSLContext

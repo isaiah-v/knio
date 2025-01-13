@@ -11,6 +11,7 @@ import kotlin.Throws
  * @See [use]
  */
 interface KAutoCloseable {
+
     /**
      * Closes this resource, relinquishing any underlying resources.
      *

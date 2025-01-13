@@ -1,7 +1,7 @@
 package org.ivcode.knio.net.ssl
 
 import org.ivcode.knio.net.KServerSocketFactory
-import org.ivcode.knio.system.knioContext
+import org.ivcode.knio.context.knioContext
 import java.net.InetAddress
 import javax.net.ssl.SSLContext
 
