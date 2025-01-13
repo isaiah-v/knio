@@ -1,19 +1,23 @@
 package org.ivcode.knio.net.ssl
 
-import org.ivcode.knio.system.ChannelFactory
+import org.ivcode.knio.system.KnioContext
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import javax.net.ssl.SSLContext
 
 internal class KSSLSocketFactoryDefault(
     private val sslContext: SSLContext,
-    private val channelFactory: ChannelFactory = ChannelFactory.getDefault()
+    private val context: KnioContext
 ): KSSLSocketFactory {
-    override suspend fun createSocket() = KSSLSocketImpl (
-        channel = channelFactory.openSocketChannel(),
-        sslEngine =  sslContext.createSSLEngine(),
-        useClientMode = true
-    )
+    override suspend fun createSocket(): KSSLSocket {
+
+        return KSSLSocketImpl (
+            channel = context.channelFactory.openSocketChannel(),
+            sslEngine = sslContext.createSSLEngine(),
+            useClientMode = true,
+            context = context
+        )
+    }
 
     override suspend fun createSocket(host: String, port: Int) = createSocket().apply {
         connect(InetSocketAddress(host, port))

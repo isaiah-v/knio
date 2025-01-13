@@ -1,6 +1,7 @@
 package org.ivcode.knio.net.ssl
 
 import org.ivcode.knio.net.KSocketFactory
+import org.ivcode.knio.system.knioContext
 import java.io.IOException
 import java.net.InetAddress
 import java.net.UnknownHostException
@@ -10,10 +11,12 @@ import kotlin.jvm.Throws
 interface KSSLSocketFactory: KSocketFactory {
 
     companion object {
-        private val DEFAULT: KSSLSocketFactory = KSSLSocketFactoryDefault(SSLContext.getDefault())
 
-        fun getDefault(): KSSLSocketFactory {
-            return DEFAULT
+        suspend fun getDefault(): KSSLSocketFactory {
+            return KSSLSocketFactoryDefault(
+                sslContext = SSLContext.getDefault(),
+                context = knioContext()
+            )
         }
     }
 

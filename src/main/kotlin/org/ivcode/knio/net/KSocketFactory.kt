@@ -1,6 +1,7 @@
 package org.ivcode.knio.net
 
-import org.ivcode.knio.system.ChannelFactory
+import org.ivcode.knio.system.KnioContext
+import org.ivcode.knio.system.knioContext
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -9,8 +10,8 @@ import java.net.UnknownHostException
 
 interface KSocketFactory {
     companion object {
-        fun getDefault(): KSocketFactory {
-            return DefaultKSocketFactory()
+        suspend fun getDefault(): KSocketFactory {
+            return DefaultKSocketFactory(knioContext())
         }
     }
 
@@ -30,9 +31,9 @@ interface KSocketFactory {
     suspend fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int): KSocket
 
     private class DefaultKSocketFactory(
-        private val channelFactory: ChannelFactory = ChannelFactory.getDefault()
+        private val context: KnioContext
     ): KSocketFactory {
-        override suspend fun createSocket() = KSocketImpl(channel = channelFactory.openSocketChannel())
+        override suspend fun createSocket() = KSocketImpl(channel = context.channelFactory.openSocketChannel())
 
         override suspend fun createSocket(host: String, port: Int) =
             createSocket().apply { connect(InetSocketAddress(host, port)) }

@@ -1,15 +1,14 @@
 package org.ivcode.knio.net
 
-import org.ivcode.knio.net.KServerSocketFactoryDefault
+import org.ivcode.knio.system.knioContext
 import java.io.IOException
 import java.net.InetAddress
-import java.net.InetSocketAddress
 
 interface KServerSocketFactory {
 
     companion object {
-        fun getDefault(): KServerSocketFactory {
-            return KServerSocketFactoryDefault()
+        suspend fun getDefault(): KServerSocketFactory {
+            return KServerSocketFactoryDefault(knioContext())
         }
     }
 

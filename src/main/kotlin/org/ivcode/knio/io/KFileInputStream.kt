@@ -6,7 +6,7 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import org.ivcode.knio.nio.readSuspend
-import org.ivcode.knio.system.ChannelFactory
+import org.ivcode.knio.system.knioContext
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 
@@ -18,13 +18,23 @@ import java.nio.file.StandardOpenOption
  *
  * @param path The path to the file to read.
  */
-class KFileInputStream (
-    path: Path,
-    channelFactory: ChannelFactory = ChannelFactory.getDefault()
+class KFileInputStream private constructor(
+    private val path: Path,
+    private val channel: AsynchronousFileChannel
 ): KInputStream() {
 
-    /** The asynchronous file channel for reading data. */
-    private val channel: AsynchronousFileChannel = channelFactory.openFileChannel(path, StandardOpenOption.READ)
+    companion object {
+        /**
+         * Opens a file input stream for the specified file.
+         *
+         * @param path The path to the file to read.
+         * @return The file input stream.
+         */
+        suspend fun open(path: Path): KFileInputStream {
+            val channel = knioContext().channelFactory.openFileChannel(path, StandardOpenOption.READ)
+            return KFileInputStream(path, channel)
+        }
+    }
 
     /** The current position in the file. */
     private var position: Long = 0
@@ -34,7 +44,6 @@ class KFileInputStream (
 
     /** The mark limit for the read-ahead limit. */
     private var markLimit: Int = 0
-
 
     /**
      * Returns the number of bytes available to read.

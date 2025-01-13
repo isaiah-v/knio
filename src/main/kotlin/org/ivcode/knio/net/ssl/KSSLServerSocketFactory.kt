@@ -1,16 +1,19 @@
 package org.ivcode.knio.net.ssl
 
 import org.ivcode.knio.net.KServerSocketFactory
+import org.ivcode.knio.system.knioContext
 import java.net.InetAddress
 import javax.net.ssl.SSLContext
 
 interface KSSLServerSocketFactory: KServerSocketFactory {
 
     companion object {
-        private val DEFAULT: KSSLServerSocketFactory = KSSLServerSocketFactoryDefault(SSLContext.getDefault())
 
-        fun getDefault(): KSSLServerSocketFactory {
-            return DEFAULT
+        suspend fun getDefault(): KSSLServerSocketFactory {
+            val context = knioContext()
+
+            @Suppress("BlockingMethodInNonBlockingContext")
+            return KSSLServerSocketFactoryDefault(SSLContext.getDefault(), context)
         }
     }
 

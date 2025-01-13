@@ -1,8 +1,10 @@
 package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.withLock
-import org.ivcode.knio.system.ByteBufferPool
+import org.ivcode.knio.system.KnioContext
+import org.ivcode.knio.system.knioContext
 import java.io.IOException
+import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.ReadOnlyBufferException
 import java.nio.charset.Charset
@@ -14,17 +16,23 @@ import java.nio.charset.CoderResult
  * This class is equivalent to the [java.io.InputStreamReader].
  *
  * @property inputStream the input stream to read from
- * @property bufferPool the buffer pool to use for acquiring buffers
+ * @property byteBufferPool the buffer pool to use for acquiring buffers
  * @property bufferSize the size of the buffer to use
  */
-class KInputStreamReader (
+class KInputStreamReader private constructor (
     private val inputStream: KInputStream,
     charset: Charset = Charsets.UTF_8,
-    private val bufferPool: ByteBufferPool = ByteBufferPool.getDefault(),
-    bufferSize: Int = 8192
+    private val bufferSize: Int = 8192,
+    private val context: KnioContext
 ): KReader() {
 
-    private val buffer = bufferPool.acquire(bufferSize).apply { clear().flip() }
+    companion object {
+        suspend fun open(inputStream: KInputStream, charset: Charset = Charsets.UTF_8): KInputStreamReader {
+            return KInputStreamReader(inputStream, charset, context = knioContext())
+        }
+    }
+
+    private val buffer: ByteBuffer = context.byteBufferPool.acquire(bufferSize)
     private val decoder = charset.newDecoder()
     private var eof = false
     private var isClosed = false
@@ -102,7 +110,7 @@ class KInputStreamReader (
                 return
             }
             isClosed = true
-            bufferPool.release(buffer)
+            context.byteBufferPool.release(buffer)
             inputStream.close()
         }
     }

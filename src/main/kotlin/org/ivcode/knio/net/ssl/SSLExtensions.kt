@@ -1,17 +1,15 @@
 package org.ivcode.knio.net.ssl
 
-import org.ivcode.knio.system.ChannelFactory
+import org.ivcode.knio.system.knioContext
 import javax.net.ssl.SSLContext
 
 // Related Extension Functions:
-fun SSLContext.getKnioSSLSocketFactory(
-    channelFactory: ChannelFactory = ChannelFactory.getDefault()
-): KSSLSocketFactory {
-    return KSSLSocketFactoryDefault(this, channelFactory)
+suspend fun SSLContext.getKnioSSLSocketFactory(): KSSLSocketFactory {
+    return KSSLSocketFactoryDefault(this, knioContext())
 }
 
-fun SSLContext.getKnioSSLServerSocketFactory(
-    channelFactory: ChannelFactory = ChannelFactory.getDefault()
+suspend fun SSLContext.getKnioSSLServerSocketFactory(
 ): KSSLServerSocketFactory {
-    return KSSLServerSocketFactoryDefault(this, channelFactory)
+    @Suppress("BlockingMethodInNonBlockingContext")
+    return KSSLServerSocketFactoryDefault(this, knioContext())
 }

@@ -6,9 +6,9 @@ import kotlinx.coroutines.sync.withLock
 import org.ivcode.knio.net.KSocketInputStream
 import org.ivcode.knio.nio.readSuspend
 import org.ivcode.knio.nio.writeSuspend
-import org.ivcode.knio.system.ByteBufferPool
 import org.ivcode.knio.net.KSocketOutputStream
 import org.ivcode.knio.utils.compactOrIncreaseSize
+import org.ivcode.knio.system.KnioContext
 import org.jetbrains.annotations.Blocking
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -21,7 +21,7 @@ internal class KSSLSocketImpl (
     channel: AsynchronousSocketChannel,
     sslEngine: SSLEngine,
     useClientMode: Boolean,
-    private val bufferPool: ByteBufferPool = ByteBufferPool.getDefault()
+    private val context: KnioContext
 ): KSSLSocketAbstract(
     channel,
     sslEngine,
@@ -39,9 +39,9 @@ internal class KSSLSocketImpl (
     private var networkWrite: ByteBuffer?
 
     init {
-        networkRead = bufferPool.acquire(sslEngine.session.packetBufferSize)
-        networkWrite = bufferPool.acquire(sslEngine.session.packetBufferSize)
-        applicationRead = bufferPool.acquire(sslEngine.session.applicationBufferSize)
+        networkRead = context.byteBufferPool.acquire(sslEngine.session.packetBufferSize)
+        networkWrite = context.byteBufferPool.acquire(sslEngine.session.packetBufferSize)
+        applicationRead = context.byteBufferPool.acquire(sslEngine.session.applicationBufferSize)
     }
 
     private val inputStream = object : KSocketInputStream() {
@@ -152,7 +152,7 @@ internal class KSSLSocketImpl (
                     // The network buffer is clear and the size should be the same as the packet buffer size.
                     networkWrite = networkWrite!!.compactOrIncreaseSize(
                         sslEngine.session.packetBufferSize,
-                        bufferPool
+                        context.byteBufferPool
                     )
                 }
 
@@ -196,7 +196,7 @@ internal class KSSLSocketImpl (
                     // increase the available network buffer size
                     networkRead = networkRead!!.compactOrIncreaseSize(
                         sslEngine.session.packetBufferSize,
-                        bufferPool
+                        context.byteBufferPool
                     )
 
                     // read more data from the channel
@@ -261,7 +261,7 @@ internal class KSSLSocketImpl (
             netBuff.clear()
         } finally {
             isInputShutdown = true
-            bufferPool.release(netBuff)
+            context.byteBufferPool.release(netBuff)
         }
     }
 
@@ -284,7 +284,7 @@ internal class KSSLSocketImpl (
                         // increase network buffer size
                         netBuff = netBuff.compactOrIncreaseSize(
                             sslEngine.session.packetBufferSize,
-                            bufferPool
+                            context.byteBufferPool
                         )
                     }
 
@@ -333,7 +333,7 @@ internal class KSSLSocketImpl (
             }
         } finally {
             isOutputShutdown = true
-            bufferPool.release(netBuff)
+            context.byteBufferPool.release(netBuff)
         }
     }
 
@@ -368,11 +368,11 @@ internal class KSSLSocketImpl (
                     val result = sslEngine.unwrap(net, app)
                     when (result.status!!) {
                         SSLEngineResult.Status.BUFFER_UNDERFLOW -> {
-                            networkRead = net.compactOrIncreaseSize(sslEngine.session.packetBufferSize, bufferPool)
+                            networkRead = net.compactOrIncreaseSize(sslEngine.session.packetBufferSize, context.byteBufferPool)
                             net = networkRead!!
                         }
                         SSLEngineResult.Status.BUFFER_OVERFLOW -> {
-                            applicationRead = app.compactOrIncreaseSize(sslEngine.session.applicationBufferSize, bufferPool)
+                            applicationRead = app.compactOrIncreaseSize(sslEngine.session.applicationBufferSize, context.byteBufferPool)
                             app = applicationRead!!
                         }
                         SSLEngineResult.Status.OK -> {
@@ -430,7 +430,7 @@ internal class KSSLSocketImpl (
                     // increase network buffer size
                     networkWrite = networkWrite!!.compactOrIncreaseSize(
                         sslEngine.session.packetBufferSize,
-                        bufferPool
+                        context.byteBufferPool
                     )
                 }
 

@@ -1,20 +1,18 @@
 package org.ivcode.knio.net.ssl
 
-import org.ivcode.knio.system.ByteBufferPool
 import org.ivcode.knio.nio.acceptSuspend
+import org.ivcode.knio.system.KnioContext
 import org.jetbrains.annotations.Blocking
 import java.net.SocketAddress
-import java.nio.channels.AsynchronousServerSocketChannel
 import javax.net.ssl.SSLContext
 
 @Blocking
 internal class KSSLServerSocketImpl (
     sslContext: SSLContext,
-    serverChannel: AsynchronousServerSocketChannel,
-    private val bufferPool: ByteBufferPool = ByteBufferPool.getDefault()
+    private val context: KnioContext
 ): KSSLServerSocketAbstract(
     sslContext,
-    serverChannel
+    context.channelFactory.openServerSocketChannel()
 ) {
 
     private var acceptTimeout: Long? = null
@@ -26,7 +24,7 @@ internal class KSSLServerSocketImpl (
             channel = channel,
             sslEngine = @Suppress("BlockingMethodInNonBlockingContext") createSSLEngine(),
             useClientMode = isUseClientMode,
-            bufferPool
+            context = context
         )
     }
 

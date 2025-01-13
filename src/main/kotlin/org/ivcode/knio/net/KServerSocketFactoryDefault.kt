@@ -1,14 +1,14 @@
 package org.ivcode.knio.net
 
-import org.ivcode.knio.system.ChannelFactory
+import org.ivcode.knio.system.KnioContext
 import java.net.InetAddress
 import java.net.InetSocketAddress
 
-internal class KServerSocketFactoryDefault(
-    private val channelFactory: ChannelFactory = ChannelFactory.getDefault()
+internal class KServerSocketFactoryDefault (
+    private val context: KnioContext
 ): KServerSocketFactory {
     override suspend fun createServerSocket() =
-        KServerSocketImpl(channelFactory.openServerSocketChannel())
+        KServerSocketImpl(context.channelFactory.openServerSocketChannel())
 
     override suspend fun createServerSocket(port: Int) =
         createServerSocket().open(port)
