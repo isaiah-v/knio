@@ -6,7 +6,7 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import org.ivcode.knio.nio.readSuspend
-import org.ivcode.knio.context.knioContext
+import org.ivcode.knio.context.getKnioContext
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 
@@ -31,7 +31,7 @@ class KFileInputStream private constructor(
          * @return The file input stream.
          */
         suspend fun open(path: Path): KFileInputStream {
-            val channel = knioContext().channelFactory.openFileChannel(path, StandardOpenOption.READ)
+            val channel = getKnioContext().channelFactory.openFileChannel(path, StandardOpenOption.READ)
             return KFileInputStream(path, channel)
         }
 

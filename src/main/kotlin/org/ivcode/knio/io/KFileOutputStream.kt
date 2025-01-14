@@ -2,7 +2,7 @@ package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.ivcode.knio.context.knioContext
+import org.ivcode.knio.context.getKnioContext
 import org.ivcode.knio.nio.writeSuspend
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
@@ -18,7 +18,7 @@ class KFileOutputStream private constructor (
 
     companion object {
         suspend fun open(path: Path): KFileOutputStream {
-            val context = knioContext()
+            val context = getKnioContext()
 
             return KFileOutputStream(
                 context.channelFactory.openFileChannel(path, StandardOpenOption.WRITE)
@@ -42,8 +42,11 @@ class KFileOutputStream private constructor (
         }
     }
 
-    override suspend fun close() {
-        @Suppress("BlockingMethodInNonBlockingContext")
+    override suspend fun close() = mutex.withLock {
         fileChannel.close()
+    }
+
+    suspend fun getChannel(): AsynchronousFileChannel {
+        return this.fileChannel
     }
 }

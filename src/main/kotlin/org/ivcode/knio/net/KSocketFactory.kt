@@ -1,7 +1,7 @@
 package org.ivcode.knio.net
 
 import org.ivcode.knio.context.KnioContext
-import org.ivcode.knio.context.knioContext
+import org.ivcode.knio.context.getKnioContext
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -11,7 +11,7 @@ import java.net.UnknownHostException
 interface KSocketFactory {
     companion object {
         suspend fun getDefault(): KSocketFactory {
-            return DefaultKSocketFactory(knioContext())
+            return DefaultKSocketFactory(getKnioContext())
         }
     }
 

@@ -2,7 +2,7 @@ package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.withLock
 import org.ivcode.knio.context.KnioContext
-import org.ivcode.knio.context.knioContext
+import org.ivcode.knio.context.getKnioContext
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
@@ -28,7 +28,7 @@ class KInputStreamReader private constructor (
 
     companion object {
         suspend fun open(inputStream: KInputStream, charset: Charset = Charsets.UTF_8): KInputStreamReader {
-            return KInputStreamReader(inputStream, charset, context = knioContext())
+            return KInputStreamReader(inputStream, charset, context = getKnioContext())
         }
     }
 

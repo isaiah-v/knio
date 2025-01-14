@@ -1,11 +1,10 @@
-package org.ivcode.org.ivcode.knio.io
+package org.ivcode.knio.io
 
-import org.ivcode.knio.context.knioContext
-import org.ivcode.knio.io.KReader
-import org.ivcode.org.ivcode.knio.context.acquireReleasableCharBuffer
+import org.ivcode.knio.context.getKnioContext
+import org.ivcode.knio.context.acquireReleasableCharBuffer
 
 suspend fun KReader.readText(): String {
-    val releasable = knioContext().byteBufferPool.acquireReleasableCharBuffer(1024)
+    val releasable = getKnioContext().byteBufferPool.acquireReleasableCharBuffer(1024)
 
     try {
         val buff = releasable.value

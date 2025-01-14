@@ -1,12 +1,11 @@
-package org.ivcode.org.ivcode.knio.context
+package org.ivcode.knio.context
 
-import org.ivcode.knio.context.ByteBufferPool
 import java.nio.*
 
-private const val BYTES_PER_CHAR = 2
+private const val BYTES_PER_CHAR  = 2
 private const val BYTES_PER_SHORT = 2
-private const val BYTES_PER_INT = 4
-private const val BYTES_PER_LONG = 8
+private const val BYTES_PER_INT   = 4
+private const val BYTES_PER_LONG  = 8
 
 /**
  * Interface representing a buffer that can be released back to a pool.

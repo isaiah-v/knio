@@ -1,13 +1,14 @@
 package org.ivcode.knio.io
 
 import kotlinx.coroutines.runBlocking
+import org.ivcode.knio.annotations.JavaIO
 import org.ivcode.knio.lang.use
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.io.FileInputStream
+
 
 class KFileInputStreamTest {
 
@@ -15,7 +16,7 @@ class KFileInputStreamTest {
     @ValueSource(strings = [
         "src/test/resources/test.txt",
     ])
-    fun `FileInputStream - java vs knio`(file: String) {
+    fun `java vs knio`(file: String) {
 
         // read file with java.io
         val expectedExec = {
@@ -29,15 +30,9 @@ class KFileInputStreamTest {
         }
 
         val actualExec = suspend {
-            File(file).knioInputStream().bufferedReader().use { reader ->
-                var line: String? = reader.readLine()
-                while (line != null) {
-                    print(line)
-                    line = reader.readLine()
-                }
-            }
             ByteArrayOutputStream().use { outputStream ->
                 KFileInputStream.open(file).use { fis ->
+                    @OptIn(JavaIO::class)
                     fis.copyTo(outputStream)
                 }
 

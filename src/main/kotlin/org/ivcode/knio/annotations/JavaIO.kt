@@ -5,8 +5,8 @@ package org.ivcode.knio.annotations
  */
 @RequiresOptIn(
     level = RequiresOptIn.Level.WARNING,
-    message = "Operation depends on the legacy I/O api and may result in the thread blocking"
+    message = "Operation depends on the blocking java I/O api and may result in thread blocking"
 )
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.FUNCTION)
-annotation class LegacyDependency
+annotation class JavaIO

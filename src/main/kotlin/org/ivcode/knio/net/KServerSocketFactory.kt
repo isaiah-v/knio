@@ -1,6 +1,6 @@
 package org.ivcode.knio.net
 
-import org.ivcode.knio.context.knioContext
+import org.ivcode.knio.context.getKnioContext
 import java.io.IOException
 import java.net.InetAddress
 
@@ -8,7 +8,7 @@ interface KServerSocketFactory {
 
     companion object {
         suspend fun getDefault(): KServerSocketFactory {
-            return KServerSocketFactoryDefault(knioContext())
+            return KServerSocketFactoryDefault(getKnioContext())
         }
     }
 
