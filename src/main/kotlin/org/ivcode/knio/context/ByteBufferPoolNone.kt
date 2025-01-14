@@ -2,7 +2,7 @@ package org.ivcode.knio.context
 
 import java.nio.ByteBuffer
 
-class ByteBufferNoPool(
+class ByteBufferPoolNone(
     private val isDirect: Boolean = false
 ): ByteBufferPool {
 

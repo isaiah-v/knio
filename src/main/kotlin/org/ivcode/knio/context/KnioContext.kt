@@ -3,7 +3,7 @@ package org.ivcode.knio.context
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
-private val DEFAULT_BYTE_BUFFER_POOL = ByteBufferNoPool()
+private val DEFAULT_BYTE_BUFFER_POOL = ByteBufferPoolNone()
 private val DEFAULT_CHANNEL_FACTORY = ChannelFactoryDefault()
 
 private val DEFAULT_KNIO_CONTEXT = KnioContext()
