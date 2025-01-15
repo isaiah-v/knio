@@ -13,6 +13,7 @@ private const val BYTES_PER_LONG  = 8
  * @param T the type of buffer
  */
 interface ReleasableBuffer<T: Buffer> {
+    val released: Boolean
     val value: T
     fun release()
 }
@@ -24,13 +25,26 @@ interface ReleasableBuffer<T: Buffer> {
  * @property pool the ByteBufferPool to release the buffer to
  */
 internal class ReleasableByteBuffer (
-    override val value: ByteBuffer,
+    value: ByteBuffer,
     private val pool: ByteBufferPool
 ) : ReleasableBuffer<ByteBuffer> {
+
+    override var released: Boolean = false
+        private set
+
+    override val value: ByteBuffer = value
+        get() {
+            if (released) {
+                throw IllegalStateException("Buffer has been released")
+            }
+            return field
+        }
+
     /**
      * Releases the ByteBuffer back to the pool.
      */
     override fun release() {
+        released = true
         pool.release(value)
     }
 }
@@ -49,12 +63,22 @@ internal class ReleasableBufferImpl<T: Buffer>(
     transformer: (ByteBuffer) -> T
 ) : ReleasableBuffer<T> {
 
+    override var released = false
+        private set
+
     override val value: T = transformer(buffer)
+        get() {
+            if (released) {
+                throw IllegalStateException("Buffer has been released")
+            }
+            return field
+        }
 
     /**
      * Releases the ByteBuffer back to the pool.
      */
     override fun release() {
+        released = true
         pool.release(buffer)
     }
 }

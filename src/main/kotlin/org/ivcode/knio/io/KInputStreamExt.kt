@@ -7,8 +7,8 @@ import java.nio.charset.Charset
 suspend fun KInputStream.reader(charset: Charset = Charsets.UTF_8): KReader =
     KInputStreamReader.open(this, charset)
 
-suspend fun KInputStream.bufferedReader(charset: Charset = Charsets.UTF_8): KBufferedReader =
-    KBufferedReader(this.reader(charset))
+suspend fun KInputStream.bufferedReader(): KBufferedReader =
+    KBufferedReader.open(reader())
 
 /**
  * Copies this input stream to the specified output stream.

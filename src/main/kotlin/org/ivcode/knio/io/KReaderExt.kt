@@ -25,3 +25,7 @@ suspend fun KReader.readText(): String {
         releasable.release()
     }
 }
+
+suspend fun KReader.buffered(): KBufferedReader {
+    return KBufferedReader.open(this)
+}

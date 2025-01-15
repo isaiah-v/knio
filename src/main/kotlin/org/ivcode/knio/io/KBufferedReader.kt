@@ -1,9 +1,13 @@
 package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.withLock
+import org.ivcode.knio.context.KnioContext
+import org.ivcode.knio.context.acquireReleasableCharBuffer
+import org.ivcode.knio.context.getKnioContext
 import java.io.IOException
 import java.nio.CharBuffer
-import kotlin.math.min
+
+private const val DEFAULT_CHAR_BUFFER_SIZE = 8192
 
 /**
  * A buffered reader that reads characters from a KReader.
@@ -13,22 +17,26 @@ import kotlin.math.min
  */
 class KBufferedReader(
     reader: KReader,
-    bufferSize: Int = DEFAULT_CHAR_BUFFER_SIZE,
+    bufferSize: Int,
+    context: KnioContext
 ): KReader() {
 
     companion object {
-        private const val INVALIDATED = -2
-        private const val UNMARKED = -1
-        private const val DEFAULT_CHAR_BUFFER_SIZE = 8192
-        private const val DEFAULT_EXPECTED_LINE_LENGTH = 80
+        suspend fun open(reader: KReader, bufferSize: Int = DEFAULT_CHAR_BUFFER_SIZE): KBufferedReader {
+            return KBufferedReader(reader, bufferSize, getKnioContext())
+        }
     }
 
     private var inStream: KReader? = reader
+
     private var cb: CharArray? = CharArray(bufferSize)
+    private var buffer = context.byteBufferPool.acquireReleasableCharBuffer(bufferSize).apply { value.flip() }
+
+    private var mark: Int? = null
+
     private var nChars: Int = 0
     private var nextChar: Int = 0
 
-    private var markedChar: Int = UNMARKED
     private var readAheadLimit: Int = 0 /* Valid only when markedChar > 0 */
 
     /** If the next character is a line feed, skip it  */
@@ -40,7 +48,7 @@ class KBufferedReader(
     /** Checks to make sure that the stream has not been closed  */
     @Throws(IOException::class)
     private fun ensureOpen() {
-        if (inStream == null) throw IOException("Stream closed")
+        if (buffer.released) throw IOException("Stream closed")
     }
 
     /**
@@ -49,46 +57,36 @@ class KBufferedReader(
      * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
-    private suspend fun fill() {
-        val dst: Int
-        if (markedChar <= UNMARKED) {
-            /* No mark */
-            dst = 0
-        } else {
-            /* Marked */
-            val delta: Int = nextChar - markedChar
-            if (delta >= readAheadLimit) {
-                /* Gone past read-ahead limit: Invalidate mark */
-                markedChar = INVALIDATED
-                readAheadLimit = 0
-                dst = 0
-            } else {
-                if (readAheadLimit <= cb!!.size) {
-                    /* Shuffle in the current buffer */
-                    System.arraycopy(cb, markedChar, cb, 0, delta)
-                    markedChar = 0
-                    dst = delta
-                } else {
-                    /* Reallocate buffer to accommodate read-ahead limit */
-                    val ncb = CharArray(readAheadLimit)
-                    System.arraycopy(cb, markedChar, ncb, 0, delta)
-                    cb = ncb
-                    markedChar = 0
-                    dst = delta
-                }
-                nChars = delta
-                nextChar = nChars
-            }
+    private suspend fun fill(): Int {
+        // not synchronized, as only called from other synchronized methods
+
+        if(inStream == null) {
+            return -1
         }
 
-        var n: Int
-        do {
-            n = inStream!!.read(cb!!, dst, cb!!.size - dst)
-        } while (n == 0)
-        if (n > 0) {
-            nChars = dst + n
-            nextChar = dst
+        val buffer = buffer.value
+
+        if(isMarked()) {
+            val delta = buffer.position() - mark!!
+            if(delta > readAheadLimit) {
+                mark = mark!! - delta
+                buffer.compact()
+            } else {
+                mark = null
+                buffer.clear()
+            }
+        } else {
+            buffer.clear()
         }
+
+        val read = inStream!!.read(buffer)
+        if(read == -1) {
+            // Nothing read, EOF reached, clean up, and return
+            inStream = null
+        }
+        buffer.flip()
+
+        return read
     }
 
     /**
@@ -100,21 +98,14 @@ class KBufferedReader(
     @Throws(IOException::class)
     override suspend fun read(): Int {
         lock.withLock {
+            val buffer = buffer.value
+
             ensureOpen()
-            while (true) {
-                if (nextChar >= nChars) {
-                    fill()
-                    if (nextChar >= nChars) return -1
-                }
-                if (skipLF) {
-                    skipLF = false
-                    if (cb!![nextChar] == '\n') {
-                        nextChar++
-                        continue
-                    }
-                }
-                return cb!![nextChar++].code
+            if(!buffer.hasRemaining()) {
+                if(fill()==-1) return -1
             }
+
+            return buffer.get().code
         }
     }
 
@@ -128,26 +119,24 @@ class KBufferedReader(
      * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
-    private suspend fun read1(cbuf: CharArray, off: Int, len: Int): Int {
-        if (nextChar >= nChars) {
-            if (len >= cb!!.size && markedChar <= UNMARKED && !skipLF) {
-                return inStream!!.read(cbuf, off, len)
+    private suspend fun read0(cbuf: CharArray, off: Int, len: Int): Int {
+        val buffer = buffer.value
+        var read = 0
+        var eof = false
+
+        while (read!=len && !eof) {
+            if(buffer.hasRemaining()) {
+                val toRead = minOf(len-read, buffer.remaining())
+                buffer.get(cbuf, read+off, toRead)
+                read += toRead
+            } else {
+                if(fill() == -1) {
+                    eof = true
+                }
             }
-            fill()
         }
-        if (nextChar >= nChars) return -1
-        if (skipLF) {
-            skipLF = false
-            if (cb!![nextChar] === '\n') {
-                nextChar++
-                if (nextChar >= nChars) fill()
-                if (nextChar >= nChars) return -1
-            }
-        }
-        val n = min(len.toDouble(), (nChars - nextChar).toDouble()).toInt()
-        System.arraycopy(cb, nextChar, cbuf, off, n)
-        nextChar += n
-        return n
+
+        return if(read==0 && eof) -1 else read
     }
 
     /**
@@ -162,23 +151,7 @@ class KBufferedReader(
     @Throws(IOException::class)
     override suspend fun read(cbuf: CharArray, off: Int, len: Int): Int {
         lock.withLock {
-            ensureOpen()
-            if ((off < 0) || (off > cbuf.size) || (len < 0) ||
-                ((off + len) > cbuf.size) || ((off + len) < 0)
-            ) {
-                throw IndexOutOfBoundsException()
-            } else if (len == 0) {
-                return 0
-            }
-
-            var n = read1(cbuf, off, len)
-            if (n <= 0) return n
-            while ((n < len) && inStream!!.ready()) {
-                val n1 = read1(cbuf, off + n, len - n)
-                if (n1 <= 0) break
-                n += n1
-            }
-            return n
+            return read0(cbuf, off, len)
         }
     }
 
@@ -190,7 +163,25 @@ class KBufferedReader(
      * @throws IOException If an I/O error occurs.
      */
     override suspend fun read(b: CharBuffer): Int {
-        return TODO()
+        val buffer = buffer.value
+
+        var read = 0
+        var eof = false
+
+        while(b.hasRemaining() && !eof) {
+            if(!buffer.hasRemaining()) {
+                if(fill() == -1) eof = true
+            } else {
+                val toRead = minOf(b.remaining(), buffer.remaining())
+                b.put(b.position(), buffer, buffer.position(), toRead)
+                b.position(b.position() + toRead)
+                buffer.position(buffer.position() + toRead)
+
+                read += toRead
+            }
+        }
+
+        return if(read==0 && eof) -1 else read
     }
 
     /**
@@ -202,57 +193,51 @@ class KBufferedReader(
      */
     @Throws(IOException::class)
     suspend fun readLine(ignoreLF: Boolean = false): String? {
-        var s: StringBuffer? = null
+        var s: StringBuilder = StringBuilder()
         var startChar: Int
 
         lock.withLock {
+
             ensureOpen()
             var omitLF = ignoreLF || skipLF
-            bufferLoop@ while (true) {
-                if (nextChar >= nChars) fill()
-                if (nextChar >= nChars) { /* EOF */
-                    return if (!s.isNullOrEmpty()) s.toString()
-                    else null
-                }
-                var eol = false
-                var c = 0.toChar()
+            val buffer = buffer.value
 
-                /* Skip a leftover '\n', if necessary */
-                if (omitLF && (cb!![nextChar] === '\n')) nextChar++
+            bufferLoop@ while (true) {
+                if(!buffer.hasRemaining()) {
+                    if(fill() == -1) {
+                        return if (s.isNotEmpty()) {
+                            s.toString()
+                        } else{
+                            null
+                        }
+                    }
+                }
+
+                var eol = false
+                var c: Char
+
+                if (omitLF && buffer.get(buffer.position()) == '\n') {
+                    buffer.position(buffer.position() + 1)
+                }
                 skipLF = false
                 omitLF = false
 
-                var i = nextChar
-                charLoop@ while (i < nChars) {
-                    c = cb!![i]
+                charLoop@ while (buffer.hasRemaining()) {
+                    c = buffer.get()
                     if ((c == '\n') || (c == '\r')) {
                         eol = true
                         break@charLoop
+                    } else {
+                        s.append(c)
                     }
-                    i++
+
                 }
-                startChar = nextChar
-                nextChar = i
+                //startChar = nextChar
+                //nextChar = i
 
                 if (eol) {
-                    val str: String
-                    if (s == null) {
-                        str = String(cb!!, startChar, i - startChar)
-                    } else {
-                        s!!.append(cb!!, startChar, i - startChar)
-                        str = s.toString()
-
-
-                    }
-                    nextChar++
-                    if (c == '\r') {
-                        skipLF = true
-                    }
-                    return str
+                    return s.toString()
                 }
-
-                if (s == null) s = StringBuffer(DEFAULT_EXPECTED_LINE_LENGTH)
-                s!!.append(cb, startChar, i - startChar)
             }
         }
     }
@@ -306,16 +291,7 @@ class KBufferedReader(
     override suspend fun ready(): Boolean {
         lock.withLock {
             ensureOpen()
-            if (skipLF) {
-                if (nextChar >= nChars && inStream!!.ready()) {
-                    fill()
-                }
-                if (nextChar < nChars) {
-                    if (cb!![nextChar] == '\n') nextChar++
-                    skipLF = false
-                }
-            }
-            return (nextChar < nChars) || inStream!!.ready()
+            return buffer.value.hasRemaining() || inStream!!.ready()
         }
     }
 
@@ -339,9 +315,7 @@ class KBufferedReader(
 
         lock.withLock {
             ensureOpen()
-            this.readAheadLimit = readLimit
-            markedChar = nextChar
-            markedSkipLF = skipLF
+            setMark(readLimit)
         }
     }
 
@@ -354,14 +328,7 @@ class KBufferedReader(
     override suspend fun reset() {
         lock.withLock {
             ensureOpen()
-            if (markedChar < 0) throw IOException(
-                if (markedChar == INVALIDATED)
-                    "Mark invalid"
-                else
-                    "Stream not marked"
-            )
-            nextChar = markedChar
-            skipLF = markedSkipLF
+            buffer.value.reset()
         }
     }
 
@@ -377,7 +344,28 @@ class KBufferedReader(
 
             inStream!!.close()
             inStream = null
-            cb = null
+
+            buffer.release()
         }
+    }
+
+
+    private fun isMarked(): Boolean {
+        return mark != null
+    }
+
+    private fun setMark(readLimit: Int): Int {
+        val mark = this.buffer.value.position()
+
+        this.mark = mark
+        this.readAheadLimit = readLimit
+        return mark
+    }
+
+    private fun resetToMark(): Boolean {
+        val mark = mark ?: return false
+
+        this.buffer.value.position(mark)
+        return true
     }
 }
