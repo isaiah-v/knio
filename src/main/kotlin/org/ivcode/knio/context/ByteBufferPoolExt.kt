@@ -2,6 +2,9 @@ package org.ivcode.knio.context
 
 import java.nio.*
 
+
+private val DUMMY_BUFFER = ByteBuffer.wrap(byteArrayOf(0))
+
 private const val BYTES_PER_CHAR  = 2
 private const val BYTES_PER_SHORT = 2
 private const val BYTES_PER_INT   = 4
@@ -16,37 +19,7 @@ interface ReleasableBuffer<T: Buffer> {
     val released: Boolean
     val value: T
     fun release()
-}
-
-/**
- * Implementation of ReleasableBuffer for ByteBuffer.
- *
- * @property value the ByteBuffer instance
- * @property pool the ByteBufferPool to release the buffer to
- */
-internal class ReleasableByteBuffer (
-    value: ByteBuffer,
-    private val pool: ByteBufferPool
-) : ReleasableBuffer<ByteBuffer> {
-
-    override var released: Boolean = false
-        private set
-
-    override val value: ByteBuffer = value
-        get() {
-            if (released) {
-                throw IllegalStateException("Buffer has been released")
-            }
-            return field
-        }
-
-    /**
-     * Releases the ByteBuffer back to the pool.
-     */
-    override fun release() {
-        released = true
-        pool.release(value)
-    }
+    fun resize(newSize: Int)
 }
 
 /**
@@ -58,39 +31,79 @@ internal class ReleasableByteBuffer (
  * @property transformer a function to transform the ByteBuffer to the desired buffer type
  */
 internal class ReleasableBufferImpl<T: Buffer>(
-    private val buffer: ByteBuffer,
     private val pool: ByteBufferPool,
-    transformer: (ByteBuffer) -> T
+    size: Int,
+    private val bytesPerUnit: Int,
+    private val transformer: (ByteBuffer) -> T
 ) : ReleasableBuffer<T> {
 
     override var released = false
         private set
 
-    override val value: T = transformer(buffer)
+    private var buffer = pool.acquire(size * bytesPerUnit)
+
+    override var value: T = transformer(buffer)
         get() {
             if (released) {
                 throw IllegalStateException("Buffer has been released")
             }
             return field
         }
+        private set
+
+
 
     /**
      * Releases the ByteBuffer back to the pool.
      */
     override fun release() {
-        released = true
+        if (!released) {
+            val buffer = buffer
+            this.buffer = DUMMY_BUFFER
+            this.value = transformer(DUMMY_BUFFER)
+
+            pool.release(buffer)
+            released = true
+        }
+    }
+
+    /**
+     * Resizes the buffer.
+     *
+     * This method will acquire a new buffer from the pool, copy the contents of the current buffer to the new buffer,
+     * and release the current buffer back to the pool.
+     *
+     * @param newSize the new size of the buffer
+     */
+    override fun resize(newSize: Int) {
+        if (released) {
+            throw IllegalStateException("Buffer has been released")
+        }
+
+        val oldValue = value
+        val valuePosition = oldValue.position()
+        val valueLimit = oldValue.limit()
+        val valueLimitDelta = valueLimit - valuePosition
+
+        buffer.position(valuePosition * bytesPerUnit)
+        buffer.limit(valueLimit * bytesPerUnit)
+
+        val newBuffer = pool.acquire(newSize * bytesPerUnit)
+        newBuffer.put(buffer) // TODO: check if this is correct
+        newBuffer.position(0)
+        newBuffer.limit(newBuffer.capacity())
+
+        val newValue = transformer(newBuffer)
+        newValue.limit(valueLimitDelta)
+
+        buffer = newBuffer
+        value = newValue
+
         pool.release(buffer)
     }
 }
 
-/**
- * Acquires a releasable ByteBuffer from the pool.
- *
- * @param size the size of the ByteBuffer to acquire
- * @return a ReleasableBuffer containing the acquired ByteBuffer
- */
-fun ByteBufferPool.acquireReleasableByteBuffer(size: Int): ReleasableBuffer<ByteBuffer> =
-    ReleasableByteBuffer(acquire(size), this)
+private fun asByteBuffer(buffer: ByteBuffer): ByteBuffer = buffer
 
 
 /**
@@ -101,6 +114,18 @@ fun ByteBufferPool.acquireReleasableByteBuffer(size: Int): ReleasableBuffer<Byte
  */
 private fun asCharBuffer(buffer: ByteBuffer): CharBuffer = buffer.asCharBuffer()
 
+
+
+/**
+ * Acquires a releasable ByteBuffer from the pool.
+ *
+ * @param size the size of the ByteBuffer to acquire
+ * @return a ReleasableBuffer containing the acquired ByteBuffer
+ */
+fun ByteBufferPool.acquireReleasableByteBuffer(size: Int): ReleasableBuffer<ByteBuffer> =
+    ReleasableBufferImpl(this, size, 1, ::asByteBuffer)
+
+
 /**
  * Acquires a releasable CharBuffer from the pool.
  *
@@ -108,19 +133,4 @@ private fun asCharBuffer(buffer: ByteBuffer): CharBuffer = buffer.asCharBuffer()
  * @return a ReleasableBuffer containing the acquired CharBuffer
  */
 fun ByteBufferPool.acquireReleasableCharBuffer(size: Int): ReleasableBuffer<CharBuffer> =
-    ReleasableBufferImpl(acquire(size * BYTES_PER_CHAR), this, ::asCharBuffer)
-
-private fun asShortBuffer(buffer: ByteBuffer): ShortBuffer = buffer.asShortBuffer()
-
-fun ByteBufferPool.acquireReleasableShortBuffer(size: Int): ReleasableBuffer<ShortBuffer> =
-    ReleasableBufferImpl(acquire(size * BYTES_PER_SHORT), this, ::asShortBuffer)
-
-private fun asIntBuffer(buffer: ByteBuffer): IntBuffer = buffer.asIntBuffer()
-
-fun ByteBufferPool.acquireReleasableIntBuffer(size: Int): ReleasableBuffer<IntBuffer> =
-    ReleasableBufferImpl(acquire(size * BYTES_PER_INT), this, ::asIntBuffer)
-
-private fun asLongBuffer(buffer: ByteBuffer): LongBuffer = buffer.asLongBuffer()
-
-fun ByteBufferPool.acquireReleasableLongBuffer(size: Int): ReleasableBuffer<LongBuffer> =
-    ReleasableBufferImpl(acquire(size * BYTES_PER_LONG), this, ::asLongBuffer)
+    ReleasableBufferImpl(this, size, BYTES_PER_CHAR, ::asCharBuffer)

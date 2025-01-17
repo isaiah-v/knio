@@ -26,6 +26,6 @@ suspend fun KReader.readText(): String {
     }
 }
 
-suspend fun KReader.buffered(): KBufferedReader {
-    return KBufferedReader.open(this)
+suspend fun KReader.buffered(bufferSize: Int = DEFAULT_BUFFER_SIZE): KBufferedReader {
+    return KBufferedReader.open(this, bufferSize)
 }

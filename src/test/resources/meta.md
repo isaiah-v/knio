@@ -2,6 +2,7 @@
 ### keystore.p12
 A keystore with a certificate and private key used for basic ssl testing.
  - Password: `password`
+ - md5: `fb22103ff7f13daafdc67da5aff731d1` (`md5sum keystore.p12`)
 
 ### text.txt
 A test text file containing some lorem ipsum text.

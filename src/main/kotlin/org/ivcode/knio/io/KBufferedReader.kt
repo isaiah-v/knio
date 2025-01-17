@@ -6,8 +6,13 @@ import org.ivcode.knio.context.acquireReleasableCharBuffer
 import org.ivcode.knio.context.getKnioContext
 import java.io.IOException
 import java.nio.CharBuffer
+import java.util.*
+import java.util.function.Consumer
+import java.util.stream.StreamSupport
 
 private const val DEFAULT_CHAR_BUFFER_SIZE = 8192
+
+private const val UNMARKED = -1
 
 /**
  * A buffered reader that reads characters from a KReader.
@@ -22,28 +27,25 @@ class KBufferedReader(
 ): KReader() {
 
     companion object {
-        suspend fun open(reader: KReader, bufferSize: Int = DEFAULT_CHAR_BUFFER_SIZE): KBufferedReader {
-            return KBufferedReader(reader, bufferSize, getKnioContext())
-        }
+
+        /**
+         * Opens a buffered reader that reads characters from a [KReader].
+         *
+         * @param reader The KReader to read characters from.
+         * @param bufferSize The size of the buffer to use.
+         *
+         * @return The buffered reader.
+         */
+        suspend fun open(reader: KReader, bufferSize: Int = DEFAULT_CHAR_BUFFER_SIZE): KBufferedReader =
+            KBufferedReader(reader, bufferSize, getKnioContext())
     }
 
     private var inStream: KReader? = reader
-
-    private var cb: CharArray? = CharArray(bufferSize)
     private var buffer = context.byteBufferPool.acquireReleasableCharBuffer(bufferSize).apply { value.flip() }
 
-    private var mark: Int? = null
+    private var mark: Int = UNMARKED
+    private var readAhead: Int = 0 /* Valid only when markedChar > 0 */
 
-    private var nChars: Int = 0
-    private var nextChar: Int = 0
-
-    private var readAheadLimit: Int = 0 /* Valid only when markedChar > 0 */
-
-    /** If the next character is a line feed, skip it  */
-    private var skipLF: Boolean = false
-
-    /** The skipLF flag when the mark was set  */
-    private var markedSkipLF: Boolean = false
 
     /** Checks to make sure that the stream has not been closed  */
     @Throws(IOException::class)
@@ -65,15 +67,19 @@ class KBufferedReader(
         }
 
         val buffer = buffer.value
-
+        var delta = 0
         if(isMarked()) {
-            val delta = buffer.position() - mark!!
-            if(delta > readAheadLimit) {
-                mark = mark!! - delta
-                buffer.compact()
-            } else {
-                mark = null
+            delta = buffer.position() - mark
+            val readAheadLimit = readAhead + mark
+            if(delta >= readAheadLimit) {
+                // delta is larger than the readAhead limit, invalidate the mark
+                mark = UNMARKED
                 buffer.clear()
+            } else {
+                buffer.position(mark)
+                buffer.compact()
+                mark = 0
+                buffer.position(delta)
             }
         } else {
             buffer.clear()
@@ -85,6 +91,10 @@ class KBufferedReader(
             inStream = null
         }
         buffer.flip()
+
+        if(isMarked()) {
+            buffer.position(buffer.position() + delta)
+        }
 
         return read
     }
@@ -98,45 +108,14 @@ class KBufferedReader(
     @Throws(IOException::class)
     override suspend fun read(): Int {
         lock.withLock {
-            val buffer = buffer.value
-
             ensureOpen()
+            val buffer = buffer.value
             if(!buffer.hasRemaining()) {
                 if(fill()==-1) return -1
             }
 
             return buffer.get().code
         }
-    }
-
-    /**
-     * Reads characters into a portion of an array, reading from the underlying stream if necessary.
-     *
-     * @param cbuf The destination buffer.
-     * @param off The offset at which to start storing characters.
-     * @param len The maximum number of characters to read.
-     * @return The number of characters read, or -1 if the end of the stream has been reached.
-     * @throws IOException If an I/O error occurs.
-     */
-    @Throws(IOException::class)
-    private suspend fun read0(cbuf: CharArray, off: Int, len: Int): Int {
-        val buffer = buffer.value
-        var read = 0
-        var eof = false
-
-        while (read!=len && !eof) {
-            if(buffer.hasRemaining()) {
-                val toRead = minOf(len-read, buffer.remaining())
-                buffer.get(cbuf, read+off, toRead)
-                read += toRead
-            } else {
-                if(fill() == -1) {
-                    eof = true
-                }
-            }
-        }
-
-        return if(read==0 && eof) -1 else read
     }
 
     /**
@@ -151,7 +130,25 @@ class KBufferedReader(
     @Throws(IOException::class)
     override suspend fun read(cbuf: CharArray, off: Int, len: Int): Int {
         lock.withLock {
-            return read0(cbuf, off, len)
+            ensureOpen()
+
+            val buffer = buffer.value
+            var read = 0
+            var eof = false
+
+            while (read!=len && !eof) {
+                if(buffer.hasRemaining()) {
+                    val toRead = minOf(len-read, buffer.remaining())
+                    buffer.get(cbuf, read+off, toRead)
+                    read += toRead
+                } else {
+                    if(fill() == -1) {
+                        eof = true
+                    }
+                }
+            }
+
+            return if(read==0 && eof) -1 else read
         }
     }
 
@@ -163,25 +160,29 @@ class KBufferedReader(
      * @throws IOException If an I/O error occurs.
      */
     override suspend fun read(b: CharBuffer): Int {
-        val buffer = buffer.value
+        lock.withLock {
+            ensureOpen()
 
-        var read = 0
-        var eof = false
+            val buffer = buffer.value
 
-        while(b.hasRemaining() && !eof) {
-            if(!buffer.hasRemaining()) {
-                if(fill() == -1) eof = true
-            } else {
-                val toRead = minOf(b.remaining(), buffer.remaining())
-                b.put(b.position(), buffer, buffer.position(), toRead)
-                b.position(b.position() + toRead)
-                buffer.position(buffer.position() + toRead)
+            var read = 0
+            var eof = false
 
-                read += toRead
+            while(b.hasRemaining() && !eof) {
+                if(!buffer.hasRemaining()) {
+                    if(fill() == -1) eof = true
+                } else {
+                    val toRead = minOf(b.remaining(), buffer.remaining())
+                    b.put(b.position(), buffer, buffer.position(), toRead)
+                    b.position(b.position() + toRead)
+                    buffer.position(buffer.position() + toRead)
+
+                    read += toRead
+                }
             }
-        }
 
-        return if(read==0 && eof) -1 else read
+            return if(read==0 && eof) -1 else read
+        }
     }
 
     /**
@@ -192,14 +193,12 @@ class KBufferedReader(
      * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
-    suspend fun readLine(ignoreLF: Boolean = false): String? {
-        var s: StringBuilder = StringBuilder()
-        var startChar: Int
+    suspend fun readLine(): String? {
+        val s: StringBuilder = StringBuilder()
 
         lock.withLock {
-
             ensureOpen()
-            var omitLF = ignoreLF || skipLF
+
             val buffer = buffer.value
 
             bufferLoop@ while (true) {
@@ -216,24 +215,21 @@ class KBufferedReader(
                 var eol = false
                 var c: Char
 
-                if (omitLF && buffer.get(buffer.position()) == '\n') {
-                    buffer.position(buffer.position() + 1)
-                }
-                skipLF = false
-                omitLF = false
-
                 charLoop@ while (buffer.hasRemaining()) {
                     c = buffer.get()
-                    if ((c == '\n') || (c == '\r')) {
+                    if (c == '\n') {
                         eol = true
+                        break@charLoop
+                    } else if (c == '\r') {
+                        eol = true
+                        if (buffer.hasRemaining() && buffer.get() != '\n') {
+                            buffer.position(buffer.position() - 1)
+                        }
                         break@charLoop
                     } else {
                         s.append(c)
                     }
-
                 }
-                //startChar = nextChar
-                //nextChar = i
 
                 if (eol) {
                     return s.toString()
@@ -241,6 +237,7 @@ class KBufferedReader(
             }
         }
     }
+
 
     /**
      * Skips characters.
@@ -256,25 +253,25 @@ class KBufferedReader(
 
         lock.withLock {
             ensureOpen()
+
+            val buffer = buffer.value
+
             var r = n
             while (r > 0) {
-                if (nextChar >= nChars) fill()
-                if (nextChar >= nChars)  /* EOF */
-                    break
-                if (skipLF) {
-                    skipLF = false
-                    if (cb!![nextChar] == '\n') {
-                        nextChar++
+                if(!buffer.hasRemaining()) {
+                    if(fill() == -1) {
+                        break
                     }
                 }
-                val d = (nChars - nextChar).toLong()
-                if (r <= d) {
-                    nextChar += r.toInt()
+
+
+                if(buffer.remaining() >= r) {
+                    buffer.position(buffer.position() + r.toInt())
                     r = 0
                     break
                 } else {
-                    r -= d
-                    nextChar = nChars
+                    r -= buffer.remaining()
+                    buffer.position(buffer.limit())
                 }
             }
             return n - r
@@ -282,9 +279,10 @@ class KBufferedReader(
     }
 
     /**
-     * Tells whether this stream is ready to be read. A buffered character stream is ready if the buffer is not empty, or if the underlying character stream is ready.
+     * Tells whether this stream is ready to be read. A buffered character stream is ready if the buffer is not empty,
+     * or if the underlying character stream is ready.
      *
-     * @return True if the stream is ready to be read, false otherwise.
+     * @return `true` if the stream is ready to be read, false otherwise.
      * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
@@ -303,9 +301,12 @@ class KBufferedReader(
     override suspend fun markSupported(): Boolean = true
 
     /**
-     * Marks the present position in the stream. Subsequent calls to reset() will attempt to reposition the stream to this point.
+     * Marks the present position in the stream. Subsequent calls to reset() will attempt to reposition the stream to
+     * this point.
      *
-     * @param readLimit Limit on the number of characters that may be read while still preserving the mark.
+     * @param readLimit  Limit on the number of characters that may be read while still preserving the mark. An attempt
+     * to reset the stream after reading characters up to this limit or beyond may fail. A limit value larger than the size of the input buffer will cause a new buffer to be allocated whose size is no smaller than limit. Therefore large values should be used with care.
+     *
      * @throws IllegalArgumentException If readAheadLimit is < 0.
      * @throws IOException If an I/O error occurs.
      */
@@ -328,7 +329,9 @@ class KBufferedReader(
     override suspend fun reset() {
         lock.withLock {
             ensureOpen()
-            buffer.value.reset()
+            if (!resetToMark()) {
+                throw IOException("Mark invalid")
+            }
         }
     }
 
@@ -351,19 +354,25 @@ class KBufferedReader(
 
 
     private fun isMarked(): Boolean {
-        return mark != null
+        return mark > UNMARKED
     }
 
     private fun setMark(readLimit: Int): Int {
+        if(buffer.value.limit() < readLimit) {
+            buffer.resize(readLimit)
+        }
+
         val mark = this.buffer.value.position()
 
         this.mark = mark
-        this.readAheadLimit = readLimit
+        this.readAhead = readLimit
         return mark
     }
 
     private fun resetToMark(): Boolean {
-        val mark = mark ?: return false
+        if(!isMarked()) {
+            return false
+        }
 
         this.buffer.value.position(mark)
         return true

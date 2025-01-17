@@ -100,6 +100,11 @@ abstract class KReader(
     open suspend fun ready(): Boolean = true
     open suspend fun reset(): Unit = throw IOException("reset not supported")
 
+    /**
+     * Skips characters. This method will block until some characters are available, an I/O error occurs, or the end of
+     * the stream is reached. If the stream is already at its end before this method is invoked, then no characters are skipped and zero is returned.
+     *
+     */
     open suspend fun skip(n: Long): Long {
         require(n >= 0L) { "skip value is negative" }
         val nn = min(n, MAX_SKIP_BUFFER_SIZE).toInt()
@@ -116,4 +121,12 @@ abstract class KReader(
             return n - r
         }
     }
+
+    /**
+     * Closes the stream and releases any system resources associated with it. Once the stream has been closed, further
+     * read(), ready(), mark(), reset(), or skip() invocations will throw an IOException. Closing a previously closed
+     * stream has no effect.
+     */
+    @Throws(IOException::class)
+    abstract override suspend fun close()
 }
