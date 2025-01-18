@@ -45,8 +45,4 @@ class KFileOutputStream private constructor (
     override suspend fun close() = mutex.withLock {
         fileChannel.close()
     }
-
-    suspend fun getChannel(): AsynchronousFileChannel {
-        return this.fileChannel
-    }
 }

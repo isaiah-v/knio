@@ -102,8 +102,7 @@ class KFileInputStream private constructor(
      * @return The number of bytes read, or -1 if the end of the file is reached.
      */
     override suspend fun read(b: ByteBuffer): Int {
-        val result = doRead(b)
-        return result
+        return doRead(b)
     }
 
     /**
@@ -111,7 +110,7 @@ class KFileInputStream private constructor(
      *
      * @throws IOException If the mark position is invalid.
      */
-    override suspend fun reset() {
+    override suspend fun reset() = mutex.withLock {
         val markPosition = markPosition ?: throw IOException("Mark not set")
 
         if (position < markPosition || position - markPosition > markLimit) {
@@ -133,7 +132,7 @@ class KFileInputStream private constructor(
      * @throws IOException If an I/O error occurs.
      */
     @Throws(IOException::class)
-    override suspend fun skip(n: Long): Long {
+    override suspend fun skip(n: Long): Long = mutex.withLock {
         if (n >= 0) {
             val skip = minOf(n, remaining())
             position += skip
@@ -151,7 +150,7 @@ class KFileInputStream private constructor(
      * @param buffer The ByteBuffer to read bytes into.
      * @return The number of bytes read, or -1 if the end of the file is reached.
      */
-    private suspend fun doRead(buffer: ByteBuffer): Int {
+    private suspend fun doRead(buffer: ByteBuffer): Int = mutex.withLock {
         val count = channel.readSuspend(buffer, position)
         if (count > 0) {
             position += count

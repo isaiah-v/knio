@@ -66,7 +66,7 @@ internal class ReleasableBufferImpl<T: Buffer>(
     override var released = false
         private set
 
-    private var buffer = pool.acquire(getUnitBufferSize(size, bytesPerUnit))
+    private var buffer = pool.acquire(getBufferSize(size, bytesPerUnit))
 
     override var value: T = transformer(buffer)
         get() {
@@ -112,7 +112,7 @@ internal class ReleasableBufferImpl<T: Buffer>(
         buffer.position(valuePosition * bytesPerUnit)
         buffer.limit(valueLimit * bytesPerUnit)
 
-        val newBuffer = pool.acquire(getUnitBufferSize(newSize, bytesPerUnit))
+        val newBuffer = pool.acquire(getBufferSize(newSize, bytesPerUnit))
         newBuffer.put(buffer)
         newBuffer.position(0)
         newBuffer.limit(newBuffer.capacity())

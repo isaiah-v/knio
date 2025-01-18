@@ -7,8 +7,6 @@ import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.channels.Channel
 
-
-
 private val DEFAULT_BYTE_BUFFER_POOL = ByteBufferPoolNone()
 private val DEFAULT_CHANNEL_FACTORY = ChannelFactoryDefault()
 
