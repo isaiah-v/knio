@@ -1,12 +1,12 @@
 package org.ivcode.knio.io
 
+import org.ivcode.knio.annotations.SynchronousNative
 import org.ivcode.knio.context.KnioContext
 import org.ivcode.knio.lang.KAutoCloseable
-import org.jetbrains.annotations.Blocking
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
-import kotlin.jvm.Throws
+import kotlin.Throws
 import kotlin.math.min
 
 abstract class KInputStream(
@@ -16,6 +16,7 @@ abstract class KInputStream(
         private const val MAX_SKIP_BUFFER_SIZE: Long = 2048
     }
 
+    @Throws(IOException::class)
     abstract suspend fun read(b: ByteBuffer): Int
 
     /**
@@ -24,7 +25,10 @@ abstract class KInputStream(
      *
      * @return The number of bytes that can be read from this input stream without suspending.
      */
+    @Throws(IOException::class)
     open suspend fun available(): Int = 0
+
+    @Throws(IOException::class)
     open suspend fun skip(n: Long): Long {
         var remaining = n
         var nr: Int
@@ -75,6 +79,7 @@ abstract class KInputStream(
      *
      * @param b The buffer into which the data is read.
      */
+    @Throws(IOException::class)
     open suspend fun read(b: ByteArray): Int {
         return read(b, 0, b.size)
     }
@@ -100,6 +105,7 @@ abstract class KInputStream(
      * @param len The maximum number of bytes read.
      * @return The total number of bytes read into the buffer, or -1 if there is no more data because the end of the
      */
+    @Throws(IOException::class)
     open suspend fun read(b: ByteArray, off: Int, len: Int): Int {
         if(off < 0 || len < 0 || len > b.size - off) {
             throw IndexOutOfBoundsException()
@@ -190,6 +196,7 @@ abstract class KInputStream(
      * @param len The maximum number of bytes to read.
      * @return A byte array containing the bytes read from the stream.
      */
+    @Throws(IOException::class)
     open suspend fun readNBytes(len: Int): ByteArray {
         val b = ByteArray(len)
         val bytesRead = readNBytes(b, 0, len)
@@ -214,6 +221,7 @@ abstract class KInputStream(
      *
      * @return A byte array containing the bytes read from the stream.
      */
+    @Throws(IOException::class)
     open suspend fun readAllBytes(): ByteArray {
         val buffer = context.byteBufferPool.acquire(context.taskBufferSize)
         try {
@@ -233,8 +241,14 @@ abstract class KInputStream(
     }
 
 
+    @Throws(IOException::class)
     open suspend fun markSupported(): Boolean = false
+
+    @Throws(IOException::class)
     open suspend fun reset(): Unit = throw IOException("Mark not supported")
+
+    @Throws(IOException::class)
     open suspend fun mark(readLimit: Int) {}
+
     override suspend fun close() {}
 }

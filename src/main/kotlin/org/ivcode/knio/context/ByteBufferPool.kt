@@ -25,6 +25,10 @@ interface ByteBufferPool {
     /**
      * Releases the buffer back to the pool.
      *
+     * While releasing a buffer is recommended, it is not required.
+     * If a buffer is not released, it will be garbage collected
+     * when it is no longer in use.
+     *
      * @param buffer The buffer to release.
      */
     fun release(buffer: ByteBuffer)

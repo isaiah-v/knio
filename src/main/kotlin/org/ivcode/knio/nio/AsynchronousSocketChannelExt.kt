@@ -19,6 +19,8 @@ import kotlin.coroutines.suspendCoroutine
  * @throws Throwable the original throwable if it is not an `InterruptedByTimeoutException`.
  */
 private fun <T> errorHandler(e: Throwable): T {
+    // Catch the InterruptedByTimeoutException and throw a SocketTimeoutException instead as done
+    // in the blocking read/write functions.
     throw if (e is InterruptedByTimeoutException) {
         SocketTimeoutException("Connection timed out")
     } else {
@@ -35,13 +37,21 @@ private fun <T> errorHandler(e: Throwable): T {
  * @throws SocketTimeoutException if the read operation times out.
  * @throws Throwable if any other error occurs during the read operation.
  */
-internal suspend fun AsynchronousSocketChannel.readSuspend(b: ByteBuffer, timeout: Long? = null): Int = suspendCoroutine {
+internal suspend fun AsynchronousSocketChannel.readSuspend(
+    b: ByteBuffer,
+    timeout: Long? = null
+): Int = suspendCoroutine {
     try {
+
+        // Call the callback version of the non-blocking read function, un-suspending the coroutine when complete.
         if (timeout != null && timeout > 0) {
+            // with timeout
             read(b, timeout, TimeUnit.MILLISECONDS, it, fromResult(onFail = ::errorHandler))
         } else {
+            // without timeout
             read(b, it, fromResult(onFail = ::errorHandler))
         }
+
     } catch (e: Throwable) {
         it.resumeWithException(e)
     }
@@ -56,13 +66,21 @@ internal suspend fun AsynchronousSocketChannel.readSuspend(b: ByteBuffer, timeou
  * @throws SocketTimeoutException if the write operation times out.
  * @throws Throwable if any other error occurs during the write operation.
  */
-internal suspend fun AsynchronousSocketChannel.writeSuspend(b: ByteBuffer, timeout: Long? = null): Int = suspendCoroutine {
+internal suspend fun AsynchronousSocketChannel.writeSuspend(
+    b: ByteBuffer,
+    timeout: Long? = null
+): Int = suspendCoroutine {
     try {
+
+        // Call the callback version of the non-blocking write function, un-suspending the coroutine when complete.
         if (timeout != null && timeout > 0) {
+            // with timeout
             write(b, timeout, TimeUnit.MILLISECONDS, it, fromResult(onFail = ::errorHandler))
         } else {
+            // without timeout
             write(b, it, fromResult(onFail = ::errorHandler))
         }
+
     } catch (e: Throwable) {
         it.resumeWithException(e)
     }

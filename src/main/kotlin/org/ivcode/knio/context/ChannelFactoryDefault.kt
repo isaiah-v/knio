@@ -55,6 +55,5 @@ class ChannelFactoryDefault(
 
     override fun shutdown() {
         group.shutdown()
-        executor.shutdown()
     }
 }

@@ -2,6 +2,7 @@ package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.ivcode.knio.annotations.SynchronousNative
 import org.ivcode.knio.context.KnioContext
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -71,8 +72,20 @@ class KFileInputStream private constructor(
         return 0
     }
 
-    private fun remaining(): Long {
-        return channel.size() - position
+    /**
+     * Returns the total number of bytes in the file.
+     *
+     * @return The total number of bytes in the file.
+     */
+    @SynchronousNative
+    suspend fun size(): Long {
+        @Suppress("BlockingMethodInNonBlockingContext")
+        return channel.size()
+    }
+
+    @SynchronousNative
+    private suspend fun remaining(): Long {
+        return size() - position
     }
 
     /**
@@ -101,8 +114,17 @@ class KFileInputStream private constructor(
      *
      * @return The number of bytes read, or -1 if the end of the file is reached.
      */
-    override suspend fun read(b: ByteBuffer): Int {
-        return doRead(b)
+    override suspend fun read(b: ByteBuffer): Int = mutex.withLock {
+        return read0(b)
+    }
+
+    private suspend fun read0(buffer: ByteBuffer): Int {
+        val count = channel.readSuspend(buffer, position)
+        if (count > 0) {
+            position += count
+        }
+
+        return count
     }
 
     /**
@@ -111,6 +133,10 @@ class KFileInputStream private constructor(
      * @throws IOException If the mark position is invalid.
      */
     override suspend fun reset() = mutex.withLock {
+        reset0()
+    }
+
+    private suspend fun reset0() {
         val markPosition = markPosition ?: throw IOException("Mark not set")
 
         if (position < markPosition || position - markPosition > markLimit) {
@@ -131,8 +157,13 @@ class KFileInputStream private constructor(
      * @return The actual number of bytes skipped.
      * @throws IOException If an I/O error occurs.
      */
+    @SynchronousNative
     @Throws(IOException::class)
     override suspend fun skip(n: Long): Long = mutex.withLock {
+        // This differs from the Java implementation in that will only skip up to the end of the file or the beginning.
+        // It returns the number of skipped bytes, as the documentation states, rather than going past or throwing an
+        // exception.
+
         if (n >= 0) {
             val skip = minOf(n, remaining())
             position += skip
@@ -145,24 +176,16 @@ class KFileInputStream private constructor(
     }
 
     /**
-     * Reads bytes from the file channel into the specified ByteBuffer.
-     *
-     * @param buffer The ByteBuffer to read bytes into.
-     * @return The number of bytes read, or -1 if the end of the file is reached.
-     */
-    private suspend fun doRead(buffer: ByteBuffer): Int = mutex.withLock {
-        val count = channel.readSuspend(buffer, position)
-        if (count > 0) {
-            position += count
-        }
-
-        return count
-    }
-
-    /**
      * Closes this file input stream and releases any system resources associated with the stream.
      */
+    @SynchronousNative
     override suspend fun close() = mutex.withLock {
+        close0()
+    }
+
+    @SynchronousNative
+    private suspend fun close0() {
+        @Suppress("BlockingMethodInNonBlockingContext")
         channel.close()
     }
 }

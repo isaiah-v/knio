@@ -18,6 +18,6 @@ class ByteBufferPoolNone (
     }
 
     override fun release(buffer: ByteBuffer) {
-        // do nothing
+        // do nothing. allow the buffer to be garbage collected
     }
 }

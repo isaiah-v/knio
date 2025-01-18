@@ -11,7 +11,7 @@ private val DUMMY_BUFFER = ByteBuffer.wrap(byteArrayOf(0))
  *
  * @param T the type of buffer
  */
-interface ReleasableBuffer<T: Buffer> {
+internal interface ReleasableBuffer<T: Buffer> {
 
     /**
      * Whether the buffer has been released.
