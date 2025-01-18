@@ -1,5 +1,7 @@
 package org.ivcode.knio.net
 
+import org.ivcode.knio.io.KInputStream
+import org.ivcode.knio.io.KOutputStream
 import org.ivcode.knio.lang.KAutoCloseable
 import org.jetbrains.annotations.Blocking
 import java.io.IOException
@@ -63,7 +65,7 @@ interface KSocket: KAutoCloseable {
      *
      * @return The KInputStream.
      */
-    fun getInputStream(): KSocketInputStream
+    fun getInputStream(): KInputStream
 
     /**
      * Gets the SO_KEEPALIVE option.
@@ -99,7 +101,7 @@ interface KSocket: KAutoCloseable {
      *
      * @return The KOutputStream.a
      */
-    fun getOutputStream(): KSocketOutputStream
+    fun getOutputStream(): KOutputStream
 
     /**
      * Gets the remote port number.

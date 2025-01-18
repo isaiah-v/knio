@@ -10,7 +10,7 @@ class KnioContextTest {
     @Test
     fun `use heap ByteBuffer`() = runBlocking {
         val pool = ByteBufferPoolNone(isDirect = false)
-        val context = KnioContext(pool)
+        val context = KnioContext(byteBufferPool = pool)
 
         withContext(context) {
             val buffer = getKnioContext().byteBufferPool.acquire(1024)
@@ -21,7 +21,7 @@ class KnioContextTest {
     @Test
     fun `use direct ByteBuffer`() = runBlocking {
         val pool = ByteBufferPoolNone(isDirect = true)
-        val context = KnioContext(pool)
+        val context = KnioContext(byteBufferPool = pool)
 
         withContext(context) {
             val buffer = getKnioContext().byteBufferPool.acquire(1024)

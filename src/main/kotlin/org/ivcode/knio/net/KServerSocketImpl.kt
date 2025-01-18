@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.ivcode.knio.context.getKnioContext
 import org.ivcode.knio.nio.acceptSuspend
 import java.net.*
 import java.nio.channels.AsynchronousServerSocketChannel
@@ -23,7 +24,7 @@ internal class KServerSocketImpl(
 
     private suspend fun accept0(): KSocket {
         val acceptChannel = channel.acceptSuspend(acceptTimeout)
-        return KSocketImpl(acceptChannel)
+        return KSocketImpl(acceptChannel, getKnioContext())
     }
 
     override suspend fun bind(endpoint: SocketAddress, backlog: Int): Unit = withContext(Dispatchers.IO) {

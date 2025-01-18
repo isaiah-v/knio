@@ -1,14 +1,10 @@
 package org.ivcode.knio.context
 
 import java.nio.*
+import kotlin.jvm.Throws
 
 
 private val DUMMY_BUFFER = ByteBuffer.wrap(byteArrayOf(0))
-
-private const val BYTES_PER_CHAR  = 2
-private const val BYTES_PER_SHORT = 2
-private const val BYTES_PER_INT   = 4
-private const val BYTES_PER_LONG  = 8
 
 /**
  * Interface representing a buffer that can be released back to a pool.
@@ -16,9 +12,39 @@ private const val BYTES_PER_LONG  = 8
  * @param T the type of buffer
  */
 interface ReleasableBuffer<T: Buffer> {
+
+    /**
+     * Whether the buffer has been released.
+     */
     val released: Boolean
+
+    /**
+     * The buffer contained in the ReleasableBuffer. It should be noted that the buffer
+     * may be swapped out for a new buffer if the buffer is resized or released. If you
+     * assign this value to a variable, be conscious of the fact that the buffer may be
+     * replaced.
+     *
+     *
+     * @throws IllegalStateException if the buffer has been released
+     */
+    @get:Throws(IllegalStateException::class)
     val value: T
+
+    /**
+     * Releases the buffer back to the pool.
+     */
     fun release()
+
+    /**
+     * Resizes the buffer.
+     *
+     * @param newSize the new size of the buffer
+     *
+     * @throws BufferOverflowException if the new size is smaller than the current size and the buffer has more data
+     * available than the new buffer's size
+     * @throws IllegalStateException if the buffer has been released
+     */
+    @Throws(BufferOverflowException::class, IllegalStateException::class)
     fun resize(newSize: Int)
 }
 
@@ -40,7 +66,7 @@ internal class ReleasableBufferImpl<T: Buffer>(
     override var released = false
         private set
 
-    private var buffer = pool.acquire(size * bytesPerUnit)
+    private var buffer = pool.acquire(getUnitBufferSize(size, bytesPerUnit))
 
     override var value: T = transformer(buffer)
         get() {
@@ -50,8 +76,6 @@ internal class ReleasableBufferImpl<T: Buffer>(
             return field
         }
         private set
-
-
 
     /**
      * Releases the ByteBuffer back to the pool.
@@ -88,8 +112,8 @@ internal class ReleasableBufferImpl<T: Buffer>(
         buffer.position(valuePosition * bytesPerUnit)
         buffer.limit(valueLimit * bytesPerUnit)
 
-        val newBuffer = pool.acquire(newSize * bytesPerUnit)
-        newBuffer.put(buffer) // TODO: check if this is correct
+        val newBuffer = pool.acquire(getUnitBufferSize(newSize, bytesPerUnit))
+        newBuffer.put(buffer)
         newBuffer.position(0)
         newBuffer.limit(newBuffer.capacity())
 
@@ -122,15 +146,17 @@ private fun asCharBuffer(buffer: ByteBuffer): CharBuffer = buffer.asCharBuffer()
  * @param size the size of the ByteBuffer to acquire
  * @return a ReleasableBuffer containing the acquired ByteBuffer
  */
-fun ByteBufferPool.acquireReleasableByteBuffer(size: Int): ReleasableBuffer<ByteBuffer> =
-    ReleasableBufferImpl(this, size, 1, ::asByteBuffer)
+internal fun ByteBufferPool.acquireReleasableByteBuffer(size: Int): ReleasableBuffer<ByteBuffer> =
+    ReleasableBufferImpl(this, size, BYTES_PER_BYTE, ::asByteBuffer)
 
 
 /**
  * Acquires a releasable CharBuffer from the pool.
  *
+ * For internal use only. The pools shouldn't be used outsize of the context of the Knio.
+ *
  * @param size the size, in chars, of the CharBuffer to acquire.
  * @return a ReleasableBuffer containing the acquired CharBuffer
  */
-fun ByteBufferPool.acquireReleasableCharBuffer(size: Int): ReleasableBuffer<CharBuffer> =
+internal fun ByteBufferPool.acquireReleasableCharBuffer(size: Int): ReleasableBuffer<CharBuffer> =
     ReleasableBufferImpl(this, size, BYTES_PER_CHAR, ::asCharBuffer)

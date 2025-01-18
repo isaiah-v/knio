@@ -1,13 +1,14 @@
 package org.ivcode.knio.io
 
 import org.ivcode.knio.context.getKnioContext
-import org.ivcode.knio.context.acquireReleasableCharBuffer
+import org.ivcode.knio.context.getCharBufferSize
 
 suspend fun KReader.readText(): String {
-    val releasable = getKnioContext().byteBufferPool.acquireReleasableCharBuffer(1024)
+    val context = getKnioContext()
+    val buffer = context.byteBufferPool.acquire(getCharBufferSize(context.taskBufferSize))
 
     try {
-        val buff = releasable.value
+        val buff = buffer.asCharBuffer()
 
         val sb = StringBuilder()
         var read = this.read(buff)
@@ -22,10 +23,10 @@ suspend fun KReader.readText(): String {
 
         return sb.toString()
     } finally {
-        releasable.release()
+        context.byteBufferPool.release(buffer)
     }
 }
 
-suspend fun KReader.buffered(bufferSize: Int = DEFAULT_BUFFER_SIZE): KBufferedReader {
+suspend fun KReader.buffered(bufferSize: Int? = null): KBufferedReader {
     return KBufferedReader.open(this, bufferSize)
 }

@@ -12,12 +12,14 @@ import java.util.concurrent.Executors
 /**
  * Default implementation of the AsynchronousChannelFactory interface.
  *
- * This factory creates various types of asynchronous channels using a provided executor service.
+ * This factory creates channels that execute tasks asynchronously using the
+ * specified executor service. Otherwise, the channels are created using the
+ * default configurations.
  *
  * @property executor The executor service used to manage asynchronous tasks.
  */
 class ChannelFactoryDefault(
-    private val executor: ExecutorService = Executors.newCachedThreadPool(ThreadFactoryNamed("Kino"))
+    private val executor: ExecutorService = Executors.newCachedThreadPool(ThreadFactoryNamed("Knio"))
 ) : ChannelFactory {
 
     private val group: AsynchronousChannelGroup = AsynchronousChannelGroup.withThreadPool(executor)

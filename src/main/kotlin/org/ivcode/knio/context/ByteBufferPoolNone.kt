@@ -2,7 +2,12 @@ package org.ivcode.knio.context
 
 import java.nio.ByteBuffer
 
-class ByteBufferPoolNone(
+/**
+ * A non-implementation of [ByteBufferPool] that does not pool any buffers.
+ *
+ * This is the default implementation of [ByteBufferPool] for the knio library.
+ */
+class ByteBufferPoolNone (
     private val isDirect: Boolean = false
 ): ByteBufferPool {
 

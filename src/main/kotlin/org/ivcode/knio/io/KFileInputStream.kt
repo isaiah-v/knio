@@ -1,7 +1,8 @@
 package org.ivcode.knio.io
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.ivcode.knio.context.KnioContext
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
@@ -9,19 +10,22 @@ import org.ivcode.knio.nio.readSuspend
 import org.ivcode.knio.context.getKnioContext
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
+import kotlin.jvm.Throws
 
 /**
- * A coroutine-based asynchronous equivalent of [java.io.FileInputStream].
+ * A FileInputStream obtains input bytes from a file in a file system.
  *
- * This class is not thread-safe and should be used in a single-threaded context
- * or with external synchronization if shared between threads.
+ * This is a coroutine-based asynchronous equivalent of [java.io.FileInputStream].
  *
  * @param path The path to the file to read.
  */
 class KFileInputStream private constructor(
     private val path: Path,
-    private val channel: AsynchronousFileChannel
-): KInputStream() {
+    context: KnioContext
+): KInputStream(context) {
+
+    private val mutex = Mutex()
+    private val channel: AsynchronousFileChannel = context.channelFactory.openFileChannel(path, StandardOpenOption.READ)
 
     companion object {
         /**
@@ -31,10 +35,15 @@ class KFileInputStream private constructor(
          * @return The file input stream.
          */
         suspend fun open(path: Path): KFileInputStream {
-            val channel = getKnioContext().channelFactory.openFileChannel(path, StandardOpenOption.READ)
-            return KFileInputStream(path, channel)
+            return KFileInputStream(path, getKnioContext())
         }
 
+        /**
+         * Opens a file input stream for the specified file path.
+         *
+         * @param path The path to the file to read as a String.
+         * @return The file input stream.
+         */
         suspend fun open(path: String): KFileInputStream {
             return open(Path.of(path))
         }
@@ -50,12 +59,20 @@ class KFileInputStream private constructor(
     private var markLimit: Int = 0
 
     /**
-     * Returns the number of bytes available to read.
+     * Returns the number of remaining bytes that can be read (or skipped over) from this input stream without
+     * suspending to performing an I/O operation.
+     *
+     * Returns 0 when the file position is beyond EOF.
      *
      * @return The number of bytes available.
      */
-    override suspend fun available (): Int = withContext(Dispatchers.IO) {
-        (channel.size() - position).toInt()
+    override suspend fun available(): Int {
+        // all reads perform I/O operations, so we can't know how many bytes are available without reading
+        return 0
+    }
+
+    private fun remaining(): Long {
+        return channel.size() - position
     }
 
     /**
@@ -63,7 +80,7 @@ class KFileInputStream private constructor(
      *
      * @param readLimit The maximum limit of bytes that can be read before the mark position becomes invalid.
      */
-    override suspend  fun mark(readLimit: Int) {
+    override suspend fun mark(readLimit: Int) {
         markPosition = position
         markLimit = readLimit
     }
@@ -73,18 +90,20 @@ class KFileInputStream private constructor(
      *
      * @return True if mark and reset are supported, false otherwise.
      */
-    override suspend  fun markSupported(): Boolean {
+    override suspend fun markSupported(): Boolean {
         return true
     }
 
+    /**
+     * Reads bytes from the input stream into the specified ByteBuffer.
+     *
+     * An attempt is made to read `b.remaining()` bytes, but a smaller number may be read.
+     *
+     * @return The number of bytes read, or -1 if the end of the file is reached.
+     */
     override suspend fun read(b: ByteBuffer): Int {
-        try {
-            val result = doRead(b)
-            return result
-        } catch (e: IOException) {
-            this.close()
-            throw IOException("Read failed", e)
-        }
+        val result = doRead(b)
+        return result
     }
 
     /**
@@ -95,7 +114,7 @@ class KFileInputStream private constructor(
     override suspend fun reset() {
         val markPosition = markPosition ?: throw IOException("Mark not set")
 
-        if(position < markPosition || position - markPosition > markLimit) {
+        if (position < markPosition || position - markPosition > markLimit) {
             throw IOException("Mark invalid")
         }
 
@@ -103,28 +122,38 @@ class KFileInputStream private constructor(
     }
 
     /**
-     * Skips over and discards the specified number of bytes from the input stream.
+     * Skips over and discards n bytes of data from the input stream.
+     *
+     * The skip method may, for a variety of reasons, end up skipping over some smaller number of bytes, possibly 0.
+     * If n is negative, the method will try to skip backwards. The actual number of bytes skipped is returned.
+     * If it skips forwards, it returns a positive value. If it skips backwards, it returns a negative value.
      *
      * @param n The number of bytes to skip.
      * @return The actual number of bytes skipped.
+     * @throws IOException If an I/O error occurs.
      */
+    @Throws(IOException::class)
     override suspend fun skip(n: Long): Long {
-        if (n <= 0) return 0
-
-        val remaining = maxOf(0, available().toLong())
-        val skip = minOf(n, remaining)
-        position += skip
-        return skip
+        if (n >= 0) {
+            val skip = minOf(n, remaining())
+            position += skip
+            return skip
+        } else {
+            val rewind = -1 * minOf(-n, position)
+            position += rewind
+            return rewind
+        }
     }
 
     /**
-     * Performs the actual read operation.
+     * Reads bytes from the file channel into the specified ByteBuffer.
      *
+     * @param buffer The ByteBuffer to read bytes into.
      * @return The number of bytes read, or -1 if the end of the file is reached.
      */
     private suspend fun doRead(buffer: ByteBuffer): Int {
         val count = channel.readSuspend(buffer, position)
-        if(count > 0) {
+        if (count > 0) {
             position += count
         }
 
@@ -132,9 +161,9 @@ class KFileInputStream private constructor(
     }
 
     /**
-     * Closes the file input stream.
+     * Closes this file input stream and releases any system resources associated with the stream.
      */
-    override suspend fun close () = withContext(Dispatchers.IO) {
+    override suspend fun close() = mutex.withLock {
         channel.close()
     }
 }

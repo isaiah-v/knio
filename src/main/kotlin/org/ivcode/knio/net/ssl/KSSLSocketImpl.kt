@@ -3,12 +3,12 @@ package org.ivcode.knio.net.ssl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.ivcode.knio.net.KSocketInputStream
 import org.ivcode.knio.nio.readSuspend
 import org.ivcode.knio.nio.writeSuspend
-import org.ivcode.knio.net.KSocketOutputStream
 import org.ivcode.knio.utils.compactOrIncreaseSize
 import org.ivcode.knio.context.KnioContext
+import org.ivcode.knio.io.KInputStream
+import org.ivcode.knio.io.KOutputStream
 import org.jetbrains.annotations.Blocking
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -44,7 +44,7 @@ internal class KSSLSocketImpl (
         applicationRead = context.byteBufferPool.acquire(sslEngine.session.applicationBufferSize)
     }
 
-    private val inputStream = object : KSocketInputStream() {
+    private val inputStream = object : KInputStream(context) {
 
         @Blocking
         override suspend fun read(b: ByteBuffer): Int {
@@ -59,7 +59,7 @@ internal class KSSLSocketImpl (
         }
     }
 
-    private val outputStream = object : KSocketOutputStream() {
+    private val outputStream = object : KOutputStream() {
 
         @Blocking
         override suspend fun write(b: ByteBuffer) {
@@ -74,8 +74,8 @@ internal class KSSLSocketImpl (
         }
     }
 
-    override fun getInputStream(): KSocketInputStream = inputStream
-    override fun getOutputStream(): KSocketOutputStream = outputStream
+    override fun getInputStream(): KInputStream = inputStream
+    override fun getOutputStream(): KOutputStream = outputStream
 
     @Blocking
     override suspend fun startHandshake() = handshakeMutex.withLock {

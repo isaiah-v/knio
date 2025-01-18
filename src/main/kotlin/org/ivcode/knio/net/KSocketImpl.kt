@@ -2,6 +2,9 @@ package org.ivcode.knio.net
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.ivcode.knio.context.KnioContext
+import org.ivcode.knio.io.KInputStream
+import org.ivcode.knio.io.KOutputStream
 import org.ivcode.knio.nio.writeSuspend
 import org.jetbrains.annotations.Blocking
 import java.io.IOException
@@ -11,7 +14,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 internal class KSocketImpl internal constructor(
     /** The underlying AsynchronousSocketChannel. */
-    channel: AsynchronousSocketChannel
+    channel: AsynchronousSocketChannel,
+    context: KnioContext
 ): KSocketAbstract(channel) {
 
     /** The input shutdown flag. */
@@ -21,7 +25,7 @@ internal class KSocketImpl internal constructor(
     private var isOutputShutdown = AtomicBoolean(false)
 
     /** The input stream of the socket. */
-    private val inputStream = object : KSocketInputStream() {
+    private val inputStream = object : KInputStream(context) {
         /** read mutex */
         private val readMutex = Mutex()
 
@@ -67,7 +71,7 @@ internal class KSocketImpl internal constructor(
     }
 
     /** The output stream of the socket. */
-    private val outputStream = object : KSocketOutputStream() {
+    private val outputStream = object : KOutputStream() {
         /** write mutex */
         private val writeMutex = Mutex()
 
@@ -107,7 +111,7 @@ internal class KSocketImpl internal constructor(
      *
      * @return The KInputStream.
      */
-    override fun getInputStream(): KSocketInputStream = this.inputStream
+    override fun getInputStream(): KInputStream = this.inputStream
 
 
 
@@ -116,7 +120,7 @@ internal class KSocketImpl internal constructor(
      *
      * @return The KOutputStream.
      */
-    override fun getOutputStream(): KSocketOutputStream = outputStream
+    override fun getOutputStream(): KOutputStream = outputStream
 
     /**
      * Checks if the input is shutdown.

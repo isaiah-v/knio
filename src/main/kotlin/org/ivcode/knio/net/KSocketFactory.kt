@@ -33,7 +33,10 @@ interface KSocketFactory {
     private class DefaultKSocketFactory(
         private val context: KnioContext
     ): KSocketFactory {
-        override suspend fun createSocket() = KSocketImpl(channel = context.channelFactory.openSocketChannel())
+        override suspend fun createSocket() = KSocketImpl(
+            channel = context.channelFactory.openSocketChannel(),
+            context = context
+        )
 
         override suspend fun createSocket(host: String, port: Int) =
             createSocket().apply { connect(InetSocketAddress(host, port)) }

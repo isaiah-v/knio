@@ -2,6 +2,13 @@ package org.ivcode.knio.context
 
 import java.nio.ByteBuffer
 
+/**
+ * A pool of byte buffers.
+ *
+ * Buffers allow for more flexible memory management, and can be reused to reduce memory allocation overhead. Note,
+ * however, these pools are intended for the knio library. Once a buffer is released it is assumed to be no longer in
+ * use, and should not be used elsewhere because it may be reused elsewhere in the library.
+ */
 interface ByteBufferPool {
 
     /**

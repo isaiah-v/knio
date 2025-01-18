@@ -7,10 +7,6 @@ import org.ivcode.knio.context.getKnioContext
 import java.io.IOException
 import java.nio.CharBuffer
 import java.util.*
-import java.util.function.Consumer
-import java.util.stream.StreamSupport
-
-private const val DEFAULT_CHAR_BUFFER_SIZE = 8192
 
 private const val UNMARKED = -1
 
@@ -32,12 +28,16 @@ class KBufferedReader(
          * Opens a buffered reader that reads characters from a [KReader].
          *
          * @param reader The KReader to read characters from.
-         * @param bufferSize The size of the buffer to use.
+         * @param bufferSize The size of the buffer to use. If null, the default buffer size will be used.
          *
          * @return The buffered reader.
          */
-        suspend fun open(reader: KReader, bufferSize: Int = DEFAULT_CHAR_BUFFER_SIZE): KBufferedReader =
-            KBufferedReader(reader, bufferSize, getKnioContext())
+        suspend fun open(reader: KReader, bufferSize: Int? = null): KBufferedReader {
+            val context = getKnioContext()
+            val buffSize = bufferSize ?: context.streamBufferSize
+
+            return KBufferedReader(reader, buffSize, context)
+        }
     }
 
     private var inStream: KReader? = reader
