@@ -1,8 +1,7 @@
 package org.ivcode.knio.io
 
 import kotlinx.coroutines.runBlocking
-import org.ivcode.knio.annotations.JavaIO
-import org.ivcode.knio.annotations.SynchronousNative
+import org.ivcode.knio.annotations.NativeBlocking
 import org.ivcode.knio.lang.use
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -38,7 +37,6 @@ class KFileInputStreamTest {
         val actualExec = suspend {
             ByteArrayOutputStream().use { outputStream ->
                 KFileInputStream.open(file).use { fis ->
-                    @OptIn(JavaIO::class)
                     fis.copyTo(outputStream)
                 }
 
@@ -160,7 +158,7 @@ class KFileInputStreamTest {
         val file = "src/test/resources/test.txt"
 
         // Knio
-        @OptIn(SynchronousNative::class)
+        @OptIn(NativeBlocking::class)
         KFileInputStream.open(file).use { input ->
             val size = input.size()
 

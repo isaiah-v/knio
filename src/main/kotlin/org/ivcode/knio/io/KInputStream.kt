@@ -1,20 +1,15 @@
 package org.ivcode.knio.io
 
-import org.ivcode.knio.annotations.SynchronousNative
 import org.ivcode.knio.context.KnioContext
 import org.ivcode.knio.lang.KAutoCloseable
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
 import kotlin.Throws
-import kotlin.math.min
 
 abstract class KInputStream(
     protected val context: KnioContext
 ): KAutoCloseable {
-    companion object {
-        private const val MAX_SKIP_BUFFER_SIZE: Long = 2048
-    }
 
     @Throws(IOException::class)
     abstract suspend fun read(b: ByteBuffer): Int
@@ -31,20 +26,22 @@ abstract class KInputStream(
     @Throws(IOException::class)
     open suspend fun skip(n: Long): Long {
         var remaining = n
-        var nr: Int
 
         if (n <= 0) {
             return 0
         }
 
-        val size = MAX_SKIP_BUFFER_SIZE.coerceAtMost(remaining).toInt()
-        val skipBuffer = ByteArray(size)
-        while (remaining > 0) {
-            nr = read(skipBuffer, 0, min(size.toDouble(), remaining.toDouble()).toInt())
-            if (nr < 0) {
-                break
+        val buffer = context.byteBufferPool.acquire(context.taskBufferSize)
+        try {
+            while (remaining > 0) {
+                val nr = read(buffer)
+                if (nr < 0) {
+                    break
+                }
+                remaining -= nr.toLong()
             }
-            remaining -= nr.toLong()
+        } finally {
+            context.byteBufferPool.release(buffer)
         }
 
         return n - remaining
@@ -241,14 +238,44 @@ abstract class KInputStream(
     }
 
 
-    @Throws(IOException::class)
+    /**
+     * Tests if this input stream supports the mark and reset methods. Whether or not mark and reset are supported is an
+     * invariant property of a particular input stream instance.
+     *
+     * @return True if this stream supports the mark and reset methods, false otherwise.
+     */
     open suspend fun markSupported(): Boolean = false
 
+    /**
+     * Repositions this stream to the position at the time the mark method was last called on this input stream.
+     * The general contract of reset is:
+     *
+     *  - If the method markSupported returns true, then:
+     *    - If the method mark has not been called since the stream was created, or the number of bytes read from the
+     *  stream since mark was last called is larger than the argument to mark at that last call, then an IOException
+     *  might be thrown.
+     *    - If such an IOException is not thrown, then the stream is reset to a state such that all the bytes read since
+     *  the most recent call to mark (or since the start of the file, if mark has not been called) will be resupplied to
+     *  subsequent callers of the read method, followed by any bytes that otherwise would have been the next input data
+     *  as of the time of the call to reset.
+     *
+     *  - If the method markSupported returns false, then:
+     *    - The call to reset may throw an IOException.
+     *    - If an IOException is not thrown, then the stream is reset to a fixed state that depends on the particular type of the input stream and how it was created. The bytes that will be supplied to subsequent callers of the read method depend on the particular type of the input stream.
+     */
     @Throws(IOException::class)
     open suspend fun reset(): Unit = throw IOException("Mark not supported")
 
-    @Throws(IOException::class)
+    /**
+     * Marks the current position in the input stream.
+     *
+     * The `readLimit` parameter is ignored.
+     *
+     * @param readLimit The maximum limit of bytes that can be read before the mark position becomes invalid.
+     * @throws IOException if some other I/O error occurs.
+     */
     open suspend fun mark(readLimit: Int) {}
 
+    @Throws(IOException::class)
     override suspend fun close() {}
 }

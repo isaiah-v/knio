@@ -2,16 +2,17 @@ package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.ivcode.knio.annotations.SynchronousNative
+import org.ivcode.knio.annotations.NativeBlocking
 import org.ivcode.knio.context.KnioContext
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import org.ivcode.knio.nio.readSuspend
 import org.ivcode.knio.context.getKnioContext
+import org.ivcode.knio.utils.nativeBlocking
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import kotlin.jvm.Throws
+import kotlin.Throws
 
 /**
  * A FileInputStream obtains input bytes from a file in a file system.
@@ -59,14 +60,8 @@ class KFileInputStream private constructor(
     /** The mark limit for the read-ahead limit. */
     private var markLimit: Int = 0
 
-    /**
-     * Returns the number of remaining bytes that can be read (or skipped over) from this input stream without
-     * suspending to performing an I/O operation.
-     *
-     * Returns 0 when the file position is beyond EOF.
-     *
-     * @return The number of bytes available.
-     */
+
+    @Throws(IOException::class)
     override suspend fun available(): Int {
         // all reads perform I/O operations, so we can't know how many bytes are available without reading
         return 0
@@ -77,22 +72,25 @@ class KFileInputStream private constructor(
      *
      * @return The total number of bytes in the file.
      */
-    @SynchronousNative
+    @NativeBlocking
+    @Throws(IOException::class)
     suspend fun size(): Long {
+        return nativeBlocking(context, ::size0)
+    }
+
+    @NativeBlocking
+    suspend fun size0(): Long {
         @Suppress("BlockingMethodInNonBlockingContext")
         return channel.size()
     }
 
-    @SynchronousNative
+    @NativeBlocking
     private suspend fun remaining(): Long {
         return size() - position
     }
 
-    /**
-     * Marks the current position in the input stream.
-     *
-     * @param readLimit The maximum limit of bytes that can be read before the mark position becomes invalid.
-     */
+
+    @Throws(IOException::class)
     override suspend fun mark(readLimit: Int) {
         markPosition = position
         markLimit = readLimit
@@ -103,6 +101,7 @@ class KFileInputStream private constructor(
      *
      * @return True if mark and reset are supported, false otherwise.
      */
+    @Throws(IOException::class)
     override suspend fun markSupported(): Boolean {
         return true
     }
@@ -114,6 +113,7 @@ class KFileInputStream private constructor(
      *
      * @return The number of bytes read, or -1 if the end of the file is reached.
      */
+    @Throws(IOException::class)
     override suspend fun read(b: ByteBuffer): Int = mutex.withLock {
         return read0(b)
     }
@@ -132,6 +132,7 @@ class KFileInputStream private constructor(
      *
      * @throws IOException If the mark position is invalid.
      */
+    @Throws(IOException::class)
     override suspend fun reset() = mutex.withLock {
         reset0()
     }
@@ -157,9 +158,14 @@ class KFileInputStream private constructor(
      * @return The actual number of bytes skipped.
      * @throws IOException If an I/O error occurs.
      */
-    @SynchronousNative
+    @NativeBlocking
     @Throws(IOException::class)
     override suspend fun skip(n: Long): Long = mutex.withLock {
+        return skip0(n)
+    }
+
+    @NativeBlocking
+    private suspend fun skip0(n: Long): Long {
         // This differs from the Java implementation in that will only skip up to the end of the file or the beginning.
         // It returns the number of skipped bytes, as the documentation states, rather than going past or throwing an
         // exception.
@@ -178,12 +184,13 @@ class KFileInputStream private constructor(
     /**
      * Closes this file input stream and releases any system resources associated with the stream.
      */
-    @SynchronousNative
+    @NativeBlocking
+    @Throws(IOException::class)
     override suspend fun close() = mutex.withLock {
-        close0()
+        nativeBlocking(context, ::close0)
     }
 
-    @SynchronousNative
+    @NativeBlocking
     private suspend fun close0() {
         @Suppress("BlockingMethodInNonBlockingContext")
         channel.close()

@@ -95,7 +95,7 @@ class KInputStreamReader private constructor (
      *
      * @return the name of the character encoding being used by this stream
      */
-    fun getEncoding(): String {
+    suspend fun getEncoding(): String {
         return decoder.charset().name()
     }
 

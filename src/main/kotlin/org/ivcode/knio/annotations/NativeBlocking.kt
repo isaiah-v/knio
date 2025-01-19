@@ -1,5 +1,8 @@
 package org.ivcode.knio.annotations
 
+import java.nio.channels.AsynchronousFileChannel
+import org.ivcode.knio.context.KnioContext
+
 /**
  * Indicates that the function relies on a synchronous operation backed by a native system call.
  * While this operation typically does not block the thread, it may experience delays if the system
@@ -15,9 +18,13 @@ package org.ivcode.knio.annotations
  *
  * This annotation acts as a hint to static analysis tools and developers to be cautious of potential delays in
  * system interactions.
+ *
+ * @see [KnioContext.nativeBlockingContext]
  */
 @RequiresOptIn(
-    level = RequiresOptIn.Level.WARNING,
-    message = "Operation depends on a synchronous operation backed by a native system call."
+    message = "Operation may experience delays due to synchronous native system calls.",
+    level = RequiresOptIn.Level.WARNING
 )
-annotation class SynchronousNative
+@Retention(AnnotationRetention.BINARY)
+@Target(AnnotationTarget.FUNCTION)
+annotation class NativeBlocking

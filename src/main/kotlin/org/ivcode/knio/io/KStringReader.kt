@@ -7,7 +7,6 @@ import java.nio.CharBuffer
 import kotlin.math.max
 import kotlin.math.min
 
-
 class KStringReader(
     str: String
 ): KReader() {
@@ -23,21 +22,24 @@ class KStringReader(
     }
 
     @Throws(IOException::class)
-    override suspend fun read(b: CharBuffer): Int {
-        lock.withLock {
-            ensureOpen()
-            val str = this.str!!
+    override suspend fun read(b: CharBuffer): Int = lock.withLock {
+        ensureOpen()
+        read0(b)
+    }
 
-            val read = minOf(b.remaining(), str.remaining())
-            if(read == 0) return -1
 
-            b.put(b.position(), str, str.position(), read)
+    private suspend fun read0(b: CharBuffer): Int {
+        val str = this.str!!
 
-            str.position(str.position() + read)
-            b.position(b.position() + read)
+        val read = minOf(b.remaining(), str.remaining())
+        if(read == 0) return -1
 
-            return read
-        }
+        b.put(b.position(), str, str.position(), read)
+
+        str.position(str.position() + read)
+        b.position(b.position() + read)
+
+        return read
     }
 
     /**
@@ -59,20 +61,24 @@ class KStringReader(
      * @exception  IOException  If an I/O error occurs
      */
     @Throws(IOException::class)
-    override suspend fun skip(ns: Long): Long {
-        lock.withLock {
-            ensureOpen()
-            val str = this.str!!
-            val next = str.position()
-            val length = str.limit()
+    override suspend fun skip(ns: Long): Long = lock.withLock {
+        ensureOpen()
+        return skip0(ns)
+    }
 
-            if (next >= length) return 0
-            // Bound skip by beginning and end of the source
-            var n = min((length - next).toDouble(), ns.toDouble()).toLong()
-            n = max(-next.toDouble(), n.toDouble()).toLong()
-            str.position((next + n).toInt())
-            return n
-        }
+
+    private suspend fun skip0(ns: Long): Long {
+        val str = this.str!!
+        val next = str.position()
+        val length = str.limit()
+
+        if (next >= length) return 0
+        // Bound skip by beginning and end of the source
+        var n = min((length - next).toDouble(), ns.toDouble()).toLong()
+        n = max(-next.toDouble(), n.toDouble()).toLong()
+        str.position((next + n).toInt())
+
+        return n
     }
 
     /**
@@ -83,11 +89,9 @@ class KStringReader(
      * @exception  IOException  If the stream is closed
      */
     @Throws(IOException::class)
-    override suspend fun ready(): Boolean {
-        synchronized(lock) {
-            ensureOpen()
-            return true
-        }
+    override suspend fun ready(): Boolean = lock.withLock {
+        ensureOpen()
+        return true
     }
 
     /**
@@ -127,11 +131,9 @@ class KStringReader(
      * @exception  IOException  If an I/O error occurs
      */
     @Throws(IOException::class)
-    override suspend fun reset() {
-        lock.withLock {
-            ensureOpen()
-            str!!.position(mark)
-        }
+    override suspend fun reset():Unit = lock.withLock {
+        ensureOpen()
+        str!!.position(mark)
     }
 
     /**
@@ -141,9 +143,7 @@ class KStringReader(
      * Closing a previously closed stream has no effect. This method will block
      * while there is another thread blocking on the reader.
      */
-    override suspend fun close() {
-        lock.withLock {
-            str = null
-        }
+    override suspend fun close() =lock.withLock {
+        str = null
     }
 }
