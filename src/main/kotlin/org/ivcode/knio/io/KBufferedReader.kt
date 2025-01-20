@@ -34,7 +34,7 @@ class KBufferedReader(
          */
         suspend fun open(reader: KReader, bufferSize: Int? = null): KBufferedReader {
             val context = getKnioContext()
-            val buffSize = bufferSize ?: context.streamBufferSize
+            val buffSize = bufferSize ?: context.maxStreamBufferSize
 
             return KBufferedReader(reader, buffSize, context)
         }

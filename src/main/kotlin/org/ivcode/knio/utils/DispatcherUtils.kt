@@ -14,11 +14,7 @@ import kotlin.coroutines.CoroutineContext
  * @throws Exception if an exception occurs during execution or closing
  */
 suspend inline fun <T> nativeBlocking(knioContext: KnioContext, crossinline block: suspend ()->T):T {
-    return knioContext.nativeBlockingContext.tryWith(block)
-}
-
-suspend inline fun <T> javaIo(knioContext: KnioContext, crossinline block: suspend ()->T):T {
-    return knioContext.javaIoContext.tryWith(block)
+    return knioContext.blockingContext.tryWith(block)
 }
 
 /**

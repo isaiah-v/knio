@@ -5,7 +5,7 @@ import org.ivcode.knio.context.getCharBufferSize
 
 suspend fun KReader.readText(): String {
     val context = getKnioContext()
-    val buffer = context.byteBufferPool.acquire(getCharBufferSize(context.taskBufferSize))
+    val buffer = context.byteBufferPool.acquire(getCharBufferSize(context.maxTaskBufferSize))
 
     try {
         val buff = buffer.asCharBuffer()

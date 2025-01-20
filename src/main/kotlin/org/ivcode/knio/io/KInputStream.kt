@@ -31,7 +31,9 @@ abstract class KInputStream(
             return 0
         }
 
-        val buffer = context.byteBufferPool.acquire(context.taskBufferSize)
+        val bufferSize = minOf(context.maxTaskBufferSize.toLong(), n).toInt()
+        val buffer = context.byteBufferPool.acquire(bufferSize)
+
         try {
             while (remaining > 0) {
                 val nr = read(buffer)
@@ -220,7 +222,7 @@ abstract class KInputStream(
      */
     @Throws(IOException::class)
     open suspend fun readAllBytes(): ByteArray {
-        val buffer = context.byteBufferPool.acquire(context.taskBufferSize)
+        val buffer = context.byteBufferPool.acquire(context.maxTaskBufferSize)
         try {
             val out = ByteArrayOutputStream()
             var bytesRead = read(buffer)
