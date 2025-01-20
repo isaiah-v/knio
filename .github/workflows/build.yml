@@ -35,10 +35,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # Build with Gradle
-      - name: Build with Gradle
+      # Build with Gradle Wrapper
+      - name: Build with Gradle Wrapper
         run: ./gradlew --no-daemon clean build
-
-      # Run tests (optional)
-      - name: Run tests
-        run: ./gradlew test
