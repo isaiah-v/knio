@@ -13,7 +13,6 @@ jobs:
   # Build the project
   build:
     runs-on: ubuntu-latest
-    environment: build
 
     steps:
       # Checkout the main branch into "main" directory
@@ -68,10 +67,6 @@ jobs:
         with:
           name: build-artifacts
 
-      - name: Debug Working Directory
-        run: |
-          echo "Current Working Directory: $(pwd)"
-          ls -al
 
       # Replace the Jacoco report
       - name: Replace Jacoco Report
@@ -87,19 +82,13 @@ jobs:
           mkdir -p pages/build/main/badges
           cp -r generated/badges/* pages/build/main/badges/
 
-      # Set Git User
-      - name: Set Git User
-        working-directory: pages
-        run: |
-          echo "Git User Name: ${{ vars.ACTION_GIT_COMMIT_USER }}"  # Debugging line to confirm the value
-          git config user.name ${{ vars.ACTION_GIT_COMMIT_USER }}
-          git config user.email ${{ vars.ACTION_GIT_COMMIT_USER }}@users.noreply.github.com
-
-
       # Commit changes to the GitHub Pages branch
       - name: Commit Pages
         working-directory: pages
         run: |
+          echo ${{ github.sha }}
+          git config user.name ${{ vars.ACTION_GIT_COMMIT_USER }}
+          git config user.email ${{ vars.ACTION_GIT_COMMIT_USER }}@users.noreply.github.com
           git add build/main/jacoco build/main/badges
           git commit -m "Update Jacoco report and badges"
           git push origin pages
