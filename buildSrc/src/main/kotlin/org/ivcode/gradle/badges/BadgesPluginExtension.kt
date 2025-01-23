@@ -36,7 +36,7 @@ open class BadgesPluginExtension {
 class JacocoDsl {
     var report: String? = null
     var coverageThreshold: Double = 0.8
-    var label: String = "test coverage"
+    var label: String = "Test-Coverage"
     var passingColor: String = GREEN
     var failingColor: String = RED
     var link: URI? = null

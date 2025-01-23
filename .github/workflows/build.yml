@@ -86,9 +86,8 @@ jobs:
       - name: Commit Pages
         working-directory: pages
         run: |
-          echo ${{ github.sha }}
           git config user.name ${{ vars.ACTION_GIT_COMMIT_USER }}
           git config user.email ${{ vars.ACTION_GIT_COMMIT_USER }}@users.noreply.github.com
           git add build/main/jacoco build/main/badges
-          git commit -m "Update Jacoco report and badges"
+          git commit -m "main@${{ github.sha }}"
           git push origin pages

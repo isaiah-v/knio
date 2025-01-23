@@ -1,5 +1,5 @@
 [![Knio Build](https://github.com/isaiah-v/knio/actions/workflows/build.yml/badge.svg)](https://github.com/isaiah-v/knio/actions/workflows/build.yml)
-[![Test Coverage](https://isaiah-v.github.io/knio/build/main/badges/test%20coverage.svg)](https://isaiah-v.github.io/knio/build/main/jacoco/)
+[![Test Coverage](https://isaiah-v.github.io/knio/build/main/badges/Test-Coverage.svg)](https://isaiah-v.github.io/knio/build/main/jacoco/)
 
 ----
 
