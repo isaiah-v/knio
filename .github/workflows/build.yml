@@ -31,23 +31,22 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+            ./.gradle
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle/*') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
+            ${{ runner.os }}-gradle
 
       # Build and Test
       - name: Build and Test
-        run: ./gradlew clean build --no-daemon
+        run: ./gradlew clean build
 
       # Generate Coverage Report
       - name: Generate Coverage Report
-        run: ./gradlew jacocoTestReport --no-daemon
+        run: ./gradlew jacocoTestReport
 
       # Generate Badges
       - name: Generate Badges
-        run: ./gradlew generateBadges --no-daemon
+        run: ./gradlew generateBadges
 
       # Upload Artifacts
       - name: Archive Artifacts
@@ -55,8 +54,8 @@ jobs:
         with:
           name: build-artifacts
           path: |
-            ~/build/reports/jacoco/test/html
-            ~/build/generated/badges
+            ./build/reports/jacoco/test/html
+            ./build/generated/badges
 
   # Push artifacts to GitHub Pages
   update-page:
