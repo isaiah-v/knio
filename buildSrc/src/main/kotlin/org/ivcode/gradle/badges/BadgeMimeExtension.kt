@@ -1,22 +1,18 @@
 package org.ivcode.gradle.badges
 
+const val EXTENSION_SVG = ".svg"
+
 /**
  * The set of acceptable mime types
  */
-enum class BadgeMimeTypes(
+enum class BadgeMimeExtension(
     val mimeType: String,
     val extension: String,
 ) {
-    IMAGE_BIT("image/bmp", ".bmp"),
-    IMAGE_GIF("image/gif", ".gif"),
-    IMAGE_JPEG("image/jpeg", ".jpg"),
-    IMAGE_PNG("image/png", ".png"),
-    IMAGE_WEBP("image/webp", ".webp"),
-    IMAGE_TIFF("image/tiff", ".tiff"),
-    IMAGE_SVG("image/svg+xml", ".svg");
+    IMAGE_SVG("image/svg+xml", EXTENSION_SVG);
 
     companion object {
-        fun getByMimeType(mimeType: String): BadgeMimeTypes? {
+        fun getByMimeType(mimeType: String): BadgeMimeExtension? {
             val type = mimeType.lowercase()
 
             for (mime in values()) {

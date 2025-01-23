@@ -1,4 +1,4 @@
-name: Build Knio
+name: Knio Build
 
 on:
   push:
@@ -9,19 +9,23 @@ on:
       - main
 
 jobs:
+
+  # Build the project
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the code
-      - name: Checkout repository
+      # Checkout the main branch into "main" directory
+      - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          path: main
 
       # Set up JDK
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin' # Options: 'zulu', 'adopt', 'temurin'
+          distribution: 'temurin'
           java-version: '21'
 
       # Cache Gradle dependencies
@@ -29,16 +33,65 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+            main/.gradle/caches
+            main/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('main/**/*.gradle*', 'main/**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # Debug: Print current working directory
-      - name: Debug Working Directory
-        run: pwd
+      # Build and Test
+      - name: Build and Test
+        working-directory: main
+        run: ./gradlew clean build --no-daemon
 
-      # Build with Gradle
-      - name: Build with Gradle
-        run: ./gradlew --no-daemon clean build
+      # Generate Coverage Report
+      - name: Generate Coverage Report
+        working-directory: main
+        run: ./gradlew jacocoTestReport --no-daemon
+
+      # Generate Badges
+      - name: Generate Badges
+        working-directory: main
+        run: ./gradlew generateBadges --no-daemon
+
+  # Push artifacts to GitHub Pages
+  update-page:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      # Checkout the GitHub Pages branch into "gh-pages" directory
+      - name: Checkout Pages Branch
+        uses: actions/checkout@v3
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      # Replace the Jacoco report
+      - name: Replace Jacoco Report
+        run: |
+          rm -rf gh-pages/build/main/jacoco
+          mkdir -p gh-pages/build/main/jacoco
+          cp -r main/build/reports/jacoco/test/html/* gh-pages/build/main/jacoco/
+
+      # Replace the badges
+      - name: Update Badges
+        run: |
+          rm -rf gh-pages/build/main/badges
+          mkdir -p gh-pages/build/main/badges
+          cp -r main/build/generated/badges/* gh-pages/build/main/badges/
+
+      # Set Git User
+      - name: Set Git User
+        working-directory: gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Commit changes to the GitHub Pages branch
+      - name: Commit Pages
+        working-directory: gh-pages
+        run: |
+          git add build/main/jacoco build/main/badges
+          git commit -m "Update Jacoco report and badges"
+          git push origin gh-pages

@@ -1,33 +1,42 @@
 package org.ivcode.gradle.badges
 
+import org.gradle.api.Action
+import org.gradle.api.Project
+import org.gradle.api.file.Directory
 import java.net.URI
 
-open class BadgesExt {
-    private val badges = mutableListOf<BadgeFactory>()
+open class BadgesPluginExtension {
+    internal val badges = mutableListOf<BadgeFactory>()
+
+    var path: Directory? = null
 
     fun add(factory: BadgeFactory) {
         badges.add(factory)
     }
 
-    fun addJacoco(jacocoDsl: JacocoDsl.() -> Unit) {
-        val jacoco = JacocoDsl()
-        jacoco.jacocoDsl()
+    fun jacoco(action: Action<JacocoDsl>) {
+        val jacocoDsl = JacocoDsl()
+        action.execute(jacocoDsl)
 
-        badges.add(jacoco.createFactory())
+        badges.add(jacocoDsl.createFactory())
     }
 
-    fun addBadge(badgesDsl: BadgesDsl.() -> Unit) {
-        val badge = BadgesDsl()
-        badge.badgesDsl()
+    fun badge(action: Action<BadgesDsl>) {
+        val badgesDsl = BadgesDsl()
+        action.execute(badgesDsl)
 
-        badges.add(badge.createFactory())
+        badges.add(badgesDsl.createFactory())
+    }
+
+    internal fun getBadges(project: Project): List<Badge> {
+        return badges.stream().map { it(project) }.toList()
     }
 }
 
 class JacocoDsl {
     var report: String? = null
     var coverageThreshold: Double = 0.8
-    var label: String = "coverage"
+    var label: String = "test coverage"
     var passingColor: String = GREEN
     var failingColor: String = RED
     var link: URI? = null

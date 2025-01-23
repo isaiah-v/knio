@@ -1,4 +1,12 @@
 package org.ivcode.gradle.badges
 
-class StaticBadgeFactory {
+import org.gradle.api.Project
+
+class StaticBadgeFactory(
+    private val badge: Badge,
+): BadgeFactory {
+
+    override fun invoke(projects: Project): Badge {
+        return badge
+    }
 }

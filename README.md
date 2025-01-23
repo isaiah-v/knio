@@ -1,7 +1,12 @@
+![build](https://github.com/isaiah-v/knio/actions/workflows/build.yml/badge.svg)
+
+----
+
 # knio
 A Kotlin Coroutine NIO Library. Rebuilding Java's I/O APIs with asynchronous Kotlin Coroutines powered by NIO.
 
-I/O and asynchronous programming have come a long way. The original Java I/O APIs relied on blocking operations, using
+I/O and asynchronous program
+ing have come a long way. The original Java I/O APIs relied on blocking operations, using
 threads to handle I/O tasks. This approach, while functional and easy to read, was inefficient due to thread overhead
 and frequent context switching. The introduction of NIO and NIO2 brought significant improvements by enabling
 non-blocking I/O, but the APIs were less intuitive and harder to work with. Kotlin Coroutines offer a modern solution by

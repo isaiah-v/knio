@@ -1,4 +1,5 @@
 package org.ivcode.gradle.badges
 
-class BadgeFactory {
-}
+import org.gradle.api.Project
+
+typealias BadgeFactory = (projects : Project) -> Badge
