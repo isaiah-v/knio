@@ -90,15 +90,15 @@ jobs:
       - name: Set Git User
         working-directory: pages
         run: |
-          git config user.name $ACTION_GIT_COMMIT_USER
-          git config user.email $ACTION_GIT_COMMIT_EMAIL
+          git config user.name ${{ env.ACTION_GIT_COMMIT_USER }}
+          git config user.email ${{ env.ACTION_GIT_COMMIT_EMAIL }}
 
 
       # Commit changes to the GitHub Pages branch
       - name: Commit Pages
         working-directory: pages
         env:
-          GITHUB_TOKEN: $ACTION_GIT_COMMIT_TOKEN
+          GITHUB_TOKEN: ${{ secret.ACTION_GIT_COMMIT_TOKEN }}
         run: |
           git add build/main/jacoco build/main/badges
           git commit -m "Update Jacoco report and badges"
