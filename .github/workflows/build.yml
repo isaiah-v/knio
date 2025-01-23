@@ -13,6 +13,7 @@ jobs:
   # Build the project
   build:
     runs-on: ubuntu-latest
+    environment: build
 
     steps:
       # Checkout the main branch into "main" directory
@@ -50,6 +51,7 @@ jobs:
   # Push artifacts to GitHub Pages
   update-page:
     runs-on: ubuntu-latest
+    environment: build
     needs: build
 
     steps:
@@ -88,15 +90,15 @@ jobs:
       - name: Set Git User
         working-directory: pages
         run: |
-          git config user.name ${{ env.ACTIONS_GIT_COMMIT_USER }}
-          git config user.email ${{ env.ACTIONS_GIT_COMMIT_EMAIL }}
+          git config user.name $ACTIONS_GIT_COMMIT_USER
+          git config user.email $ACTIONS_GIT_COMMIT_EMAIL
 
 
       # Commit changes to the GitHub Pages branch
       - name: Commit Pages
         working-directory: pages
         env:
-          GITHUB_TOKEN:  ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: $ACTION_GIT_COMMIT_TOKEN
         run: |
           git add build/main/jacoco build/main/badges
           git commit -m "Update Jacoco report and badges"
