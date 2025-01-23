@@ -85,14 +85,14 @@ jobs:
         run: |
           rm -rf pages/build/main/jacoco
           mkdir -p pages/build/main/jacoco
-          cp -r build/reports/jacoco/test/html/* pages/build/main/jacoco/
+          cp -r reports/jacoco/test/html/* pages/build/main/jacoco/
 
       # Replace the badges
       - name: Update Badges
         run: |
           rm -rf pages/build/main/badges
           mkdir -p pages/build/main/badges
-          cp -r build/generated/badges/* pages/build/main/badges/
+          cp -r generated/badges/* pages/build/main/badges/
 
       # Set Git User
       - name: Set Git User
