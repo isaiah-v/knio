@@ -64,33 +64,33 @@ jobs:
       - name: Checkout Pages Branch
         uses: actions/checkout@v3
         with:
-          ref: gh-pages
-          path: gh-pages
+          ref: pages
+          path: pages
 
       # Replace the Jacoco report
       - name: Replace Jacoco Report
         run: |
-          rm -rf gh-pages/build/main/jacoco
-          mkdir -p gh-pages/build/main/jacoco
-          cp -r main/build/reports/jacoco/test/html/* gh-pages/build/main/jacoco/
+          rm -rf pages/build/main/jacoco
+          mkdir -p pages/build/main/jacoco
+          cp -r main/build/reports/jacoco/test/html/* pages/build/main/jacoco/
 
       # Replace the badges
       - name: Update Badges
         run: |
-          rm -rf gh-pages/build/main/badges
-          mkdir -p gh-pages/build/main/badges
-          cp -r main/build/generated/badges/* gh-pages/build/main/badges/
+          rm -rf pages/build/main/badges
+          mkdir -p pages/build/main/badges
+          cp -r main/build/generated/badges/* pages/build/main/badges/
 
       # Set Git User
       - name: Set Git User
-        working-directory: gh-pages
+        working-directory: pages
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       # Commit changes to the GitHub Pages branch
       - name: Commit Pages
-        working-directory: gh-pages
+        working-directory: pages
         run: |
           git add build/main/jacoco build/main/badges
           git commit -m "Update Jacoco report and badges"
