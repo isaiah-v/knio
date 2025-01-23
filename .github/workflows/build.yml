@@ -18,8 +18,6 @@ jobs:
       # Checkout the main branch into "main" directory
       - name: Checkout Repository
         uses: actions/checkout@v3
-        with:
-          path: main
 
       # Set up JDK
       - name: Set up JDK
@@ -28,36 +26,37 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Debug Working Directory
-        run: |
-          echo "Current Working Directory: $(pwd)"
-          ls -al
-
       # Cache Gradle dependencies
       - name: Cache Gradle dependencies
         uses: actions/cache@v3
         with:
           path: |
-            ~/main/.gradle/caches
-            ~/main/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('~/main/**/*.gradle*', '~/main/**/gradle-wrapper.properties') }}
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
       # Build and Test
       - name: Build and Test
-        working-directory: main
         run: ./gradlew clean build --no-daemon
 
       # Generate Coverage Report
       - name: Generate Coverage Report
-        working-directory: main
         run: ./gradlew jacocoTestReport --no-daemon
 
       # Generate Badges
       - name: Generate Badges
-        working-directory: main
         run: ./gradlew generateBadges --no-daemon
+
+      # Upload Artifacts
+      - name: Archive Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: |
+            ~/build/reports/jacoco/test/html
+            ~/build/generated/badges
 
   # Push artifacts to GitHub Pages
   update-page:
@@ -72,6 +71,11 @@ jobs:
           ref: pages
           path: pages
 
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
       - name: Debug Working Directory
         run: |
           echo "Current Working Directory: $(pwd)"
@@ -82,14 +86,14 @@ jobs:
         run: |
           rm -rf pages/build/main/jacoco
           mkdir -p pages/build/main/jacoco
-          cp -r main/build/reports/jacoco/test/html/* pages/build/main/jacoco/
+          cp -r build/reports/jacoco/test/html/* pages/build/main/jacoco/
 
       # Replace the badges
       - name: Update Badges
         run: |
           rm -rf pages/build/main/badges
           mkdir -p pages/build/main/badges
-          cp -r main/build/generated/badges/* pages/build/main/badges/
+          cp -r build/generated/badges/* pages/build/main/badges/
 
       # Set Git User
       - name: Set Git User
