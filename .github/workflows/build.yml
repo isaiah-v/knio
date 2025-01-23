@@ -98,7 +98,7 @@ jobs:
       - name: Commit Pages
         working-directory: pages
         env:
-          GITHUB_TOKEN: ${{ secret.ACTION_GIT_COMMIT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ACTION_GIT_COMMIT_TOKEN }}
         run: |
           git add build/main/jacoco build/main/badges
           git commit -m "Update Jacoco report and badges"
