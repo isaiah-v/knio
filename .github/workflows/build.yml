@@ -28,14 +28,19 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Debug Working Directory
+        run: |
+          echo "Current Working Directory: $(pwd)"
+          ls -al
+
       # Cache Gradle dependencies
       - name: Cache Gradle dependencies
         uses: actions/cache@v3
         with:
           path: |
-            main/.gradle/caches
-            main/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('main/**/*.gradle*', 'main/**/gradle-wrapper.properties') }}
+            ~/main/.gradle/caches
+            ~/main/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('~/main/**/*.gradle*', '~/main/**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
@@ -66,6 +71,11 @@ jobs:
         with:
           ref: pages
           path: pages
+
+      - name: Debug Working Directory
+        run: |
+          echo "Current Working Directory: $(pwd)"
+          ls -al
 
       # Replace the Jacoco report
       - name: Replace Jacoco Report
