@@ -61,6 +61,7 @@ jobs:
         with:
           ref: pages
           path: pages
+          token: '${{ secrets.ACTION_GIT_COMMIT_TOKEN }}'
 
       - name: Download Artifacts
         uses: actions/download-artifact@v3
@@ -98,8 +99,6 @@ jobs:
       # Commit changes to the GitHub Pages branch
       - name: Commit Pages
         working-directory: pages
-        env:
-          GITHUB_TOKEN: ${{ secrets.ACTION_GIT_COMMIT_TOKEN }}
         run: |
           git add build/main/jacoco build/main/badges
           git commit -m "Update Jacoco report and badges"
