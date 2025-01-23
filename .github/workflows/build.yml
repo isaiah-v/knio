@@ -26,16 +26,6 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      # Cache Gradle dependencies
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ./.gradle
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle/*') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle
-
       # Build and Test
       - name: Build and Test
         run: ./gradlew clean build
@@ -107,4 +97,4 @@ jobs:
         run: |
           git add build/main/jacoco build/main/badges
           git commit -m "Update Jacoco report and badges"
-          git push origin gh-pages
+          git push origin pages
