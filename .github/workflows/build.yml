@@ -90,9 +90,9 @@ jobs:
       - name: Set Git User
         working-directory: pages
         run: |
-          echo "Git User Name: ${{ var.ACTION_GIT_COMMIT_USER }}"  # Debugging line to confirm the value
-          git config user.name ${{ var.ACTION_GIT_COMMIT_USER }}
-          git config user.email ${{ var.ACTION_GIT_COMMIT_USER }}@users.noreply.github.com
+          echo "Git User Name: ${{ vars.ACTION_GIT_COMMIT_USER }}"  # Debugging line to confirm the value
+          git config user.name ${{ vars.ACTION_GIT_COMMIT_USER }}
+          git config user.email ${{ vars.ACTION_GIT_COMMIT_USER }}@users.noreply.github.com
 
 
       # Commit changes to the GitHub Pages branch
