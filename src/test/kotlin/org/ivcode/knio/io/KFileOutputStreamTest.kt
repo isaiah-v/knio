@@ -4,13 +4,11 @@ import kotlinx.coroutines.runBlocking
 import org.ivcode.knio.lang.use
 import org.ivcode.knio.nio.knioOutputStream
 import org.ivcode.knio.nio.md5
-import org.ivcode.knio.test.mkTemp
+import org.ivcode.knio.test.utils.mkTemp
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.io.File
-import java.nio.file.Files
-import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 
 class KFileOutputStreamTest {

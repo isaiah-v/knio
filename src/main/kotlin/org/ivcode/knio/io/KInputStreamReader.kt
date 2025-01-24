@@ -23,8 +23,8 @@ class KInputStreamReader private constructor (
     private val inputStream: KInputStream,
     charset: Charset = Charsets.UTF_8,
     private val bufferSize: Int = 8192,
-    private val context: KnioContext
-): KReader() {
+    context: KnioContext
+): KReader(context) {
 
     companion object {
         suspend fun open(inputStream: KInputStream, charset: Charset = Charsets.UTF_8): KInputStreamReader {
@@ -36,6 +36,12 @@ class KInputStreamReader private constructor (
     private val decoder = charset.newDecoder()
     private var eof = false
     private var isClosed = false
+
+    /**
+     * The name of the character encoding being used by this stream.
+     */
+    val encoding: String
+        get() = decoder.charset().name()
 
     /**
      * Reads characters into the given [CharBuffer].
@@ -91,27 +97,17 @@ class KInputStreamReader private constructor (
     }
 
     /**
-     * Returns the name of the character encoding being used by this stream.
-     *
-     * @return the name of the character encoding being used by this stream
-     */
-    suspend fun getEncoding(): String {
-        return decoder.charset().name()
-    }
-
-    /**
      * Closes this reader and releases any system resources associated with it.
      *
      * @throws IOException if an I/O error occurs
      */
-    override suspend fun close() {
-        lock.withLock {
-            if (isClosed) {
-                return
-            }
-            isClosed = true
-            context.byteBufferPool.release(buffer)
-            inputStream.close()
+    override suspend fun close() = lock.withLock {
+        if (isClosed) {
+            return
         }
+        isClosed = true
+        context.byteBufferPool.release(buffer)
+        inputStream.close()
     }
+
 }

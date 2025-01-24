@@ -7,6 +7,13 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import kotlin.Throws
 
+/**
+ * This abstract class is the superclass of all classes representing an input stream of bytes.
+
+ * Applications that need to define a subclass of InputStream must always provide a method that performs a bulk read.
+ *
+ * This class is equivalent to the [java.io.InputStream].
+ */
 abstract class KInputStream(
     protected val context: KnioContext
 ): KAutoCloseable {

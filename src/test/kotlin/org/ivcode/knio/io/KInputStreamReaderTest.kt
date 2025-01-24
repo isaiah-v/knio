@@ -1,9 +1,11 @@
 package org.ivcode.knio.io
 
 import kotlinx.coroutines.runBlocking
+import org.ivcode.knio.lang.knioInputStream
 import org.ivcode.knio.lang.use
 import org.ivcode.knio.nio.knioInputStream
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.io.File
@@ -32,5 +34,30 @@ class KInputStreamReaderTest {
         val actual = runBlocking { actualExec() }
 
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `test encoding`() = runBlocking {
+        val string = "this is a test string"
+        val data = string.toByteArray(Charsets.UTF_32BE)
+        val dataUtf8 = string.toByteArray(Charsets.UTF_8)
+        val encoding = Charsets.UTF_32BE.name()
+
+        // UTF-8 is default, test data can't be the same as UTF-8
+        assertEquals(false, data.contentEquals(dataUtf8))
+
+        // java
+        val actualJava = data.inputStream().reader(Charsets.UTF_32BE).use {
+            assertEquals(encoding, it.encoding)
+            it.readText()
+        }
+        assertEquals(string, actualJava)
+
+        // knio
+        val actualKnio = data.knioInputStream().reader(Charsets.UTF_32BE).use {
+            assertEquals(encoding, it.encoding)
+            it.readText()
+        }
+        assertEquals(string, actualKnio)
     }
 }

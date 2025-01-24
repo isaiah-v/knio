@@ -2,6 +2,8 @@ package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.ivcode.knio.context.KnioContext
+import org.ivcode.knio.context.acquireReleasableCharBuffer
 import org.ivcode.knio.lang.KAutoCloseable
 import java.io.IOException
 import java.nio.CharBuffer
@@ -16,13 +18,9 @@ import kotlin.math.min
  * The coroutine equivalent to the [java.io.Reader] class.
  */
 abstract class KReader(
+    protected val context: KnioContext,
     protected val lock: Mutex = Mutex()
 ): KAutoCloseable {
-    private var skipBuffer: CharArray? = null
-
-    companion object {
-        private const val MAX_SKIP_BUFFER_SIZE: Long = 8192L
-    }
 
     /**
      * Marks the present position in the stream. Subsequent calls to reset() will attempt to reposition the stream to
@@ -106,20 +104,35 @@ abstract class KReader(
      *
      */
     open suspend fun skip(n: Long): Long {
+        // Note: If skip is called frequently, it's better to use a real buffer pool rather than creating a new buffer each time
+        // It's best to override this method in the subclass to provide a longer lived buffer
+
         require(n >= 0L) { "skip value is negative" }
-        val nn = min(n, MAX_SKIP_BUFFER_SIZE).toInt()
 
-        lock.withLock {
-            if (skipBuffer == null || skipBuffer!!.size < nn) skipBuffer = CharArray(nn)
+        val nn = min(n, context.maxTaskBufferSize.toLong()).toInt()
 
-            var r = n
-            while (r > 0) {
-                val nc = read(skipBuffer!!, 0, min(r, nn.toLong()).toInt())
-                if (nc == -1) break
-                r -= nc
+        val buffer = context.byteBufferPool.acquireReleasableCharBuffer(nn)
+        try {
+            lock.withLock {
+                return skip0(n, buffer.value)
             }
-            return n - r
+        } finally {
+            buffer.release()
         }
+    }
+
+    private suspend fun skip0(n: Long, c: CharBuffer): Long {
+        if(c.remaining()>n) {
+            c.limit(c.position() + n.toInt())
+        }
+
+        var r = n
+        while (r > 0) {
+            val nc = read(c)
+            if (nc == -1) break
+            r -= nc
+        }
+        return n - r
     }
 
     /**

@@ -1,8 +1,9 @@
 plugins {
-    id("badges")
     jacoco
     `java-library`
     kotlin("jvm") version "2.0.21"
+    id("badges")
+    id("org.jetbrains.dokka") version "2.0.0"
 }
 
 group = "org.ivcode"

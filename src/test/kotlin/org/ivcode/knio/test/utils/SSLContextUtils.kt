@@ -1,7 +1,6 @@
-package org.ivcode.knio.utils
+package org.ivcode.knio.test.utils
 
 import java.io.File
-import java.nio.file.Path
 import java.security.KeyStore
 import java.security.SecureRandom
 import javax.net.ssl.*

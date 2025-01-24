@@ -4,7 +4,7 @@ import org.ivcode.knio.annotations.JavaIO
 import java.io.OutputStream
 import java.nio.charset.Charset
 
-suspend fun KInputStream.reader(charset: Charset = Charsets.UTF_8): KReader =
+suspend fun KInputStream.reader(charset: Charset = Charsets.UTF_8): KInputStreamReader =
     KInputStreamReader.open(this, charset)
 
 suspend fun KInputStream.bufferedReader(): KBufferedReader =

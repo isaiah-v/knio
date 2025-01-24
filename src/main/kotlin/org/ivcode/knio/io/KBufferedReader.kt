@@ -20,7 +20,7 @@ class KBufferedReader(
     reader: KReader,
     bufferSize: Int,
     context: KnioContext
-): KReader() {
+): KReader(context) {
 
     companion object {
 

@@ -5,4 +5,4 @@ import org.ivcode.knio.io.KStringReader
 import java.nio.CharBuffer
 
 fun String.toCharBuffer(): CharBuffer = CharBuffer.wrap(this)
-fun String.knioReader(): KReader = KStringReader(this)
+suspend fun String.knioReader(): KReader = KStringReader.open(this)

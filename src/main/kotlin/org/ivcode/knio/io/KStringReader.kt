@@ -1,15 +1,24 @@
 package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.withLock
+import org.ivcode.knio.context.KnioContext
+import org.ivcode.knio.context.getKnioContext
 import org.ivcode.knio.lang.toCharBuffer
 import java.io.IOException
 import java.nio.CharBuffer
 import kotlin.math.max
 import kotlin.math.min
 
-class KStringReader(
-    str: String
-): KReader() {
+class KStringReader private constructor (
+    str: String,
+    context: KnioContext
+): KReader(context) {
+
+    companion object {
+        suspend fun open(str: String): KStringReader {
+            return KStringReader(str, getKnioContext())
+        }
+    }
 
     private var str: CharBuffer? = str.toCharBuffer()
     private var mark = 0
