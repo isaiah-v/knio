@@ -50,6 +50,7 @@ jobs:
           path: |
             ./build/reports/jacoco/test/html
             ./build/generated/badges
+            ./build/dokka/html
 
   # Push artifacts to GitHub Pages
   build-publish-page:
