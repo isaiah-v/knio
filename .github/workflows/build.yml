@@ -38,6 +38,10 @@ jobs:
       - name: Generate Badges
         run: ./gradlew generateBadges
 
+      # Generate Kdoc
+      - name: Generate Kdoc
+        run: ./gradlew dokkaGeneratePublicationHtml
+
       # Upload Artifacts
       - name: Archive Artifacts
         uses: actions/upload-artifact@v3
@@ -48,7 +52,7 @@ jobs:
             ./build/generated/badges
 
   # Push artifacts to GitHub Pages
-  update-page:
+  build-publish-page:
     runs-on: ubuntu-latest
     environment: build
     needs: build
@@ -81,6 +85,13 @@ jobs:
           rm -rf pages/build/main/badges
           mkdir -p pages/build/main/badges
           cp -r generated/badges/* pages/build/main/badges/
+
+      # Replace the Kdoc
+      - name: Update Kdoc
+        run: |
+          rm -rf pages/build/main/kdoc
+          mkdir -p pages/build/main/kdoc
+          cp -r dokka/html/* pages/build/main/kdoc/
 
       # Commit changes to the GitHub Pages branch
       - name: Commit Pages
