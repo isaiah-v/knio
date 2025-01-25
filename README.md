@@ -50,6 +50,7 @@ In this example:
 ## Snapshots
 
 Snapshot builds are available from the `main` branch. To use the latest snapshot, configure your build script to use the GitHub Maven repository and add the Knio dependency.
+
 `build.gradle.kts`
 ```kotlin
 repositories {
