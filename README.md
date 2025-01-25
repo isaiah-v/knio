@@ -3,62 +3,48 @@
 [![Kdoc](https://img.shields.io/badge/Kdoc-green)](https://isaiah-v.github.io/knio/build/main/kdoc/)
 ----
 
-# knio
-A Kotlin Coroutine NIO Library. Rebuilding Java's I/O APIs with asynchronous Kotlin Coroutines powered by NIO.
+# Knio
+**Knio** combines the power of Kotlin coroutines with Java NIO to deliver true non-blocking I/O. It allows you to write
+asynchronous code that looks and debugs like synchronous code, leveraging coroutines to suspend operations rather than
+blocking threads.
 
-I/O and asynchronous program
-ing have come a long way. The original Java I/O APIs relied on blocking operations, using
-threads to handle I/O tasks. This approach, while functional and easy to read, was inefficient due to thread overhead
-and frequent context switching. The introduction of NIO and NIO2 brought significant improvements by enabling
-non-blocking I/O, but the APIs were less intuitive and harder to work with. Kotlin Coroutines offer a modern solution by
-allowing us to write asynchronous code in a more simple synchronous style using suspending functions. This approach
-avoids blocking threads while maintaining code clarity.
+With Knio, you can take familiar Java I/O APIs and make them non-blocking, avoiding the inefficiencies of thread
+blocking and context switching while working seamlessly with Kotlin's coroutine model.
 
-It's time to bring the simplicity of the classic blocking Java I/O APIs back with the of benefits of non-blocking I/O
-using Kotlin Coroutines.
+---
+
+## Features
+- Seamless integration of Kotlin coroutines with Java NIO.
+- Non-blocking I/O that feels like traditional synchronous code.
+- Simplified handling of non-blocking I/O operations without callbacks or streams.
+- Familiar APIs, including file and network I/O, that is true non-blocking and coroutine-friendly.
+
+---
 
 
-### Buffered Reader Example
-In this example we read from a file in a way that syntactically looks like blocking I/O, but is actually non-blocking.
+## Example: Buffered Reader
+Here's how to read lines from a file using NIO and coroutines in a non-blocking fashion:
 ```kotlin
-// Read lines from a file using NIO and coroutines
-suspend fun main() {
+import org.ivcode.knio.io.bufferedReader
+import org.ivcode.knio.io.knioInputStream
+import org.ivcode.knio.lang.use
+import java.io.File
 
-    // Create a buffered reader for a file, in a similar fashion to Java's BufferedReader
-    File(file).knioInputStream().bufferedReader().use { reader ->
-        // Suspend on the I/O operation
-        // Though this looks like a blocking call, it's actually non-blocking. The thread is released to do other work
-        // while waiting for the nio operation to complete. Not an offload, but a true non-blocking operation.
+suspend fun main() {
+    val filePath = "example.txt"
+
+    // Create a buffered reader for a file
+    File(filePath).knioInputStream().bufferedReader().use { reader ->
         var line: String? = reader.readLine()
+
         while (line != null) {
-            print(line)                      // print the line
-            line = reader.readLine()         // Another suspend on I/O [non-blocking]
-        } // close resources [non-blocking]
+            println(line) // Print each line from the file
+            line = reader.readLine() // Suspends instead of blocking
+        }
     }
 }
 ```
+In this example:
 
-# Roadmap
-### v0.1.0
-The first release will focus on getting code complete for core I/O classes.
-
-I/O Classes:
-- [x] `FileInputStream`
-- [ ] `FileOutputStream`
-- [x] `SeverSocket`
-- [x] `SSLServerSocket`
-- [x] `Socket`
-- [x] `SSLSocket`
-- [ ] `DatagramSocket`
-
-Supporting Classes:
-- [x] `InputStream`
-- [x] `OutputStream`
-- [x] `Reader`
-- [ ] `Writer`
-- [ ] `BufferedInputStream`
-- [ ] `BufferedOutputStream`
-- [x] `BufferedReader`
-- [ ] `BufferedWriter`
-- [x] `InputStreamReader`
-- [ ] `OutputStreamWriter`
+ - Suspension: The readLine() function suspends the coroutine, freeing the thread to perform other tasks while waiting for I/O to complete.
+ - No Callbacks: This approach avoids callbacks, streams, or blocking threads, making your code more readable and maintainable.
