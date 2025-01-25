@@ -11,6 +11,11 @@ gradlePlugin {
             id = "badges"
             implementationClass = "org.ivcode.gradle.badges.BadgesPlugin"
         }
+
+        create("mvnGitHub") {
+            id = "mvnGitHub"
+            implementationClass = "org.ivcode.gradle.mvngithub.MvnGitHubPlugin"
+        }
     }
 }
 

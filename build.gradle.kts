@@ -3,6 +3,7 @@ plugins {
     `java-library`
     kotlin("jvm") version "2.0.21"
     id("badges")
+    id("mvnGitHub")
     id("org.jetbrains.dokka") version "2.0.0"
 }
 
@@ -20,10 +21,20 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-params")
 }
 
+java {
+    withSourcesJar()
+}
+
 badges {
     jacoco {
         report = "build/reports/jacoco/test/jacocoTestReport.xml"
     }
+}
+
+mvnGitHub {
+    owner = "isaiah-v"
+    username = "isaiah-v"
+    token = "ghp_1J2k3l4m5n6o7p8q9r0s"
 }
 
 tasks.named<JacocoReport>("jacocoTestReport") {
@@ -34,10 +45,10 @@ tasks.named<JacocoReport>("jacocoTestReport") {
     }
 }
 
-
 tasks.test {
     useJUnitPlatform()
 }
+
 kotlin {
     jvmToolchain(21)
 }
