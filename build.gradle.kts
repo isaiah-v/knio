@@ -33,8 +33,7 @@ badges {
 
 mvnGitHub {
     owner = "isaiah-v"
-    username = "isaiah-v"
-    token = "ghp_1J2k3l4m5n6o7p8q9r0s"
+    repository = "Knio"
 }
 
 tasks.named<JacocoReport>("jacocoTestReport") {
