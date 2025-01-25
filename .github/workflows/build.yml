@@ -13,7 +13,6 @@ jobs:
   # Build the project
   build:
     runs-on: ubuntu-latest
-    environment: build
 
     steps:
       # Checkout the main branch into "main" directory
@@ -46,7 +45,7 @@ jobs:
       # Publish Snapshot
       - name: Publish Snapshot
         run: |
-          ./gradlew publishGitHubPublicationToGitHubRepository -P"GITHUB_TOKEN=${{ secrets.ACTION_GIT_COMMIT_TOKEN }}" -P"GITHUB_ACTOR=${{ github.actor }}"
+          ./gradlew publishGitHubPublicationToGitHubRepository -P"GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" -P"GITHUB_ACTOR=${{ github.actor }}"
 
       # Upload Artifacts
       - name: Archive Artifacts
