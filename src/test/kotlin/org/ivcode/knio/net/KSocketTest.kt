@@ -1,172 +1,214 @@
 package org.ivcode.knio.net
 
-import kotlinx.coroutines.runBlocking
 import org.ivcode.knio.lang.use
-import org.junit.jupiter.api.Test
+import org.ivcode.knio.net.ssl.getKnioSSLSocketFactory
+import org.ivcode.knio.test.net.JavaReverseServer
+import org.ivcode.knio.test.net.runServer
+import org.ivcode.knio.test.utils.createTestSSLContext
+import org.ivcode.knio.test.utils.createTrustAllSSLContext
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.net.Socket
 import java.net.SocketException
 import javax.net.ServerSocketFactory
 import javax.net.SocketFactory
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class KSocketTest {
 
-    /**
-     * A basic reverse string server using the standard blocking ServerSocket, handling one client at a time.
-     */
-    private class SimpleReverseServer: AutoCloseable, Runnable {
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `test basic client`(isSSL: Boolean) = runServer(startReverseServer(isSSL)) {
+        val text = "Hello World"
+        val expected = text.reversed()
 
-        private val server = ServerSocketFactory.getDefault().createServerSocket(8080)
+        // java
+        createSocket(isSSL).use { client ->
+            val str = StringBuilder()
 
-        override fun run() {
-            try {
-                while (!server.isClosed) {
-                    server.accept().use { client ->
-                        // read the input
-                        val buffer = ByteArray(1024)
-                        val builder = StringBuilder()
+            client.soTimeout = 4000
 
-                        client.getInputStream().apply {
-                            while (true) {
-                                val read = read(buffer)
-                                if (read == -1) {
-                                    break
-                                }
-
-                                builder.append(String(buffer, 0, read, Charsets.UTF_8))
-                            }
-                        }
-                        client.shutdownInput()
-
-
-                        val reverse = builder.toString().reversed()
-
-                        // write the output
-                        client.getOutputStream().apply {
-                            write(reverse.toByteArray(Charsets.UTF_8))
-                        }
-                        client.shutdownOutput()
-                    }
-                }
-            } catch (e: SocketException) {
-                // socket closed
-            } finally {
-                server.close()
+            client.getOutputStream().apply {
+                write(text.toByteArray(Charsets.UTF_8))
             }
+            client.shutdownOutput()
+
+            client.getInputStream().apply {
+                val data = readAllBytes()
+                str.append(String(data, Charsets.UTF_8))
+            }
+            client.shutdownInput()
+
+            assertEquals(expected, str.toString())
         }
 
+        // knio
+        createKnioSocket(isSSL).use { client ->
+            val str = StringBuilder()
 
-        override fun close() {
-            server.close()
+            client.setReadTimeout(4000)
+            client.setWriteTimeout(4000)
+
+            client.getOutputStream().apply {
+                write(text.toByteArray(Charsets.UTF_8))
+            }
+            client.shutdownOutput()
+
+            client.getInputStream().apply {
+                val data = readAllBytes()
+                str.append(String(data, Charsets.UTF_8))
+            }
+            client.shutdownInput()
+
+            assertEquals(expected, str.toString())
         }
     }
 
-    private fun runServer(): AutoCloseable {
-        val server = SimpleReverseServer()
-        val thread = Thread(server)
-        thread.start()
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `test shutdown output stream`(isSSL: Boolean) = runServer(startReverseServer(isSSL)) {
+        val text = "Hello World"
+
+        // java
+        createSocket(isSSL).use { client ->
+            client.getOutputStream().write(text.toByteArray(Charsets.UTF_8))
+            client.shutdownOutput()
+
+            assertThrows<SocketException> {
+                client.getOutputStream()
+            }
+        }
+
+        // knio
+        createKnioSocket(isSSL).use { client ->
+            client.getOutputStream().write(text.toByteArray(Charsets.UTF_8))
+            client.shutdownOutput()
+
+            assertThrows<SocketException> {
+                client.getOutputStream()
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `test closing output-stream closes connection`(isSSL: Boolean) = runServer(startReverseServer(isSSL)) {
+        val text = "Hello World"
+        val expected = text.reversed()
+
+        // java
+        createSocket(isSSL).use { client ->
+            client.soTimeout = 4000
+
+            client.getOutputStream().use { output ->
+                output.write(text.toByteArray(Charsets.UTF_8))
+
+                // open before close
+                assertFalse(client.isClosed)
+            } // <- output-stream closed
+
+            // the socket closes when the output stream is closed
+            assertTrue(client.isClosed)
+        }
+
+        // knio
+        createKnioSocket(isSSL).use { client ->
+            client.setReadTimeout(4000)
+            client.setWriteTimeout(4000)
+
+            client.getOutputStream().use { output ->
+                output.write(text.toByteArray(Charsets.UTF_8))
+
+                // open before close
+                assertFalse(client.isClosed())
+            } // <- output-stream closed
+
+            // the socket closes when the output stream is closed
+            assertTrue(client.isClosed())
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `test closing input-stream closes connection`(isSSL: Boolean) = runServer(startReverseServer(isSSL)) {
+        val text = "Hello World"
+        val expected = text.reversed()
+
+        // java
+        createSocket(isSSL).use { client ->
+            val str = StringBuilder()
+
+            client.soTimeout = 4000
+
+            client.getOutputStream().apply {
+                write(text.toByteArray(Charsets.UTF_8))
+            }
+            client.shutdownOutput()
+
+            client.getInputStream().use { input ->
+                val data = input.readAllBytes()
+                str.append(String(data, Charsets.UTF_8))
+
+                // before closing
+                assertFalse(client.isClosed)
+            } // <- input-stream closed
+
+            // after close
+            assertTrue(client.isClosed)
+        }
+
+        // knio
+        createKnioSocket(isSSL).use { client ->
+            val str = StringBuilder()
+
+            client.setWriteTimeout(4000)
+            client.setReadTimeout(4000)
+
+            client.getOutputStream().apply {
+                write(text.toByteArray(Charsets.UTF_8))
+            }
+            client.shutdownOutput()
+
+            client.getInputStream().use { input ->
+                val data = input.readAllBytes()
+                str.append(String(data, Charsets.UTF_8))
+
+                // before closing
+                assertFalse(client.isClosed())
+            } // <- input-stream closed
+
+            // after close
+            assertTrue(client.isClosed())
+        }
+    }
+
+
+    private fun startReverseServer(isSSL: Boolean): JavaReverseServer {
+        val serverSocket = if(isSSL) {
+            createTestSSLContext().serverSocketFactory.createServerSocket(8443)
+        } else {
+            ServerSocketFactory.getDefault().createServerSocket(8080)
+        }
+
+        val server = JavaReverseServer(serverSocket)
+        server.start()
 
         return server
     }
 
-    @Test
-    fun `test basic client`(): Unit = runBlocking {
-        val text = "Hello World"
-        val expected = text.reversed()
-
-
-        runServer().use {
-            // java
-            SocketFactory.getDefault().createSocket("localhost", 8080).use { client ->
-                assertEquals(expected, client.reverseString(text))
-            }
-
-            // knio
-            KSocketFactory.getDefault().createSocket("localhost", 8080).use { client ->
-                assertEquals(expected, client.reverseString(text))
-            }
-        }
+    private fun createSocket(isSSL: Boolean): Socket = if(isSSL) {
+        createTrustAllSSLContext().socketFactory.createSocket("localhost", 8443)
+    } else {
+        SocketFactory.getDefault().createSocket("localhost", 8080)
     }
 
-    @Test
-    fun `test shutdown output stream`():Unit = runBlocking {
-        val text = "Hello World"
-        val expected = text.reversed()
-
-        runServer().use {
-            // java
-            SocketFactory.getDefault().createSocket("localhost", 8080).use { client ->
-                client.getOutputStream().write(text.toByteArray(Charsets.UTF_8))
-                client.shutdownOutput()
-
-                assertThrows<SocketException> {
-                    client.getOutputStream()
-                }
-            }
-
-            // knio
-            KSocketFactory.getDefault().createSocket("localhost", 8080).use { client ->
-                client.getOutputStream().write(text.toByteArray(Charsets.UTF_8))
-                client.shutdownOutput()
-
-                assertThrows<SocketException> {
-                    client.getOutputStream()
-                }
-            }
-        }
+    private suspend fun createKnioSocket(isSSL: Boolean): KSocket = if (isSSL) {
+        createTrustAllSSLContext().getKnioSSLSocketFactory().createSocket("localhost", 8443)
+    } else {
+        KSocketFactory.getDefault().createSocket("localhost", 8080)
     }
-}
 
-fun Socket.reverseString(input: String): String {
-    val str = StringBuilder()
-
-    soTimeout = 4000
-
-    getOutputStream().apply {
-        write(input.toByteArray(Charsets.UTF_8))
-    }
-    shutdownOutput()
-
-    val buffer = ByteArray(1024)
-    getInputStream().apply {
-        while (true) {
-            val read = read(buffer)
-            if (read == -1) {
-                break
-            }
-
-            str.append(String(buffer, 0, read, Charsets.UTF_8))
-        }
-    }
-    shutdownInput()
-
-    return str.toString()
-}
-
-suspend fun KSocket.reverseString(input: String): String {
-    val str = StringBuilder()
-
-    setReadTimeout(4000)
-    setWriteTimeout(4000)
-
-    getOutputStream().apply {
-        write(input.toByteArray(Charsets.UTF_8))
-    }
-    shutdownOutput()
-
-    val buffer = ByteArray(1024)
-    getInputStream().apply {
-        while (true) {
-            val read = read(buffer)
-            if (read == -1) {
-                break
-            }
-
-            str.append(String(buffer, 0, read, Charsets.UTF_8))
-        }
-    }
-    shutdownInput()
-
-    return str.toString()
 }

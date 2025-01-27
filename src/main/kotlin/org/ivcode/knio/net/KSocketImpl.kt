@@ -101,7 +101,6 @@ internal class KSocketImpl internal constructor(
          */
         @Blocking
         override suspend fun close() {
-            @Suppress("BlockingMethodInNonBlockingContext")
             this@KSocketImpl.close()
         }
     }
