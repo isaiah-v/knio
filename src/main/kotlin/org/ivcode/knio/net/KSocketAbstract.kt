@@ -1,9 +1,8 @@
 package org.ivcode.knio.net
 
-import org.ivcode.knio.net.KSocket
+import org.ivcode.knio.annotations.Blocking
 import org.ivcode.knio.utils.asCompletionHandler
 import org.ivcode.knio.utils.timeout
-import org.jetbrains.annotations.Blocking
 import java.io.IOException
 import java.net.SocketAddress
 import java.net.SocketTimeoutException
@@ -14,6 +13,8 @@ import kotlin.coroutines.suspendCoroutine
 internal abstract class KSocketAbstract(
     protected val ch: AsynchronousSocketChannel
 ): KSocket {
+
+
 
     /** The read timeout in milliseconds. */
     protected var rTimeout: Long? = null

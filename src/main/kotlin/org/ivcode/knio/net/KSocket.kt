@@ -16,7 +16,6 @@ import java.nio.channels.AsynchronousSocketChannel
  * It is up to the user to decide the appropriate dispatcher.
  *
  */
-@Blocking
 interface KSocket: KAutoCloseable {
 
 
@@ -65,7 +64,7 @@ interface KSocket: KAutoCloseable {
      *
      * @return The KInputStream.
      */
-    fun getInputStream(): KInputStream
+    suspend fun getInputStream(): KInputStream
 
     /**
      * Gets the SO_KEEPALIVE option.
@@ -101,7 +100,7 @@ interface KSocket: KAutoCloseable {
      *
      * @return The KOutputStream.a
      */
-    fun getOutputStream(): KOutputStream
+    suspend fun getOutputStream(): KOutputStream
 
     /**
      * Gets the remote port number.

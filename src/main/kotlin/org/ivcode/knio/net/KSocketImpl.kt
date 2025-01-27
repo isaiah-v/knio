@@ -2,12 +2,14 @@ package org.ivcode.knio.net
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.ivcode.knio.annotations.Blocking
 import org.ivcode.knio.context.KnioContext
 import org.ivcode.knio.io.KInputStream
 import org.ivcode.knio.io.KOutputStream
+import org.ivcode.knio.nio.readSuspend
 import org.ivcode.knio.nio.writeSuspend
-import org.jetbrains.annotations.Blocking
 import java.io.IOException
+import java.net.SocketException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
 import java.util.concurrent.atomic.AtomicBoolean
@@ -35,25 +37,25 @@ internal class KSocketImpl internal constructor(
          * @param b The ByteBuffer to read data into.
          * @return The number of bytes read.
          */
+        @Blocking
         override suspend fun read(b: ByteBuffer): Int = readMutex.withLock {
             return read0(b)
         }
 
+        @Blocking
         private suspend fun read0(b: ByteBuffer): Int {
             var total = 0
 
             while (b.hasRemaining()) {
-                repeat(3) {
-                    val result = read(b)
+                val result = channel.readSuspend(b, rTimeout)
 
-                    if (result == -1) {
-                        // Blocking
-                        close()
-                        return -1
-                    } else if (result > 0) {
-                        total += result
-                        return@repeat
-                    }
+                if (result == -1) {
+                    // Blocking
+                    shutdownInput()
+                    return -1
+                } else if (result > 0) {
+                    total += result
+                    return total
                 }
             }
 
@@ -61,12 +63,12 @@ internal class KSocketImpl internal constructor(
         }
 
         /**
-         * Closes the input stream.
+         * Closes the socket as per the [java.net.Socket.getInputStream] says.
          */
         @Blocking
         override suspend fun close() {
             @Suppress("BlockingMethodInNonBlockingContext")
-            this@KSocketImpl.shutdownInput()
+            this@KSocketImpl.close()
         }
     }
 
@@ -88,21 +90,22 @@ internal class KSocketImpl internal constructor(
                 val result = channel.writeSuspend(b, wTimeout)
 
                 if (result == -1) {
-                    close()
+                    shutdownOutput()
                     break
                 }
             }
         }
 
         /**
-         * Closes the output stream.
+         * Closes the socket as per the [java.net.Socket.getOutputStream] says.
          */
         @Blocking
         override suspend fun close() {
             @Suppress("BlockingMethodInNonBlockingContext")
-            this@KSocketImpl.shutdownOutput()
+            this@KSocketImpl.close()
         }
     }
+
 
 
 
@@ -111,7 +114,13 @@ internal class KSocketImpl internal constructor(
      *
      * @return The KInputStream.
      */
-    override fun getInputStream(): KInputStream = this.inputStream
+    override suspend fun getInputStream(): KInputStream {
+        if(isInputShutdown()) {
+            throw SocketException("Socket input is shutdown")
+        }
+
+        return this.inputStream
+    }
 
 
 
@@ -120,7 +129,13 @@ internal class KSocketImpl internal constructor(
      *
      * @return The KOutputStream.
      */
-    override fun getOutputStream(): KOutputStream = outputStream
+    override suspend fun getOutputStream(): KOutputStream {
+        if(isOutputShutdown()) {
+            throw SocketException("Socket output is shutdown")
+        }
+
+        return outputStream
+    }
 
     /**
      * Checks if the input is shutdown.

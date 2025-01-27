@@ -18,6 +18,13 @@ fun createTrustAllManagers(): Array<TrustManager> {
     })
 }
 
+fun createTestSSLContext () = createSSLContext(
+    keystore = "src/test/resources/keystore.p12",
+    keystorePassword = "password",
+    truststore = "src/test/resources/keystore.p12",
+    truststorePassword = "password"
+)
+
 fun createSSLContext (
     protocol: String = "TLS",
     random: SecureRandom? = null,

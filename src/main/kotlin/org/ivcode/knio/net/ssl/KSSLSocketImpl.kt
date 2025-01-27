@@ -3,14 +3,15 @@ package org.ivcode.knio.net.ssl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.ivcode.knio.annotations.Blocking
 import org.ivcode.knio.nio.readSuspend
 import org.ivcode.knio.nio.writeSuspend
 import org.ivcode.knio.utils.compactOrIncreaseSize
 import org.ivcode.knio.context.KnioContext
 import org.ivcode.knio.io.KInputStream
 import org.ivcode.knio.io.KOutputStream
-import org.jetbrains.annotations.Blocking
 import java.io.IOException
+import java.net.SocketException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.ClosedChannelException
@@ -48,14 +49,12 @@ internal class KSSLSocketImpl (
 
         @Blocking
         override suspend fun read(b: ByteBuffer): Int {
-            @Suppress("BlockingMethodInNonBlockingContext")
             return this@KSSLSocketImpl.read(b)
         }
 
         @Blocking
         override suspend fun close() {
-            @Suppress("BlockingMethodInNonBlockingContext")
-            this@KSSLSocketImpl.shutdownInput()
+            this@KSSLSocketImpl.close()
         }
     }
 
@@ -63,19 +62,27 @@ internal class KSSLSocketImpl (
 
         @Blocking
         override suspend fun write(b: ByteBuffer) {
-            @Suppress("BlockingMethodInNonBlockingContext")
             this@KSSLSocketImpl.write(b)
         }
 
         @Blocking
         override suspend fun close() {
-            @Suppress("BlockingMethodInNonBlockingContext")
-            this@KSSLSocketImpl.shutdownOutput()
+            this@KSSLSocketImpl.close()
         }
     }
 
-    override fun getInputStream(): KInputStream = inputStream
-    override fun getOutputStream(): KOutputStream = outputStream
+    override suspend fun getInputStream(): KInputStream {
+        if(isInputShutdown()) {
+            throw SocketException("Socket input is shutdown")
+        }
+        return inputStream
+    }
+    override suspend fun getOutputStream(): KOutputStream {
+        if(isOutputShutdown()) {
+            throw SocketException("Socket output is shutdown")
+        }
+        return outputStream
+    }
 
     @Blocking
     override suspend fun startHandshake() = handshakeMutex.withLock {
