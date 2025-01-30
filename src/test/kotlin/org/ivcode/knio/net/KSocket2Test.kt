@@ -1,8 +1,10 @@
 package org.ivcode.knio.net
 
 import org.ivcode.knio.lang.use
+import org.ivcode.knio.net.ssl.getKnioSSLServerSocketFactory
 import org.ivcode.knio.net.ssl.getKnioSSLSocketFactory
 import org.ivcode.knio.test.net.JavaReverseServer
+import org.ivcode.knio.test.net.KnioReverseServer
 import org.ivcode.knio.test.net.runServer
 import org.ivcode.knio.test.utils.createTestSSLContext
 import org.ivcode.knio.test.utils.createTrustAllSSLContext
@@ -17,11 +19,11 @@ import javax.net.SocketFactory
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class KSocketTest {
+class KSocket2Test {
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `test basic client`(isSSL: Boolean) = runServer(startReverseServer(isSSL)) {
+    fun `test basic client`(isSSL: Boolean) = runServer({startReverseServer(isSSL)}) {
         val text = "Hello World"
         val expected = text.reversed()
 
@@ -69,7 +71,7 @@ class KSocketTest {
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `test shutdown output stream`(isSSL: Boolean) = runServer(startReverseServer(isSSL)) {
+    fun `test shutdown output stream`(isSSL: Boolean) = runServer({startReverseServer(isSSL)}) {
         val text = "Hello World"
 
         // java
@@ -95,7 +97,7 @@ class KSocketTest {
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `test closing output-stream closes connection`(isSSL: Boolean) = runServer(startReverseServer(isSSL)) {
+    fun `test closing output-stream closes connection`(isSSL: Boolean) = runServer({startReverseServer(isSSL)}) {
         val text = "Hello World"
         val expected = text.reversed()
 
@@ -133,7 +135,7 @@ class KSocketTest {
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `test closing input-stream closes connection`(isSSL: Boolean) = runServer(startReverseServer(isSSL)) {
+    fun `test closing input-stream closes connection`(isSSL: Boolean) = runServer({startReverseServer(isSSL)}) {
         val text = "Hello World"
         val expected = text.reversed()
 
@@ -186,14 +188,14 @@ class KSocketTest {
     }
 
 
-    private fun startReverseServer(isSSL: Boolean): JavaReverseServer {
+    private suspend fun startReverseServer(isSSL: Boolean): KnioReverseServer {
         val serverSocket = if(isSSL) {
-            createTestSSLContext().serverSocketFactory.createServerSocket(8443)
+            createTestSSLContext().getKnioSSLServerSocketFactory().createServerSocket(8443)
         } else {
-            ServerSocketFactory.getDefault().createServerSocket(8080)
+            KServerSocketFactory.getDefault().createServerSocket(8080)
         }
 
-        val server = JavaReverseServer(serverSocket)
+        val server = KnioReverseServer(serverSocket)
         server.start()
 
         return server

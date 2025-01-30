@@ -1,6 +1,8 @@
 package org.ivcode.knio.nio
 
 import org.ivcode.knio.utils.fromResult
+import java.io.IOException
+import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
@@ -19,12 +21,10 @@ import kotlin.coroutines.suspendCoroutine
  * @throws Throwable the original throwable if it is not an `InterruptedByTimeoutException`.
  */
 private fun <T> errorHandler(e: Throwable): T {
-    // Catch the InterruptedByTimeoutException and throw a SocketTimeoutException instead as done
-    // in the blocking read/write functions.
-    throw if (e is InterruptedByTimeoutException) {
-        SocketTimeoutException("Connection timed out")
-    } else {
-        e
+    when (e) {
+        is InterruptedByTimeoutException -> throw SocketTimeoutException("Connection timed out")
+        is IOException -> throw SocketException(e.message, e)
+        else -> throw e
     }
 }
 
@@ -71,7 +71,6 @@ internal suspend fun AsynchronousSocketChannel.writeSuspend(
     timeout: Long? = null
 ): Int = suspendCoroutine {
     try {
-
         // Call the callback version of the non-blocking write function, un-suspending the coroutine when complete.
         if (timeout != null && timeout > 0) {
             // with timeout

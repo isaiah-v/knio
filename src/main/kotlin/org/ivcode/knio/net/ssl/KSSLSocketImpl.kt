@@ -459,7 +459,7 @@ internal class KSSLSocketImpl (
 
                 SSLEngineResult.Status.CLOSED -> {
                     // closed
-                    throw SSLException("Connection closed during handshake")
+                    throw SocketException("connection closed")
                 }
             }
         }

@@ -31,7 +31,7 @@ internal class KServerSocketImpl(
         channel.bind(endpoint, backlog)
     }
 
-    override suspend fun close(): Unit = acceptMutex.withLock {
+    override suspend fun close(): Unit {
         channel.close()
         acceptTimeout = null
     }
