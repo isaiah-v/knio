@@ -1,6 +1,5 @@
 package org.ivcode.knio.net
 
-import org.ivcode.knio.annotations.Blocking
 import org.ivcode.knio.utils.asCompletionHandler
 import org.ivcode.knio.utils.timeout
 import java.io.IOException
@@ -29,7 +28,6 @@ internal abstract class KSocketAbstract(
      * @param local the SocketAddress to bind to
      * @throws IOException if an I/O error occurs
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun bind(local: SocketAddress?) {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -39,7 +37,6 @@ internal abstract class KSocketAbstract(
     /**
      * Closes the socket.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun close() {
         if (!ch.isOpen) return
@@ -98,7 +95,6 @@ internal abstract class KSocketAbstract(
      *
      * @return The value of the SO_KEEPALIVE option.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun getKeepAlive(): Boolean {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -161,7 +157,6 @@ internal abstract class KSocketAbstract(
      *
      * @return The value of the SO_RCVBUF option.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun getReceiveBufferSize(): Int {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -180,7 +175,6 @@ internal abstract class KSocketAbstract(
      *
      * @return The value of the SO_REUSEADDR option.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun getReuseAddress(): Boolean {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -192,7 +186,6 @@ internal abstract class KSocketAbstract(
      *
      * @return The value of the SO_SNDBUF option.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun getSendBufferSize(): Int{
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -204,7 +197,6 @@ internal abstract class KSocketAbstract(
      *
      * @return The value of the SO_LINGER option.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun getSoLinger(): Int {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -230,7 +222,6 @@ internal abstract class KSocketAbstract(
      *
      * @return The value of the TCP_NODELAY option.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun getTcpNoDelay(): Boolean {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -242,7 +233,6 @@ internal abstract class KSocketAbstract(
      *
      * @return The value of the IP_TOS option.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun getTrafficClass(): Int {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -275,7 +265,6 @@ internal abstract class KSocketAbstract(
      *
      * @param keepAlive The value to set.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun setKeepAlive(keepAlive: Boolean) {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -287,7 +276,6 @@ internal abstract class KSocketAbstract(
      *
      * @param size The buffer size to set.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun setReceiveBufferSize(size: Int) {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -300,7 +288,6 @@ internal abstract class KSocketAbstract(
      * @param reuse The value to set.
      * @throws IOException if an I/O error occurs.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun setReuseAddress(reuse: Boolean) {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -313,7 +300,6 @@ internal abstract class KSocketAbstract(
      * @param size The buffer size to set.
      * @throws IOException if an I/O error occurs.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun setSendBufferSize(size: Int) {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -356,7 +342,6 @@ internal abstract class KSocketAbstract(
      * @param on The value to set.
      * @throws IOException if an I/O error occurs.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun setTcpNoDelay(on: Boolean) {
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -369,7 +354,6 @@ internal abstract class KSocketAbstract(
      * @param tc The value to set.
      * @throws IOException if an I/O error occurs.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun setTrafficClass(tc: Int) {
         @Suppress("BlockingMethodInNonBlockingContext")

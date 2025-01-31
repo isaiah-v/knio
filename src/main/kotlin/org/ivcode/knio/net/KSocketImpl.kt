@@ -2,7 +2,6 @@ package org.ivcode.knio.net
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.ivcode.knio.annotations.Blocking
 import org.ivcode.knio.context.KnioContext
 import org.ivcode.knio.io.KInputStream
 import org.ivcode.knio.io.KOutputStream
@@ -37,12 +36,10 @@ internal class KSocketImpl internal constructor(
          * @param b The ByteBuffer to read data into.
          * @return The number of bytes read.
          */
-        @Blocking
         override suspend fun read(b: ByteBuffer): Int = readMutex.withLock {
             return read0(b)
         }
 
-        @Blocking
         private suspend fun read0(b: ByteBuffer): Int {
             var total = 0
 
@@ -65,9 +62,7 @@ internal class KSocketImpl internal constructor(
         /**
          * Closes the socket as per the [java.net.Socket.getInputStream] says.
          */
-        @Blocking
         override suspend fun close() {
-            @Suppress("BlockingMethodInNonBlockingContext")
             this@KSocketImpl.close()
         }
     }
@@ -82,7 +77,6 @@ internal class KSocketImpl internal constructor(
          *
          * @param b The ByteBuffer containing data to write.
          */
-        @Blocking
         override suspend fun write(b: ByteBuffer):Unit = writeMutex.withLock {
             // only one thread can write at a time to avoid WritePendingException
 
@@ -99,7 +93,6 @@ internal class KSocketImpl internal constructor(
         /**
          * Closes the socket as per the [java.net.Socket.getOutputStream] says.
          */
-        @Blocking
         override suspend fun close() {
             this@KSocketImpl.close()
         }
@@ -155,7 +148,6 @@ internal class KSocketImpl internal constructor(
      *
      * @throws IOException if an I/O error occurs.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun shutdownInput() {
         if(!isInputShutdown.getAndSet(true)) {
@@ -170,7 +162,6 @@ internal class KSocketImpl internal constructor(
      *
      * @throws IOException if an I/O error occurs.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun shutdownOutput() {
         if(!isOutputShutdown.getAndSet(true)) {

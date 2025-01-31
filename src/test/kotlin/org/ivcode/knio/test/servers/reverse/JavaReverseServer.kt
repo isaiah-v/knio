@@ -1,11 +1,5 @@
-package org.ivcode.knio.test.net
+package org.ivcode.knio.test.servers.reverse
 
-import kotlinx.coroutines.*
-import org.ivcode.knio.io.KInputStream
-import org.ivcode.knio.io.KOutputStream
-import org.ivcode.knio.lang.KAutoCloseable
-import org.ivcode.knio.lang.use
-import org.ivcode.knio.net.KServerSocket
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.ServerSocket
@@ -16,16 +10,16 @@ import java.net.SocketException
  *
  * @property serverSocket The server socket to accept client connections.
  */
-class KnioReverseServer(
-    private val serverSocket: KServerSocket
-): KAutoCloseable {
+class JavaReverseServer(
+    private val serverSocket: ServerSocket
+): Runnable, ReverseServer {
 
     /**
      * Starts the server and listens for client connections.
      * Reverses the input string from the client and sends it back.
      */
-    suspend fun run() = serverSocket.use {
-        while (!serverSocket.isClosed()) {
+    override fun run() = serverSocket.use {
+        while (!serverSocket.isClosed) {
             try {
                 serverSocket.accept().use { client ->
                     // read the input
@@ -50,7 +44,7 @@ class KnioReverseServer(
      * @param input The InputStream to read from.
      * @return The string read from the input.
      */
-    private suspend fun readInput(input: KInputStream): String {
+    private fun readInput(input: InputStream): String {
         val buffer = ByteArray(1024)
         val builder = StringBuilder()
 
@@ -72,15 +66,8 @@ class KnioReverseServer(
      * @param str The string to write.
      * @param output The OutputStream to write to.
      */
-    private suspend fun writeOutput(str: String, output: KOutputStream) {
+    private fun writeOutput(str: String, output: OutputStream) {
         output.write(str.toByteArray(Charsets.UTF_8))
-    }
-
-    /**
-     * Closes the server socket.
-     */
-    override suspend fun close() {
-        serverSocket.close()
     }
 
     /**
@@ -88,11 +75,15 @@ class KnioReverseServer(
      *
      * @return The instance of JavaReverseServer.
      */
-    suspend fun start(): KnioReverseServer {
-        CoroutineScope(Dispatchers.IO).launch {
-            run()
-        }
+    override suspend fun start(): JavaReverseServer {
+        val thead = Thread(this)
+        thead.isDaemon = true
+        thead.start()
 
         return this
+    }
+
+    override suspend fun stop() {
+        serverSocket.close()
     }
 }

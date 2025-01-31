@@ -1,6 +1,5 @@
 package org.ivcode.knio.io
 
-import org.ivcode.knio.annotations.JavaIO
 import java.io.OutputStream
 import java.nio.charset.Charset
 
@@ -40,7 +39,6 @@ suspend fun KInputStream.copyTo(output: KOutputStream, bufferSize: Int = DEFAULT
  * @param bufferSize The buffer size to use when copying.
  * @return The number of bytes copied.
  */
-@JavaIO
 suspend fun KInputStream.copyTo(output: OutputStream, bufferSize: Int = DEFAULT_BUFFER_SIZE): Long {
     var bytesCopied: Long = 0
     val buffer = ByteArray(bufferSize)

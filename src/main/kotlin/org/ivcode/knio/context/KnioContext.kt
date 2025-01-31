@@ -10,8 +10,6 @@ import java.nio.channels.Channel
 private val DEFAULT_BYTE_BUFFER_POOL = ByteBufferPoolNone()
 private val DEFAULT_CHANNEL_FACTORY = ChannelFactoryDefault()
 
-private val DEFAULT_CONTEXT_NATIVE_BLOCKING: CoroutineContext? = null
-
 private val DEFAULT_KNIO_CONTEXT = KnioContext()
 
 /**
@@ -23,12 +21,6 @@ private val DEFAULT_KNIO_CONTEXT = KnioContext()
  * @property maxStreamBufferSize The size of buffers used for streams. The memory used for these buffers depends on the
  * data type. For example, a [ByteBuffer] is 1:1, but a [CharBuffer] is 2:1.
  *
- * @property javaIoContext The dispatcher to use for @JavaIO functions. If null, the operation will not be dispatched
- * to a different context.
- *
- * @property blockingContext The context to use for blocking or waiting operations. This includes I/O and native
- * operations that may block the thread, but does not include CPU-bound operations.
- *
  * @property byteBufferPool The pool to use for acquiring [ByteBuffer] instances. This pool is used to create byte
  * buffers, but other buffers types are also pulled from this pool and a view is created.
  *
@@ -37,7 +29,6 @@ private val DEFAULT_KNIO_CONTEXT = KnioContext()
 data class KnioContext (
     val maxTaskBufferSize: Int = DEFAULT_TASK_BUFFER_SIZE,
     val maxStreamBufferSize: Int = DEFAULT_STREAM_BUFFER_SIZE,
-    val blockingContext: CoroutineContext? = DEFAULT_CONTEXT_NATIVE_BLOCKING,
     val byteBufferPool: ByteBufferPool = DEFAULT_BYTE_BUFFER_POOL,
     val channelFactory: ChannelFactory = DEFAULT_CHANNEL_FACTORY
 ): CoroutineContext.Element {

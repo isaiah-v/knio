@@ -3,7 +3,6 @@ package org.ivcode.knio.net.ssl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.ivcode.knio.annotations.Blocking
 import org.ivcode.knio.nio.readSuspend
 import org.ivcode.knio.nio.writeSuspend
 import org.ivcode.knio.utils.compactOrIncreaseSize
@@ -47,12 +46,10 @@ internal class KSSLSocketImpl (
 
     private val inputStream = object : KInputStream(context) {
 
-        @Blocking
         override suspend fun read(b: ByteBuffer): Int {
             return this@KSSLSocketImpl.read(b)
         }
 
-        @Blocking
         override suspend fun close() {
             this@KSSLSocketImpl.close()
         }
@@ -60,12 +57,10 @@ internal class KSSLSocketImpl (
 
     private val outputStream = object : KOutputStream() {
 
-        @Blocking
         override suspend fun write(b: ByteBuffer) {
             this@KSSLSocketImpl.write(b)
         }
 
-        @Blocking
         override suspend fun close() {
             this@KSSLSocketImpl.close()
         }
@@ -84,13 +79,11 @@ internal class KSSLSocketImpl (
         return outputStream
     }
 
-    @Blocking
     override suspend fun startHandshake() = handshakeMutex.withLock {
         startHandshake0()
     }
 
 
-    @Blocking
     private suspend fun startHandshake0() {
         if(isHandshakeCompleted) return
 
@@ -138,7 +131,6 @@ internal class KSSLSocketImpl (
         }
     }
 
-    @Blocking
     private suspend fun wrapHandshake() {
         val dummyBuffer = ByteBuffer.allocate(0)
 
@@ -187,7 +179,6 @@ internal class KSSLSocketImpl (
         }
     }
 
-    @Blocking
     private suspend fun unwrapHandshake() {
         val dummyBuffer = ByteBuffer.allocate(0)
 
@@ -251,7 +242,6 @@ internal class KSSLSocketImpl (
         return isOutputShutdown
     }
 
-    @Blocking
     override suspend fun shutdownInput() {
         val netBuff = networkRead ?: return
         networkRead = null
@@ -272,7 +262,6 @@ internal class KSSLSocketImpl (
         }
     }
 
-    @Blocking
     override suspend fun shutdownOutput() {
         var netBuff = networkWrite ?: return
         networkWrite = null
@@ -344,7 +333,6 @@ internal class KSSLSocketImpl (
         }
     }
 
-    @Blocking
     private suspend fun read(b: ByteBuffer): Int {
         if(!isHandshakeCompleted) {
             @Suppress("BlockingMethodInNonBlockingContext")
@@ -416,7 +404,6 @@ internal class KSSLSocketImpl (
         }
     }
 
-    @Blocking
     private suspend fun write(b: ByteBuffer) {
         if(!isHandshakeCompleted) {
             @Suppress("BlockingMethodInNonBlockingContext")

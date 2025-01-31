@@ -1,7 +1,6 @@
 package org.ivcode.knio.io
 
 import kotlinx.coroutines.runBlocking
-import org.ivcode.knio.annotations.Blocking
 import org.ivcode.knio.lang.use
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -158,7 +157,6 @@ class KFileInputStreamTest {
         val file = "src/test/resources/test.txt"
 
         // Knio
-        @OptIn(Blocking::class)
         KFileInputStream.open(file).use { input ->
             val size = input.size()
 

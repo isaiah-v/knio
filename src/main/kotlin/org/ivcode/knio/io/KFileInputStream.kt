@@ -2,14 +2,12 @@ package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.ivcode.knio.annotations.Blocking
 import org.ivcode.knio.context.KnioContext
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import org.ivcode.knio.nio.readSuspend
 import org.ivcode.knio.context.getKnioContext
-import org.ivcode.knio.utils.nativeBlocking
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import kotlin.Throws
@@ -72,19 +70,12 @@ class KFileInputStream private constructor(
      *
      * @return The total number of bytes in the file.
      */
-    @Blocking
     @Throws(IOException::class)
     suspend fun size(): Long {
-        return nativeBlocking(context, ::size0)
-    }
-
-    @Blocking
-    suspend fun size0(): Long {
         @Suppress("BlockingMethodInNonBlockingContext")
         return channel.size()
     }
 
-    @Blocking
     private suspend fun remaining(): Long {
         return size() - position
     }
@@ -158,13 +149,11 @@ class KFileInputStream private constructor(
      * @return The actual number of bytes skipped.
      * @throws IOException If an I/O error occurs.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun skip(n: Long): Long = mutex.withLock {
         return skip0(n)
     }
 
-    @Blocking
     private suspend fun skip0(n: Long): Long {
         // This differs from the Java implementation in that will only skip up to the end of the file or the beginning.
         // It returns the number of skipped bytes, as the documentation states, rather than going past or throwing an
@@ -184,13 +173,14 @@ class KFileInputStream private constructor(
     /**
      * Closes this file input stream and releases any system resources associated with the stream.
      */
-    @Blocking
     @Throws(IOException::class)
     override suspend fun close() = mutex.withLock {
-        nativeBlocking(context, ::close0)
+        close0()
     }
 
-    @Blocking
+    /**
+     * Closes the file input stream without locking the mutex.
+     */
     private suspend fun close0() {
         @Suppress("BlockingMethodInNonBlockingContext")
         channel.close()

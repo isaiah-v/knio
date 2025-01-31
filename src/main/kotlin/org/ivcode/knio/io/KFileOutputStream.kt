@@ -2,11 +2,9 @@ package org.ivcode.knio.io
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.ivcode.knio.annotations.Blocking
 import org.ivcode.knio.context.KnioContext
 import org.ivcode.knio.context.getKnioContext
 import org.ivcode.knio.nio.writeSuspend
-import org.ivcode.knio.utils.nativeBlocking
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
@@ -76,16 +74,14 @@ class KFileOutputStream private constructor (
      *
      * If this stream has an associated channel then the channel is closed as well.
      */
-    @Blocking
     override suspend fun close() = mutex.withLock {
-        nativeBlocking(context, ::close0)
+        close0()
     }
 
     /**
-     * Closes the file channel associated with this output stream.
+     * Closes the file channel without acquiring the mutex.
      */
-    @Blocking
-    suspend fun close0() {
+    private suspend fun close0() {
         @Suppress("BlockingMethodInNonBlockingContext")
         fileChannel.close()
     }

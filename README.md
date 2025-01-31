@@ -1,6 +1,6 @@
 [![Knio Build](https://github.com/isaiah-v/Knio/actions/workflows/build.yml/badge.svg)](https://github.com/isaiah-v/Knio/actions/workflows/build.yml)
-[![Test Coverage](https://isaiah-v.github.io/Knio/build/main/badges/Test-Coverage.svg)](https://isaiah-v.github.io/Knio/build/main/jacoco/)
-[![Kdoc](https://img.shields.io/badge/Kdoc-green)](https://isaiah-v.github.io/Knio/build/main/kdoc/)
+[![Test Coverage](https://www.knio.org/build/main/badges/Test-Coverage.svg)](https://www.knio.org/build/main/jacoco/)
+[![Kdoc](https://img.shields.io/badge/Kdoc-green)](https://www.knio.org/build/main/kdoc/)
 ----  
 
 # Knio

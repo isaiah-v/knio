@@ -1,16 +1,16 @@
 package org.ivcode.knio.context
 
-const val BYTES_PER_BYTE   = 1
-const val BYTES_PER_CHAR   = 2
-const val BYTES_PER_SHORT  = 2
-const val BYTES_PER_INT    = 4
-const val BYTES_PER_LONG   = 8
-const val BYTES_PER_FLOAT  = 4
-const val BYTES_PER_DOUBLE = 8
+internal const val BYTES_PER_BYTE   = 1
+internal const val BYTES_PER_CHAR   = 2
+internal const val BYTES_PER_SHORT  = 2
+internal const val BYTES_PER_INT    = 4
+internal const val BYTES_PER_LONG   = 8
+internal const val BYTES_PER_FLOAT  = 4
+internal const val BYTES_PER_DOUBLE = 8
 
 
-const val DEFAULT_TASK_BUFFER_SIZE = 1024
-const val DEFAULT_STREAM_BUFFER_SIZE = 8 * 1024
+internal const val DEFAULT_TASK_BUFFER_SIZE = 1024
+internal const val DEFAULT_STREAM_BUFFER_SIZE = 8 * 1024
 
 /**
  * Gets the size of a buffer for a given unit type (byte, char, int,... etc.)
