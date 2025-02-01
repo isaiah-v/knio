@@ -3,9 +3,9 @@ package org.ivcode.knio.test.servers.reverse
 import kotlinx.coroutines.*
 import org.ivcode.knio.io.KInputStream
 import org.ivcode.knio.io.KOutputStream
-import org.ivcode.knio.lang.KAutoCloseable
 import org.ivcode.knio.lang.use
 import org.ivcode.knio.net.KServerSocket
+import org.ivcode.knio.test.servers.TestServer
 import java.net.SocketException
 
 /**
@@ -15,13 +15,13 @@ import java.net.SocketException
  */
 class KnioReverseServer(
     private val serverSocket: KServerSocket
-): ReverseServer {
+): TestServer {
 
     /**
      * Starts the server and listens for client connections.
      * Reverses the input string from the client and sends it back.
      */
-    suspend fun run() = serverSocket.use {
+    private suspend fun run() = serverSocket.use {
         while (!serverSocket.isClosed()) {
             try {
                 serverSocket.accept().use { client ->

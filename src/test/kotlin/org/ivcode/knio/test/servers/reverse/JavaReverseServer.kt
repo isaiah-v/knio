@@ -1,5 +1,6 @@
 package org.ivcode.knio.test.servers.reverse
 
+import org.ivcode.knio.test.servers.TestServer
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.ServerSocket
@@ -12,7 +13,7 @@ import java.net.SocketException
  */
 class JavaReverseServer(
     private val serverSocket: ServerSocket
-): Runnable, ReverseServer {
+): Runnable, TestServer {
 
     /**
      * Starts the server and listens for client connections.

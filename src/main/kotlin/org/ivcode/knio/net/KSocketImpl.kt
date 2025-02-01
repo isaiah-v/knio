@@ -44,7 +44,7 @@ internal class KSocketImpl internal constructor(
             var total = 0
 
             while (b.hasRemaining()) {
-                val result = channel.readSuspend(b, rTimeout)
+                val result = channel.readSuspend(b, getReadTimeout())
 
                 if (result == -1) {
                     // Blocking
@@ -81,7 +81,7 @@ internal class KSocketImpl internal constructor(
             // only one thread can write at a time to avoid WritePendingException
 
             while(b.hasRemaining()) {
-                val result = channel.writeSuspend(b, wTimeout)
+                val result = channel.writeSuspend(b, getWriteTimeout())
 
                 if (result == -1) {
                     shutdownOutput()

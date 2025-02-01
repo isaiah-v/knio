@@ -159,7 +159,7 @@ internal class KSSLSocketImpl (
                     // Unwrap was successful. Write the data to the channel.
                     networkWrite!!.flip()
                     while (networkWrite!!.hasRemaining()) {
-                        val read = ch.writeSuspend(networkWrite!!)
+                        val read = ch.writeSuspend(networkWrite!!, getWriteTimeout())
                         if (read == -1) {
                             throw SSLException("Connection closed during handshake")
                         }
@@ -375,7 +375,6 @@ internal class KSSLSocketImpl (
                             break
                         }
                         SSLEngineResult.Status.CLOSED -> {
-                            @Suppress("BlockingMethodInNonBlockingContext")
                             shutdownInput()
                             break@input
                         }
@@ -383,9 +382,8 @@ internal class KSSLSocketImpl (
                 }
             } else {
                 net.clear()
-                val count = ch.readSuspend(net)
+                val count = ch.readSuspend(net, getReadTimeout())
                 if(count == -1) {
-                    @Suppress("BlockingMethodInNonBlockingContext")
                     shutdownInput()
                     break@input
                 }
@@ -431,7 +429,7 @@ internal class KSSLSocketImpl (
                 SSLEngineResult.Status.OK -> {
                     networkWrite!!.flip()
                     while (networkWrite!!.hasRemaining()) {
-                        val written = ch.writeSuspend(networkWrite!!)
+                        val written = ch.writeSuspend(networkWrite!!, getWriteTimeout())
                         if (written == -1) {
                             throw SSLException("Connection closed during handshake")
                         }

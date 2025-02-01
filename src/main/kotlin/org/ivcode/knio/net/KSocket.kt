@@ -171,14 +171,6 @@ interface KSocket: KAutoCloseable {
     suspend fun getTcpNoDelay(): Boolean
 
     /**
-     * Gets the IP_TOS option.
-     *
-     * @return The value of the IP_TOS option.
-     */
-    @Throws(IOException::class)
-    suspend fun getTrafficClass(): Int
-
-    /**
      * Checks if the socket is bound.
      *
      * @return True if the socket is bound, false otherwise.
@@ -269,15 +261,6 @@ interface KSocket: KAutoCloseable {
      */
     @Throws(IOException::class)
     suspend fun setTcpNoDelay(on: Boolean)
-
-    /**
-     * Sets the IP_TOS option.
-     *
-     * @param tc The value to set.
-     * @throws IOException if an I/O error occurs.
-     */
-    @Throws(IOException::class)
-    suspend fun setTrafficClass(tc: Int)
 
     /**
      * Shuts down the input side of the socket.

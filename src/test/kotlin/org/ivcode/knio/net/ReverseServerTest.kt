@@ -1,22 +1,29 @@
 package org.ivcode.knio.net
 
-import kotlinx.coroutines.runBlocking
 import org.ivcode.knio.lang.use
-import org.ivcode.knio.net.ssl.getKnioSSLSocketFactory
-import org.ivcode.knio.test.servers.reverse.ReverseServer
-import org.ivcode.knio.test.utils.createTrustAllSSLContext
+import org.ivcode.knio.test.servers.TestServer
+import org.ivcode.knio.test.servers.TestServerTest
+import org.ivcode.knio.test.servers.createJavaSocket
+import org.ivcode.knio.test.servers.createKnioSocket
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import java.net.Socket
 import java.net.SocketException
-import javax.net.SocketFactory
+import java.net.SocketTimeoutException
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-abstract class ReverseServerTest {
+/**
+ * Abstract test class for testing the ReverseServer.
+ */
+abstract class ReverseServerTest<T: TestServer>: TestServerTest<T>() {
 
+    /**
+     * Tests the basic client functionality with and without SSL.
+     *
+     * @param isSSL Whether to use SSL.
+     */
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `test basic client`(isSSL: Boolean) = runServer(isSSL) {
@@ -24,7 +31,7 @@ abstract class ReverseServerTest {
         val expected = text.reversed()
 
         // java
-        createSocket(isSSL).use { client ->
+        createJavaSocket(isSSL).use { client ->
             val str = StringBuilder()
 
             client.soTimeout = 4000
@@ -65,13 +72,18 @@ abstract class ReverseServerTest {
         }
     }
 
+    /**
+     * Tests the behavior when the output stream is shut down.
+     *
+     * @param isSSL Whether to use SSL.
+     */
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
-    fun `test shutdown output stream`(isSSL: Boolean) = runServer(isSSL) {
+    fun `test shutdown output stream`(isSSL: Boolean) = runServer(isSSL){
         val text = "Hello World"
 
         // java
-        createSocket(isSSL).use { client ->
+        createJavaSocket(isSSL).use { client ->
             client.getOutputStream().write(text.toByteArray(Charsets.UTF_8))
             client.shutdownOutput()
 
@@ -91,14 +103,18 @@ abstract class ReverseServerTest {
         }
     }
 
+    /**
+     * Tests that closing the output stream closes the connection.
+     *
+     * @param isSSL Whether to use SSL.
+     */
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `test closing output-stream closes connection`(isSSL: Boolean) = runServer(isSSL) {
         val text = "Hello World"
-        val expected = text.reversed()
 
         // java
-        createSocket(isSSL).use { client ->
+        createJavaSocket(isSSL).use { client ->
             client.soTimeout = 4000
 
             client.getOutputStream().use { output ->
@@ -129,6 +145,11 @@ abstract class ReverseServerTest {
         }
     }
 
+    /**
+     * Tests that closing the input stream closes the connection.
+     *
+     * @param isSSL Whether to use SSL.
+     */
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
     fun `test closing input-stream closes connection`(isSSL: Boolean) = runServer(isSSL) {
@@ -136,7 +157,7 @@ abstract class ReverseServerTest {
         val expected = text.reversed()
 
         // java
-        createSocket(isSSL).use { client ->
+        createJavaSocket(isSSL).use { client ->
             val str = StringBuilder()
 
             client.soTimeout = 4000
@@ -183,26 +204,47 @@ abstract class ReverseServerTest {
         }
     }
 
-    private fun createSocket(isSSL: Boolean): Socket = if(isSSL) {
-        createTrustAllSSLContext().socketFactory.createSocket("localhost", 8443)
-    } else {
-        SocketFactory.getDefault().createSocket("localhost", 8080)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `test read timeout`(isSSL: Boolean) = runServer(isSSL) {
+        // java
+        createJavaSocket(isSSL).use { client ->
+            client.soTimeout = 1000
+
+            assertThrows<SocketTimeoutException> {
+                client.getInputStream().read()
+            }
+        }
+
+        // knio
+        createKnioSocket(isSSL).use { client ->
+            client.setReadTimeout(1000)
+
+            assertThrows<SocketTimeoutException> {
+                client.getInputStream().read()
+            }
+        }
     }
 
-    private suspend fun createKnioSocket(isSSL: Boolean): KSocket = if (isSSL) {
-        createTrustAllSSLContext().getKnioSSLSocketFactory().createSocket("localhost", 8443)
-    } else {
-        KSocketFactory.getDefault().createSocket("localhost", 8080)
-    }
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `test write timeout`(isSSL: Boolean) = runServer(isSSL) {
+        // java
+        createJavaSocket(isSSL).use { client ->
+            client.soTimeout = 1000
 
-    protected abstract suspend fun startReverseServer(isSSL: Boolean): ReverseServer
+            assertThrows<SocketTimeoutException> {
+                client.getOutputStream().write(0)
+            }
+        }
 
-    private fun runServer(isSSL: Boolean, block: suspend () -> Unit) = runBlocking {
-        val server = startReverseServer(isSSL)
-        try {
-            block()
-        } finally {
-            server.stop()
+        // knio
+        createKnioSocket(isSSL).use { client ->
+            client.setWriteTimeout(1000)
+
+            assertThrows<SocketTimeoutException> {
+                client.getOutputStream().write(0)
+            }
         }
     }
 

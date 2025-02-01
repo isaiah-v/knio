@@ -16,10 +16,10 @@ internal abstract class KSocketAbstract(
 
 
     /** The read timeout in milliseconds. */
-    protected var rTimeout: Long? = null
+    private var rTimeout: Long? = null
 
     /** The write timeout in milliseconds. */
-    protected var wTimeout: Long? = null
+    private var wTimeout: Long? = null
 
     /**
      * Binds the socket to a local address.
@@ -229,17 +229,6 @@ internal abstract class KSocketAbstract(
     }
 
     /**
-     * Gets the IP_TOS option.
-     *
-     * @return The value of the IP_TOS option.
-     */
-    @Throws(IOException::class)
-    override suspend fun getTrafficClass(): Int {
-        @Suppress("BlockingMethodInNonBlockingContext")
-        return ch.getOption(java.net.StandardSocketOptions.IP_TOS)
-    }
-
-    /**
      * Checks if the socket is bound.
      *
      * @return True if the socket is bound, false otherwise.
@@ -346,17 +335,5 @@ internal abstract class KSocketAbstract(
     override suspend fun setTcpNoDelay(on: Boolean) {
         @Suppress("BlockingMethodInNonBlockingContext")
         ch.setOption(java.net.StandardSocketOptions.TCP_NODELAY, on)
-    }
-
-    /**
-     * Sets the IP_TOS option.
-     *
-     * @param tc The value to set.
-     * @throws IOException if an I/O error occurs.
-     */
-    @Throws(IOException::class)
-    override suspend fun setTrafficClass(tc: Int) {
-        @Suppress("BlockingMethodInNonBlockingContext")
-        ch.setOption(java.net.StandardSocketOptions.IP_TOS, tc)
     }
 }
