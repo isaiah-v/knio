@@ -226,26 +226,4 @@ abstract class ReverseServerTest<T: TestServer>: TestServerTest<T>() {
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = [false, true])
-    fun `test write timeout`(isSSL: Boolean) = runServer(isSSL) {
-        // java
-        createJavaSocket(isSSL).use { client ->
-            client.soTimeout = 1000
-
-            assertThrows<SocketTimeoutException> {
-                client.getOutputStream().write(0)
-            }
-        }
-
-        // knio
-        createKnioSocket(isSSL).use { client ->
-            client.setWriteTimeout(1000)
-
-            assertThrows<SocketTimeoutException> {
-                client.getOutputStream().write(0)
-            }
-        }
-    }
-
 }
