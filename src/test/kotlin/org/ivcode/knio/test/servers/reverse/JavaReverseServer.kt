@@ -5,6 +5,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.net.ServerSocket
 import java.net.SocketException
+import javax.net.ssl.SSLSocket
 
 /**
  * A server that reverses a string written using the classic Java API.
@@ -23,6 +24,10 @@ class JavaReverseServer(
         while (!serverSocket.isClosed) {
             try {
                 serverSocket.accept().use { client ->
+                    if(client is SSLSocket) {
+                        client.startHandshake()
+                    }
+
                     // read the input
                     val input = readInput(client.getInputStream())
                     client.shutdownInput()
@@ -32,9 +37,11 @@ class JavaReverseServer(
 
                     // write the reversed input
                     writeOutput(reverse, client.getOutputStream())
+                    client.shutdownOutput()
                 }
-            } catch (e: SocketException) {
+            } catch (e: Throwable) {
                 // socket closed
+                e.printStackTrace()
             }
         }
     }

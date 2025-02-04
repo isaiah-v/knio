@@ -63,7 +63,6 @@ interface KSocket: KAutoCloseable {
     /**
      * Returns the address to which the socket is connected.
      *
-     * TODO test this requirement
      * If the socket was connected prior to being closed, then this method will continue to return the connected address
      * after the socket is closed.
      *
@@ -78,7 +77,6 @@ interface KSocket: KAutoCloseable {
      *
      * @return The KInputStream.
      *
-     * TODO test all cases
      * @throws IOException if an I/O error occurs when creating the input stream, the socket is closed, the socket is
      * not connected, or the socket input has been shutdown using shutdownInput()
      */
@@ -101,11 +99,10 @@ interface KSocket: KAutoCloseable {
      * If there is a security manager set, its checkConnect method is called with the local address and -1 as its
      * arguments to see if the operation is allowed. If the operation is not allowed, the loopback address is returned.
      *
-     * TODO test all cases
      * @return the local address to which the socket is bound, the loopback address if denied by the security manager,
      * or the wildcard address if the socket is closed or not bound yet
      */
-    suspend fun getLocalAddress(): java.net.InetAddress?
+    suspend fun getLocalAddress(): java.net.InetAddress
 
     /**
      * Returns the local port number to which this socket is bound.
@@ -315,7 +312,6 @@ interface KSocket: KAutoCloseable {
      * known socket address or port it may not be possible to bind a socket to the required SocketAddress if there is a
      * connection in the timeout state involving the socket address or port.
      *
-     * TODO test this is an option
      * Enabling [SO_REUSEADDR] prior to binding the socket using bind(SocketAddress) allows the socket to be bound even
      * though a previous connection is in a timeout state.
      *
@@ -386,7 +382,7 @@ interface KSocket: KAutoCloseable {
     /**
      * Disables the output stream for this socket. For a TCP socket, any previously written data will be sent followed
      * by TCP's normal connection termination sequence. If you write to a socket output stream after invoking
-     * `shutdownOutput()` on the socket, the stream will throw an `IOException`.  TODO test the IOException
+     * `shutdownOutput()` on the socket, the stream will throw an `IOException`.
      *
      * @throws IOException if an I/O error occurs when shutting down this socket.
      */

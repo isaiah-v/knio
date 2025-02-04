@@ -8,6 +8,8 @@ import java.nio.channels.AsynchronousSocketChannel
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
+private val UNDEFINED_ADDRESS = java.net.InetAddress.getByName("0.0.0.0")
+
 internal abstract class KSocketAbstract(
     protected val ch: AsynchronousSocketChannel
 ): KSocket {
@@ -19,6 +21,14 @@ internal abstract class KSocketAbstract(
 
     /** The write timeout in milliseconds. */
     private var wTimeout: Long? = null
+
+    private var inetAddress: java.net.InetAddress? = null
+
+    init {
+        if(ch.isOpen) {
+            this.inetAddress = getInetAddressNonSuspend()
+        }
+    }
 
 
     override suspend fun bind(local: SocketAddress?) {
@@ -35,7 +45,12 @@ internal abstract class KSocketAbstract(
     }
 
 
-    override suspend fun connect(endpoint: SocketAddress, timeout: Long) = suspendCoroutine {
+    override suspend fun connect(endpoint: SocketAddress, timeout: Long) {
+        connect0(endpoint, timeout)
+        this.inetAddress = getInetAddressNonSuspend()
+    }
+
+    private suspend fun connect0(endpoint: SocketAddress, timeout: Long) = suspendCoroutine {
         try {
             val timoutJob = if (timeout > 0) {
                 it.timeout(timeout) { SocketTimeoutException("Connection timed out") }
@@ -44,9 +59,8 @@ internal abstract class KSocketAbstract(
             } else {
                 null
             }
-
             // returns "this" upon completion
-            ch.connect(endpoint, it, Unit.asCompletionHandler(timoutJob))
+            ch.connect(endpoint, it, Unit.asCompletionHandler (timoutJob))
         } catch (e: Throwable) {
             it.resumeWithException(e)
         }
@@ -54,6 +68,10 @@ internal abstract class KSocketAbstract(
 
 
     override suspend fun getInetAddress(): java.net.InetAddress? {
+        return this.inetAddress
+    }
+
+    private fun getInetAddressNonSuspend(): java.net.InetAddress? {
         val address = ch.remoteAddress ?: return null
         return if(address is java.net.InetSocketAddress) {
             address.address
@@ -69,12 +87,12 @@ internal abstract class KSocketAbstract(
     }
 
 
-    override suspend fun getLocalAddress(): java.net.InetAddress? {
-        val address = ch.localAddress ?: null
+    override suspend fun getLocalAddress(): java.net.InetAddress {
+        val address = ch.localAddress ?: UNDEFINED_ADDRESS
         return if(address is java.net.InetSocketAddress) {
             address.address
         } else {
-            null
+            UNDEFINED_ADDRESS
         }
     }
 

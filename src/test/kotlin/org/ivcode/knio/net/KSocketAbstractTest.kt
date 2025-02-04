@@ -6,10 +6,17 @@ import org.ivcode.knio.test.servers.*
 import org.ivcode.knio.test.servers.accept.AcceptOnlyServer
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
+import java.net.Inet4Address
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.SocketAddress
+import java.net.SocketException
 import javax.net.SocketFactory
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 
 class KSocketAbstractTest: TestServerTest<AcceptOnlyServer>() {
 
@@ -383,6 +390,107 @@ class KSocketAbstractTest: TestServerTest<AcceptOnlyServer>() {
             socket.connect(address)
             assertEquals(true, socket.isBound())
             assertEquals(true, socket.isConnected())
+        }
+    }
+
+    @Test
+    fun `test writing to shutdown output`() = runServer(false) {
+
+        // Documentations states an IOException should be thrown
+        // The IOException thrown is a SocketException
+
+        // java
+        createJavaSocket(false).use { client ->
+            client.shutdownOutput()
+
+            assertThrows<SocketException> {
+                client.getOutputStream().write(0)
+            }
+        }
+
+        // knio
+        createKnioSocket(false).use { client ->
+            client.shutdownOutput()
+
+            assertThrows<SocketException> {
+                client.getOutputStream().write(0)
+            }
+        }
+    }
+
+    @Test
+    fun `get inet-address after close`() = runServer(false) {
+        // java
+        createJavaSocket(false).use { client ->
+            client.close()
+            assertNotNull(client.getInetAddress())
+        }
+
+        // knio
+        createKnioSocket(false).use { client ->
+            client.close()
+            assertNotNull(client.getInetAddress())
+        }
+    }
+
+    @Test
+    fun `get local address`() = runServer(false) {
+        val expected = Inet4Address.getLoopbackAddress()
+
+        // java
+        createJavaSocket(false).use { socket ->
+            assertEquals(expected, socket.localAddress)
+        }
+
+        // knio
+        createKnioSocket(false).use { socket ->
+            assertEquals(expected, socket.getLocalAddress())
+        }
+    }
+
+
+    @Test
+    fun `get local address before binding`() = runBlocking {
+        val expected: InetAddress = Inet4Address.getByName("0.0.0.0")
+
+        // java
+        SocketFactory.getDefault().createSocket().use { socket ->
+            assertEquals(expected, socket.localAddress)
+        }
+
+        // knio
+        KSocketFactory.getDefault().createSocket().use { socket ->
+            assertEquals(expected, socket.getLocalAddress())
+        }
+    }
+
+    @Test
+    fun `get local port`() = runServer(false) {
+        val notExpected = -1
+
+        // java
+        createJavaSocket(false).use { socket ->
+            assertNotEquals(notExpected, socket.localPort)
+        }
+
+        // knio
+        createKnioSocket(false).use { socket ->
+            assertNotEquals(notExpected, socket.getLocalPort())
+        }
+    }
+
+    @Test
+    fun `get local port before binding`() = runBlocking {
+        val expected = -1
+
+        // java
+        SocketFactory.getDefault().createSocket().use { socket ->
+            assertEquals(expected, socket.localPort)
+        }
+
+        // knio
+        KSocketFactory.getDefault().createSocket().use { socket ->
+            assertEquals(expected, socket.getLocalPort())
         }
     }
 

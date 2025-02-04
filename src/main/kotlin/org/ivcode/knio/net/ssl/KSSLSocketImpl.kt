@@ -41,7 +41,7 @@ internal class KSSLSocketImpl (
     init {
         networkRead = context.byteBufferPool.acquire(sslEngine.session.packetBufferSize)
         networkWrite = context.byteBufferPool.acquire(sslEngine.session.packetBufferSize)
-        applicationRead = context.byteBufferPool.acquire(sslEngine.session.applicationBufferSize)
+        applicationRead = context.byteBufferPool.acquire(sslEngine.session.applicationBufferSize).flip()
     }
 
     private val inputStream = object : KInputStream(context) {
@@ -67,6 +67,9 @@ internal class KSSLSocketImpl (
     }
 
     override suspend fun getInputStream(): KInputStream {
+        if(!ch.isOpen) {
+            throw SocketException("Socket is closed")
+        }
         if(isInputShutdown()) {
             throw SocketException("Socket input is shutdown")
         }
@@ -334,8 +337,16 @@ internal class KSSLSocketImpl (
     }
 
     private suspend fun read(b: ByteBuffer): Int {
+        if(isInputShutdown && applicationRead?.hasRemaining() == false) {
+            return -1
+        }
+
+        if(!isHandshakeCompleted && isInputShutdown) {
+            return -1
+        }
+
         if(!isHandshakeCompleted) {
-            @Suppress("BlockingMethodInNonBlockingContext")
+            applicationRead?.clear()
             startHandshake()
         }
 

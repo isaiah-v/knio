@@ -7,6 +7,7 @@ import org.ivcode.knio.lang.use
 import org.ivcode.knio.net.KServerSocket
 import org.ivcode.knio.test.servers.TestServer
 import java.net.SocketException
+import javax.net.ssl.SSLSocket
 
 /**
  * A server that reverses a string written using the classic Knio API.
@@ -25,6 +26,9 @@ class KnioReverseServer(
         while (!serverSocket.isClosed()) {
             try {
                 serverSocket.accept().use { client ->
+                    if(client is SSLSocket) {
+                        client.startHandshake()
+                    }
                     // read the input
                     val input = readInput(client.getInputStream())
                     client.shutdownInput()
@@ -34,6 +38,7 @@ class KnioReverseServer(
 
                     // write the reversed input
                     writeOutput(reverse, client.getOutputStream())
+                    client.shutdownOutput()
                 }
             } catch (e: SocketException) {
                 // socket closed

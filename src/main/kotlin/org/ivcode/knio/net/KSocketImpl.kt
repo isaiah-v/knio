@@ -41,6 +41,10 @@ internal class KSocketImpl internal constructor(
         }
 
         private suspend fun read0(b: ByteBuffer): Int {
+            if(isInputShutdown()) {
+                return -1
+            }
+
             var total = 0
 
             while (b.hasRemaining()) {
@@ -107,6 +111,9 @@ internal class KSocketImpl internal constructor(
      * @return The KInputStream.
      */
     override suspend fun getInputStream(): KInputStream {
+        if(!ch.isOpen) {
+            throw SocketException("Socket is closed")
+        }
         if(isInputShutdown()) {
             throw SocketException("Socket input is shutdown")
         }
