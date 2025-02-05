@@ -29,7 +29,7 @@ interface KSocket: KAutoCloseable {
      * @throws IllegalStateException if the socket is already bound
      */
     @Throws(IOException::class, IllegalArgumentException::class, IllegalStateException::class)
-    suspend fun bind(local: SocketAddress? = null)
+    suspend fun bind(local: SocketAddress?)
 
     /**
      * Closes this socket.
@@ -107,7 +107,6 @@ interface KSocket: KAutoCloseable {
     /**
      * Returns the local port number to which this socket is bound.
      *
-     * TODO test this requirement
      * If the socket was bound prior to being closed, then this method will continue to return the local port number
      * after the socket is closed.
      *
@@ -125,8 +124,6 @@ interface KSocket: KAutoCloseable {
      * If there is a security manager set, its checkConnect method is called with the local address and -1 as its
      * arguments to see if the operation is allowed. If the operation is not allowed, a SocketAddress representing the
      * loopback address and the local port to which this socket is bound is returned.
-     *
-     * TODO test post closed behavior
      *
      * @return The local SocketAddress.
      */
@@ -147,7 +144,6 @@ interface KSocket: KAutoCloseable {
     /**
      * Returns the remote port number to which this socket is connected.
      *
-     * TODO test this requirement
      * If the socket was connected prior to being closed, then this method will continue to return the connected port
      * number after the socket is closed.
      *
@@ -169,13 +165,12 @@ interface KSocket: KAutoCloseable {
     /**
      * Returns the address of the endpoint this socket is connected to, or null if it is unconnected.
      *
-     * TODO test this requirement
      * If the socket was connected prior to being closed, then this method will continue to return the connected address
      * after the socket is closed.
      *
      * @return a [SocketAddress] representing the remote endpoint of this socket, or `null` if it is not connected yet.
      */
-    suspend fun getRemoteSocketAddress(): SocketAddress
+    suspend fun getRemoteSocketAddress(): SocketAddress?
 
     /**
      * Tests if [SO_REUSEADDR] is enabled.
@@ -225,7 +220,6 @@ interface KSocket: KAutoCloseable {
     /**
      * Returns the binding state of the socket.
      *
-     * TODO test this requirement
      * Note: Closing a socket doesn't clear its binding state, which means this method will return true for a closed
      * socket (see isClosed()) if it was successfully bound prior to being closed.
      *
@@ -243,7 +237,6 @@ interface KSocket: KAutoCloseable {
     /**
      * Returns the connection state of the socket.
      *
-     * TODO test this requirement
      * Note: Closing a socket doesn't clear its connection state, which means this method will return true for a closed
      * socket (see isClosed()) if it was successfully connected prior to being closed.
      *
@@ -290,7 +283,6 @@ interface KSocket: KAutoCloseable {
      * larger than 64K is required then this must be requested before the socket is connected to the remote peer. There
      * are two cases to be aware of:
      *
-     *  TODO test these cases
      *  1. For sockets accepted from a ServerSocket, this must be done by calling ServerSocket.setReceiveBufferSize(int)
      *  before the ServerSocket is bound to a local address.
      *
@@ -299,7 +291,7 @@ interface KSocket: KAutoCloseable {
      * @param size The buffer size to set.
      *
      * @throws SocketException if there is an error in the underlying protocol, such as a TCP error.
-     * @throws IllegalArgumentException if the value is 0 or negative. // TODO test this requirement
+     * @throws IllegalArgumentException if the value is 0 or negative.
      */
     @Throws(SocketException::class, IllegalArgumentException::class)
     suspend fun setReceiveBufferSize(size: Int)
