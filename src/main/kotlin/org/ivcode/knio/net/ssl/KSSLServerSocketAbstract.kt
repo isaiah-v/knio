@@ -1,6 +1,5 @@
 package org.ivcode.knio.net.ssl
 
-import org.jetbrains.annotations.Blocking
 import java.net.InetAddress
 import java.net.SocketAddress
 import java.nio.channels.AsynchronousServerSocketChannel
@@ -8,7 +7,6 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLEngine
 import javax.net.ssl.SSLParameters
 
-@Blocking
 internal abstract class KSSLServerSocketAbstract(
     private val sslContext: SSLContext,
     protected val serverChannel: AsynchronousServerSocketChannel

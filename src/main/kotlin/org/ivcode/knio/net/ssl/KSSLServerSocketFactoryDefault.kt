@@ -6,7 +6,6 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import javax.net.ssl.SSLContext
 
-@Blocking
 class KSSLServerSocketFactoryDefault(
     private val sslContext: SSLContext,
     private val context: KnioContext

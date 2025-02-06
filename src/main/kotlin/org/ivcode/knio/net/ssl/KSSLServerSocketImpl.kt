@@ -2,11 +2,9 @@ package org.ivcode.knio.net.ssl
 
 import org.ivcode.knio.nio.acceptSuspend
 import org.ivcode.knio.context.KnioContext
-import org.jetbrains.annotations.Blocking
 import java.net.SocketAddress
 import javax.net.ssl.SSLContext
 
-@Blocking
 internal class KSSLServerSocketImpl (
     sslContext: SSLContext,
     private val context: KnioContext

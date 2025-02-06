@@ -1,10 +1,8 @@
 package org.ivcode.knio.net.ssl
 
 import org.ivcode.knio.net.KServerSocket
-import org.jetbrains.annotations.Blocking
 import javax.net.ssl.SSLParameters
 
-@Blocking
 interface KSSLServerSocket: KServerSocket {
     override suspend fun accept(): KSSLSocket
     suspend fun getEnabledCipherSuites(): Array<String>
