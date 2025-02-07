@@ -18,10 +18,10 @@ import javax.net.ssl.SSLSession
 <span class="fc" id="L18">    }</span>
 
     override suspend fun getSupportedCipherSuites(): Array&lt;String&gt; {
-<span class="nc" id="L21">        return sslEngine.supportedCipherSuites</span>
+<span class="fc" id="L21">        return sslEngine.supportedCipherSuites</span>
     }
     override suspend fun getEnabledCipherSuites(): Array&lt;String&gt; {
-<span class="nc" id="L24">        return sslEngine.enabledCipherSuites</span>
+<span class="fc" id="L24">        return sslEngine.enabledCipherSuites</span>
     }
 
     override suspend fun setEnabledCipherSuites(suites: Array&lt;String&gt;) {
@@ -78,48 +78,20 @@ import javax.net.ssl.SSLSession
 <span class="nc" id="L78">        return sslEngine.enableSessionCreation</span>
     }
 
-    override suspend fun getSSLParameters(): SSLParameters {
-<span class="nc" id="L82">        val params = SSLParameters()</span>
-<span class="nc" id="L83">        params.cipherSuites = getEnabledCipherSuites()</span>
-<span class="nc" id="L84">        params.protocols = getEnabledProtocols()</span>
-<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (getNeedClientAuth()) {</span>
-<span class="nc" id="L86">            params.needClientAuth = true</span>
-<span class="nc bnc" id="L87" title="All 2 branches missed.">        } else if (getWantClientAuth()) {</span>
-<span class="nc" id="L88">            params.wantClientAuth = true</span>
-        }
-<span class="nc" id="L90">        return params</span>
-    }
-
-    override suspend fun setSSLParameters(params: SSLParameters) {
-<span class="nc" id="L94">        var s = params.cipherSuites</span>
-<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (s != null) {</span>
-<span class="nc" id="L96">            setEnabledCipherSuites(s)</span>
-        }
-<span class="nc" id="L98">        s = params.protocols</span>
-<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (s != null) {</span>
-<span class="nc" id="L100">            setEnabledProtocols(s)</span>
-        }
-<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (params.needClientAuth) {</span>
-<span class="nc" id="L103">            setNeedClientAuth(true)</span>
-        } else {
-<span class="nc" id="L105">            setWantClientAuth(params.wantClientAuth)</span>
-        }
-<span class="nc" id="L107">    }</span>
-
     override suspend fun getApplicationProtocol(): String {
-<span class="nc" id="L110">        return sslEngine.applicationProtocol</span>
+<span class="nc" id="L82">        return sslEngine.applicationProtocol</span>
     }
 
     override suspend fun getHandshakeApplicationProtocol(): String {
-<span class="nc" id="L114">        return sslEngine.handshakeApplicationProtocol</span>
+<span class="nc" id="L86">        return sslEngine.handshakeApplicationProtocol</span>
     }
 
     override suspend fun setHandshakeApplicationProtocolSelector(selector: (KSSLSocket, MutableList&lt;String&gt;) -&gt; String?) {
-<span class="nc" id="L118">        TODO(&quot;Not yet implemented&quot;)</span>
+<span class="nc" id="L90">        TODO(&quot;Not yet implemented&quot;)</span>
     }
 
     override suspend fun getHandshakeApplicationProtocolSelector(): ((KSSLSocket, MutableList&lt;String&gt;) -&gt; String?)? {
-<span class="nc" id="L122">        TODO(&quot;Not yet implemented&quot;)</span>
+<span class="nc" id="L94">        TODO(&quot;Not yet implemented&quot;)</span>
     }
 
 
