@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KAutoCloseableExt.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.lang</a> &gt; <span class="el_source">KAutoCloseableExt.kt</span></div><h1>KAutoCloseableExt.kt</h1><pre class="source lang-java linenums">package org.knio.core.lang
+
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
+
+/**
+ * Executes the given block function on this resource and then closes it.
+ *
+ * @param T the type of the resource
+ * @param R the return type of the block function
+ * @param block a function to process this resource
+ * @return the result of the block function
+ * @throws Exception if an exception occurs during execution or closing
+ */
+<span class="nc" id="L15">@Throws(Exception::class)</span>
+suspend inline fun &lt;T : KAutoCloseable, R&gt; T.use(crossinline block: suspend (T) -&gt; R): R {
+<span class="nc" id="L17">    return try {</span>
+<span class="nc" id="L18">        block(this)</span>
+    } finally {
+<span class="nc" id="L20">        close()</span>
+<span class="nc" id="L21">    }</span>
+}
+
+/**
+ * Executes the given block function on this resource within the provided dispatcher context and then closes it.
+ *
+ * @param T the type of the resource
+ * @param R the return type of the block function
+ * @param dispatcher the coroutine dispatcher to run the block function
+ * @param block a suspend function to process this resource
+ * @return the result of the block function
+ * @throws Exception if an exception occurs during execution or closing
+ */
+@Throws(Exception::class)
+suspend inline fun &lt;T : KAutoCloseable, R&gt; T.use(
+    dispatcher: CoroutineDispatcher,
+    crossinline block: suspend (T) -&gt; R
+<span class="nc" id="L38">): R = withContext(dispatcher) {</span>
+<span class="nc" id="L39">    return@withContext try {</span>
+<span class="nc" id="L40">        block(this@use)</span>
+    } finally {
+<span class="nc" id="L42">        close()</span>
+<span class="nc" id="L43">    }</span>
+<span class="nc" id="L44">}</span>
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

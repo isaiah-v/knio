@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PathExt.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.nio</a> &gt; <span class="el_source">PathExt.kt</span></div><h1>PathExt.kt</h1><pre class="source lang-java linenums">package org.knio.core.nio
+
+import org.knio.core.io.*
+import org.knio.core.lang.use
+import org.knio.core.security.update
+import java.nio.file.Path
+import java.security.MessageDigest
+
+/**
+ * Opens a `KInputStream` for the given `Path`.
+ *
+ * @receiver The `Path` to open the input stream for.
+ * @return A `KInputStream` for the given `Path`.
+ */
+suspend fun Path.knioInputStream(): KInputStream {
+<span class="fc" id="L16">    return KFileInputStream.open(this)</span>
+}
+
+/**
+ * Opens a `KOutputStream` for the given `Path`.
+ *
+ * @receiver The `Path` to open the output stream for.
+ * @return A `KOutputStream` for the given `Path`.
+ */
+suspend fun Path.knioOutputStream(): KOutputStream {
+<span class="fc" id="L26">    return KFileOutputStream.open(this)</span>
+}
+
+/**
+ * Computes the MD5 hash of the file at the given `Path`.
+ *
+ * @receiver The `Path` of the file to compute the MD5 hash for.
+ * @return The MD5 hash of the file as a hexadecimal string.
+ */
+<span class="fc" id="L35">suspend fun Path.md5(): String {</span>
+<span class="fc" id="L36">    val digest = MessageDigest.getInstance(&quot;MD5&quot;)</span>
+
+<span class="fc" id="L38">    knioInputStream().use { fis -&gt;</span>
+<span class="fc" id="L39">        digest.update(fis)</span>
+<span class="fc" id="L40">    }</span>
+
+<span class="fc" id="L42">    val bytes = digest.digest()</span>
+<span class="fc" id="L43">    return bytes.joinToString(&quot;&quot;) { &quot;%02x&quot;.format(it) }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteBufferPoolExt.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.context</a> &gt; <span class="el_source">ByteBufferPoolExt.kt</span></div><h1>ByteBufferPoolExt.kt</h1><pre class="source lang-java linenums">package org.knio.core.context
+
+import java.nio.*
+import kotlin.jvm.Throws
+
+
+<span class="fc" id="L7">private val DUMMY_BUFFER = ByteBuffer.wrap(byteArrayOf(0))</span>
+
+/**
+ * Interface representing a buffer that can be released back to a pool.
+ *
+ * @param T the type of buffer
+ */
+internal interface ReleasableBuffer&lt;T: Buffer&gt; {
+
+    /**
+     * Whether the buffer has been released.
+     */
+    val released: Boolean
+
+    /**
+     * The buffer contained in the ReleasableBuffer. It should be noted that the buffer
+     * may be swapped out for a new buffer if the buffer is resized or released. If you
+     * assign this value to a variable, be conscious of the fact that the buffer may be
+     * replaced.
+     *
+     *
+     * @throws IllegalStateException if the buffer has been released
+     */
+    @get:Throws(IllegalStateException::class)
+    val value: T
+
+    /**
+     * Releases the buffer back to the pool.
+     */
+    fun release()
+
+    /**
+     * Resizes the buffer.
+     *
+     * @param newSize the new size of the buffer
+     *
+     * @throws BufferOverflowException if the new size is smaller than the current size and the buffer has more data
+     * available than the new buffer's size
+     * @throws IllegalStateException if the buffer has been released
+     */
+    @Throws(BufferOverflowException::class, IllegalStateException::class)
+    fun resize(newSize: Int)
+}
+
+/**
+ * Generic implementation of ReleasableBuffer.
+ *
+ * @param T the type of buffer
+ * @property buffer the ByteBuffer instance
+ * @property pool the ByteBufferPool to release the buffer to
+ * @property transformer a function to transform the ByteBuffer to the desired buffer type
+ */
+<span class="fc" id="L59">internal class ReleasableBufferImpl&lt;T: Buffer&gt;(</span>
+<span class="fc" id="L60">    private val pool: ByteBufferPool,</span>
+    size: Int,
+<span class="fc" id="L62">    private val bytesPerUnit: Int,</span>
+<span class="fc" id="L63">    private val transformer: (ByteBuffer) -&gt; T</span>
+) : ReleasableBuffer&lt;T&gt; {
+
+<span class="fc" id="L66">    override var released = false</span>
+        private set
+
+<span class="fc" id="L69">    private var buffer = pool.acquire(getBufferSize(size, bytesPerUnit))</span>
+
+<span class="fc" id="L71">    override var value: T = transformer(buffer)</span>
+        get() {
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">            if (released) {</span>
+<span class="nc" id="L74">                throw IllegalStateException(&quot;Buffer has been released&quot;)</span>
+            }
+<span class="fc" id="L76">            return field</span>
+        }
+        private set
+
+    /**
+     * Releases the ByteBuffer back to the pool.
+     */
+    override fun release() {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        if (!released) {</span>
+<span class="fc" id="L85">            val buffer = buffer</span>
+<span class="fc" id="L86">            this.buffer = DUMMY_BUFFER</span>
+<span class="fc" id="L87">            this.value = transformer(DUMMY_BUFFER)</span>
+
+<span class="fc" id="L89">            pool.release(buffer)</span>
+<span class="fc" id="L90">            released = true</span>
+        }
+<span class="fc" id="L92">    }</span>
+
+    /**
+     * Resizes the buffer.
+     *
+     * This method will acquire a new buffer from the pool, copy the contents of the current buffer to the new buffer,
+     * and release the current buffer back to the pool.
+     *
+     * @param newSize the new size of the buffer
+     */
+    override fun resize(newSize: Int) {
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">        if (released) {</span>
+<span class="nc" id="L104">            throw IllegalStateException(&quot;Buffer has been released&quot;)</span>
+        }
+
+<span class="fc" id="L107">        val oldValue = value</span>
+<span class="fc" id="L108">        val valuePosition = oldValue.position()</span>
+<span class="fc" id="L109">        val valueLimit = oldValue.limit()</span>
+<span class="fc" id="L110">        val valueLimitDelta = valueLimit - valuePosition</span>
+
+<span class="fc" id="L112">        buffer.position(valuePosition * bytesPerUnit)</span>
+<span class="fc" id="L113">        buffer.limit(valueLimit * bytesPerUnit)</span>
+
+<span class="fc" id="L115">        val newBuffer = pool.acquire(getBufferSize(newSize, bytesPerUnit))</span>
+<span class="fc" id="L116">        newBuffer.put(buffer)</span>
+<span class="fc" id="L117">        newBuffer.position(0)</span>
+<span class="fc" id="L118">        newBuffer.limit(newBuffer.capacity())</span>
+
+<span class="fc" id="L120">        val newValue = transformer(newBuffer)</span>
+<span class="fc" id="L121">        newValue.limit(valueLimitDelta)</span>
+
+<span class="fc" id="L123">        buffer = newBuffer</span>
+<span class="fc" id="L124">        value = newValue</span>
+
+<span class="fc" id="L126">        pool.release(buffer)</span>
+<span class="fc" id="L127">    }</span>
+}
+
+<span class="nc" id="L130">private fun asByteBuffer(buffer: ByteBuffer): ByteBuffer = buffer</span>
+
+
+/**
+ * Transforms a ByteBuffer into a CharBuffer.
+ *
+ * @param buffer the ByteBuffer to transform
+ * @return the resulting CharBuffer
+ */
+<span class="fc" id="L139">private fun asCharBuffer(buffer: ByteBuffer): CharBuffer = buffer.asCharBuffer()</span>
+
+
+
+/**
+ * Acquires a releasable ByteBuffer from the pool.
+ *
+ * @param size the size of the ByteBuffer to acquire
+ * @return a ReleasableBuffer containing the acquired ByteBuffer
+ */
+internal fun ByteBufferPool.acquireReleasableByteBuffer(size: Int): ReleasableBuffer&lt;ByteBuffer&gt; =
+<span class="nc" id="L150">    ReleasableBufferImpl(this, size, BYTES_PER_BYTE, ::asByteBuffer)</span>
+
+
+/**
+ * Acquires a releasable CharBuffer from the pool.
+ *
+ * For internal use only. The pools shouldn't be used outsize of the context of the Knio.
+ *
+ * @param size the size, in chars, of the CharBuffer to acquire.
+ * @return a ReleasableBuffer containing the acquired CharBuffer
+ */
+internal fun ByteBufferPool.acquireReleasableCharBuffer(size: Int): ReleasableBuffer&lt;CharBuffer&gt; =
+<span class="fc" id="L162">    ReleasableBufferImpl(this, size, BYTES_PER_CHAR, ::asCharBuffer)</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

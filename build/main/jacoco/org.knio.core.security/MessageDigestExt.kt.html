@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MessageDigestExt.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.security</a> &gt; <span class="el_source">MessageDigestExt.kt</span></div><h1>MessageDigestExt.kt</h1><pre class="source lang-java linenums">package org.knio.core.security
+
+import org.knio.core.context.getKnioContext
+import org.knio.core.io.KInputStream
+import java.io.IOException
+import java.security.MessageDigest
+import kotlin.jvm.Throws
+
+/**
+ * Extension function to update a MessageDigest with data from a [KInputStream].
+ *
+ * This function reads data from the provided KInputStream in chunks and updates
+ * the MessageDigest with the read data. It uses a buffer from the knioContext's
+ * byteBufferPool to read the data.
+ *
+ * This function will consume the entire KInputStream but will not call [KInputStream.close].
+ *
+ * @param inputStream The KInputStream to read data from.
+ * @throws IOException If an I/O error occurs.
+ */
+<span class="fc" id="L21">@Throws(IOException::class)</span>
+suspend fun MessageDigest.update(inputStream: KInputStream) {
+<span class="fc" id="L23">    val buffer = getKnioContext().byteBufferPool.acquire(1024)</span>
+<span class="fc" id="L24">    try {</span>
+<span class="fc" id="L25">        while (true) {</span>
+<span class="fc" id="L26">            val read = inputStream.read(buffer)</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">            if (read == -1) {</span>
+<span class="fc" id="L28">                break</span>
+            }
+<span class="fc" id="L30">            buffer.flip()</span>
+<span class="fc" id="L31">            update(buffer)</span>
+<span class="fc" id="L32">            buffer.clear()</span>
+        }
+    } finally {
+<span class="pc" id="L35">        getKnioContext().byteBufferPool.release(buffer)</span>
+<span class="fc" id="L36">    }</span>
+<span class="fc" id="L37">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

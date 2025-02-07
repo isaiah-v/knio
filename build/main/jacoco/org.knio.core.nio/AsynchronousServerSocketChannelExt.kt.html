@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AsynchronousServerSocketChannelExt.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.nio</a> &gt; <span class="el_source">AsynchronousServerSocketChannelExt.kt</span></div><h1>AsynchronousServerSocketChannelExt.kt</h1><pre class="source lang-java linenums">package org.knio.core.nio
+
+import org.knio.core.utils.fromResult
+import org.knio.core.utils.timeout
+import java.net.SocketTimeoutException
+import java.nio.channels.AsynchronousServerSocketChannel
+import java.nio.channels.AsynchronousSocketChannel
+import kotlin.coroutines.suspendCoroutine
+
+
+/**
+ * Suspends the coroutine and accepts a connection from the `AsynchronousServerSocketChannel`.
+ *
+ * @param timeout The timeout in milliseconds to wait for a connection. If `null`, the function will wait indefinitely.
+ * @return The `AsynchronousSocketChannel` representing the accepted connection.
+ * @throws SocketTimeoutException if the timeout is reached before a connection is accepted.
+ */
+<span class="nc" id="L18">suspend fun AsynchronousServerSocketChannel.acceptSuspend(</span>
+<span class="nc" id="L19">    timeout: Long? = null</span>
+<span class="fc bfc" id="L20" title="All 2 branches covered.">): AsynchronousSocketChannel = suspendCoroutine { continuation -&gt;</span>
+
+    // Create a timeout job if a timeout is specified.
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">    val timeoutJob = if(timeout != null) {</span>
+<span class="nc" id="L24">        continuation.timeout(timeout) { SocketTimeoutException() }</span>
+    } else {
+<span class="fc" id="L26">        null</span>
+    }
+
+    // Call the callback version of the non-blocking accept function, un-suspending the coroutine when complete.
+<span class="fc" id="L30">    accept(continuation, fromResult(timeoutJob))</span>
+<span class="fc" id="L31">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

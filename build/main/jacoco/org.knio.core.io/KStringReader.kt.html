@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KStringReader.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.io</a> &gt; <span class="el_source">KStringReader.kt</span></div><h1>KStringReader.kt</h1><pre class="source lang-java linenums">package org.knio.core.io
+
+import kotlinx.coroutines.sync.withLock
+import org.knio.core.context.KnioContext
+import org.knio.core.context.getKnioContext
+import org.knio.core.lang.toCharBuffer
+import java.io.IOException
+import java.nio.CharBuffer
+import kotlin.math.max
+import kotlin.math.min
+
+<span class="fc" id="L12">class KStringReader private constructor (</span>
+    str: String,
+    context: KnioContext
+<span class="fc" id="L15">): KReader(context) {</span>
+
+    companion object {
+        suspend fun open(str: String): KStringReader {
+<span class="fc" id="L19">            return KStringReader(str, getKnioContext())</span>
+        }
+    }
+
+<span class="fc" id="L23">    private var str: CharBuffer? = str.toCharBuffer()</span>
+    private var mark = 0
+
+
+    /** Check to make sure that the stream has not been closed  */
+    @Throws(IOException::class)
+    private fun ensureOpen() {
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (str == null) throw IOException(&quot;Stream closed&quot;)</span>
+<span class="fc" id="L31">    }</span>
+
+    @Throws(IOException::class)
+<span class="fc" id="L34">    override suspend fun read(b: CharBuffer): Int = lock.withLock {</span>
+<span class="fc" id="L35">        ensureOpen()</span>
+<span class="fc" id="L36">        read0(b)</span>
+<span class="fc" id="L37">    }</span>
+
+
+    private suspend fun read0(b: CharBuffer): Int {
+<span class="fc" id="L41">        val str = this.str!!</span>
+
+<span class="fc" id="L43">        val read = minOf(b.remaining(), str.remaining())</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if(read == 0) return -1</span>
+
+<span class="fc" id="L46">        b.put(b.position(), str, str.position(), read)</span>
+
+<span class="fc" id="L48">        str.position(str.position() + read)</span>
+<span class="fc" id="L49">        b.position(b.position() + read)</span>
+
+<span class="fc" id="L51">        return read</span>
+    }
+
+    /**
+     * Skips the specified number of characters in the stream. Returns
+     * the number of characters that were skipped.
+     *
+     *
+     * The `ns` parameter may be negative, even though the
+     * `skip` method of the [Reader] superclass throws
+     * an exception in this case. Negative values of `ns` cause the
+     * stream to skip backwards. Negative return values indicate a skip
+     * backwards. It is not possible to skip backwards past the beginning of
+     * the string.
+     *
+     *
+     * If the entire string has been read or skipped, then this method has
+     * no effect and always returns 0.
+     *
+     * @exception  IOException  If an I/O error occurs
+     */
+    @Throws(IOException::class)
+<span class="fc" id="L73">    override suspend fun skip(ns: Long): Long = lock.withLock {</span>
+<span class="fc" id="L74">        ensureOpen()</span>
+<span class="fc" id="L75">        return skip0(ns)</span>
+    }
+
+
+    private suspend fun skip0(ns: Long): Long {
+<span class="fc" id="L80">        val str = this.str!!</span>
+<span class="fc" id="L81">        val next = str.position()</span>
+<span class="fc" id="L82">        val length = str.limit()</span>
+
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        if (next &gt;= length) return 0</span>
+        // Bound skip by beginning and end of the source
+<span class="fc" id="L86">        var n = min((length - next).toDouble(), ns.toDouble()).toLong()</span>
+<span class="fc" id="L87">        n = max(-next.toDouble(), n.toDouble()).toLong()</span>
+<span class="fc" id="L88">        str.position((next + n).toInt())</span>
+
+<span class="fc" id="L90">        return n</span>
+    }
+
+    /**
+     * Tells whether this stream is ready to be read.
+     *
+     * @return True if the next read() is guaranteed not to block for input
+     *
+     * @exception  IOException  If the stream is closed
+     */
+    @Throws(IOException::class)
+<span class="fc" id="L101">    override suspend fun ready(): Boolean = lock.withLock {</span>
+<span class="fc" id="L102">        ensureOpen()</span>
+<span class="fc" id="L103">        return true</span>
+    }
+
+    /**
+     * Tells whether this stream supports the mark() operation, which it does.
+     */
+    override suspend fun markSupported(): Boolean {
+<span class="fc" id="L110">        return true</span>
+    }
+
+    /**
+     * Marks the present position in the stream.  Subsequent calls to reset()
+     * will reposition the stream to this point.
+     *
+     * @param  readLimit  Limit on the number of characters that may be
+     * read while still preserving the mark.  Because
+     * the stream's input comes from a string, there
+     * is no actual limit, so this argument must not
+     * be negative, but is otherwise ignored.
+     *
+     * @exception  IllegalArgumentException  If `readAheadLimit &lt; 0`
+     * @exception  IOException  If an I/O error occurs
+     */
+    @Throws(IOException::class)
+    override suspend fun mark(readLimit: Int) {
+<span class="pc bpc" id="L128" title="2 of 4 branches missed.">        require(readLimit &gt;= 0) { &quot;Read-ahead limit &lt; 0&quot; }</span>
+
+<span class="fc" id="L130">        lock.withLock(lock) {</span>
+<span class="fc" id="L131">            ensureOpen()</span>
+<span class="fc" id="L132">            mark = str!!.position()</span>
+<span class="fc" id="L133">        }</span>
+<span class="fc" id="L134">    }</span>
+
+    /**
+     * Resets the stream to the most recent mark, or to the beginning of the
+     * string if it has never been marked.
+     *
+     * @exception  IOException  If an I/O error occurs
+     */
+    @Throws(IOException::class)
+<span class="fc" id="L143">    override suspend fun reset():Unit = lock.withLock {</span>
+<span class="fc" id="L144">        ensureOpen()</span>
+<span class="fc" id="L145">        str!!.position(mark)</span>
+<span class="fc" id="L146">    }</span>
+
+    /**
+     * Closes the stream and releases any system resources associated with
+     * it. Once the stream has been closed, further read(),
+     * ready(), mark(), or reset() invocations will throw an IOException.
+     * Closing a previously closed stream has no effect. This method will block
+     * while there is another thread blocking on the reader.
+     */
+<span class="fc" id="L155">    override suspend fun close() =lock.withLock {</span>
+<span class="fc" id="L156">        str = null</span>
+<span class="fc" id="L157">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

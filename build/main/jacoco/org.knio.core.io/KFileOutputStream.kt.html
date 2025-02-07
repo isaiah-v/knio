@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KFileOutputStream.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.io</a> &gt; <span class="el_source">KFileOutputStream.kt</span></div><h1>KFileOutputStream.kt</h1><pre class="source lang-java linenums">package org.knio.core.io
+
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.knio.core.context.KnioContext
+import org.knio.core.context.getKnioContext
+import org.knio.core.nio.writeSuspend
+import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousFileChannel
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
+
+/**
+ * A `KFileOutputStream` is an asynchronous file output stream that supports coroutine-based
+ * non-blocking I/O operations.
+ *
+ * This class is equivalent to the [java.io.FileOutputStream].
+ *
+ * @param path The path to the file to write.
+ * @param context The context to use for I/O operations.
+ */
+<span class="fc" id="L23">class KFileOutputStream private constructor (</span>
+    path: Path,
+<span class="fc" id="L25">    private val context: KnioContext</span>
+<span class="fc" id="L26">): KOutputStream() {</span>
+
+<span class="fc" id="L28">    private val fileChannel: AsynchronousFileChannel = context.channelFactory.openFileChannel(</span>
+<span class="fc" id="L29">        path,</span>
+<span class="fc" id="L30">        StandardOpenOption.WRITE</span>
+    )
+
+<span class="fc" id="L33">    private val mutex = Mutex()</span>
+    private var position: Long = 0
+
+    companion object {
+        /**
+         * Opens a `KFileOutputStream` for the given `Path`.
+         *
+         * @param path The `Path` to open the output stream for.
+         * @return A `KFileOutputStream` for the given `Path`.
+         */
+        suspend fun open(path: Path): KFileOutputStream {
+<span class="fc" id="L44">            return KFileOutputStream(path, getKnioContext())</span>
+        }
+    }
+
+    @Throws(IOException::class)
+<span class="fc" id="L49">    override suspend fun write(b: ByteBuffer) = mutex.withLock {</span>
+<span class="fc" id="L50">        write0(b)</span>
+<span class="fc" id="L51">    }</span>
+
+    /**
+     * Writes the remaining bytes in the `ByteBuffer` to the file.
+     *
+     * @param b The `ByteBuffer` to write.
+     */
+    @Throws(IOException::class)
+    private suspend fun write0(b: ByteBuffer) {
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        while (b.hasRemaining()) {</span>
+<span class="fc" id="L61">            val read = fileChannel.writeSuspend(b, position)</span>
+
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">            if (read == -1 || read == 0) {</span>
+<span class="nc" id="L64">                break</span>
+            } else {
+<span class="fc" id="L66">                position += read</span>
+            }
+        }
+<span class="fc" id="L69">    }</span>
+
+    /**
+     * Closes this file output stream and releases any system resources associated with this stream.
+     * This file output stream may no longer be used for writing bytes.
+     *
+     * If this stream has an associated channel then the channel is closed as well.
+     */
+<span class="fc" id="L77">    override suspend fun close() = mutex.withLock {</span>
+<span class="fc" id="L78">        close0()</span>
+<span class="fc" id="L79">    }</span>
+
+    /**
+     * Closes the file channel without acquiring the mutex.
+     */
+    private suspend fun close0() {
+        @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
+<span class="fc" id="L86">        fileChannel.close()</span>
+<span class="fc" id="L87">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

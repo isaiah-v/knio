@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KSocketFactory.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.net</a> &gt; <span class="el_source">KSocketFactory.kt</span></div><h1>KSocketFactory.kt</h1><pre class="source lang-java linenums">package org.knio.core.net
+
+import org.knio.core.context.KnioContext
+import org.knio.core.context.getKnioContext
+import java.io.IOException
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.UnknownHostException
+
+interface KSocketFactory {
+    companion object {
+        suspend fun getDefault(): KSocketFactory {
+<span class="fc" id="L13">            return DefaultKSocketFactory(getKnioContext())</span>
+        }
+    }
+
+    @Throws(IOException::class)
+    suspend fun createSocket(): KSocket
+
+    @Throws(IOException::class, UnknownHostException::class)
+    suspend fun createSocket(host: String, port: Int): KSocket
+
+    @Throws(IOException::class, UnknownHostException::class)
+    suspend fun createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int): KSocket
+
+    @Throws(IOException::class)
+    suspend fun createSocket(host: InetAddress, port: Int): KSocket
+
+    @Throws(IOException::class)
+    suspend fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int): KSocket
+
+<span class="fc" id="L32">    private class DefaultKSocketFactory(</span>
+<span class="fc" id="L33">        private val context: KnioContext</span>
+    ): KSocketFactory {
+<span class="fc" id="L35">        override suspend fun createSocket() = KSocketImpl(</span>
+<span class="fc" id="L36">            channel = context.channelFactory.openSocketChannel(),</span>
+<span class="fc" id="L37">            context = context</span>
+<span class="fc" id="L38">        )</span>
+
+<span class="fc" id="L40">        override suspend fun createSocket(host: String, port: Int) =</span>
+<span class="fc" id="L41">            createSocket().apply { connect(InetSocketAddress(host, port)) }</span>
+
+<span class="nc" id="L43">        override suspend fun createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int) = createSocket().apply {</span>
+<span class="nc" id="L44">            connect(InetSocketAddress(host, port))</span>
+<span class="nc" id="L45">            bind(InetSocketAddress(localHost, localPort))</span>
+<span class="nc" id="L46">        }</span>
+
+<span class="nc" id="L48">        override suspend fun createSocket(host: InetAddress, port: Int) = createSocket().apply {</span>
+<span class="nc" id="L49">            connect(InetSocketAddress(host, port))</span>
+<span class="nc" id="L50">        }</span>
+
+<span class="nc" id="L52">        override suspend fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int) = createSocket().apply {</span>
+<span class="nc" id="L53">            connect(InetSocketAddress(address, port))</span>
+<span class="nc" id="L54">            bind(InetSocketAddress(localAddress, localPort))</span>
+<span class="nc" id="L55">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

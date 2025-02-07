@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KSSLSocketFactoryDefault.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.net.ssl</a> &gt; <span class="el_source">KSSLSocketFactoryDefault.kt</span></div><h1>KSSLSocketFactoryDefault.kt</h1><pre class="source lang-java linenums">package org.knio.core.net.ssl
+
+import org.knio.core.context.KnioContext
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import javax.net.ssl.SSLContext
+
+<span class="fc" id="L8">internal class KSSLSocketFactoryDefault(</span>
+<span class="fc" id="L9">    private val sslContext: SSLContext,</span>
+<span class="fc" id="L10">    private val context: KnioContext</span>
+): KSSLSocketFactory {
+    override suspend fun createSocket(): KSSLSocket {
+
+<span class="fc" id="L14">        return KSSLSocketImpl (</span>
+<span class="fc" id="L15">            channel = context.channelFactory.openSocketChannel(),</span>
+<span class="fc" id="L16">            sslEngine = sslContext.createSSLEngine(),</span>
+<span class="fc" id="L17">            useClientMode = true,</span>
+<span class="fc" id="L18">            context = context</span>
+        )
+    }
+
+<span class="fc" id="L22">    override suspend fun createSocket(host: String, port: Int) = createSocket().apply {</span>
+<span class="fc" id="L23">        connect(InetSocketAddress(host, port))</span>
+<span class="fc" id="L24">    }</span>
+
+<span class="nc" id="L26">    override suspend fun createSocket(</span>
+        host: String,
+        port: Int,
+        localHost: InetAddress,
+        localPort: Int
+<span class="nc" id="L31">    ) = createSocket().apply {</span>
+<span class="nc" id="L32">        connect(InetSocketAddress(host, port))</span>
+<span class="nc" id="L33">        bind(InetSocketAddress(localHost, localPort))</span>
+<span class="nc" id="L34">    }</span>
+
+<span class="nc" id="L36">    override suspend fun createSocket(host: InetAddress, port: Int) = createSocket().apply {</span>
+<span class="nc" id="L37">        connect(InetSocketAddress(host, port))</span>
+<span class="nc" id="L38">    }</span>
+
+<span class="nc" id="L40">    override suspend fun createSocket(</span>
+        address: InetAddress,
+        port: Int,
+        localAddress: InetAddress,
+        localPort: Int
+<span class="nc" id="L45">    ) = createSocket().apply {</span>
+<span class="nc" id="L46">        connect(InetSocketAddress(address, port))</span>
+<span class="nc" id="L47">        bind(InetSocketAddress(localAddress, localPort))</span>
+<span class="nc" id="L48">    }</span>
+
+<span class="nc" id="L50">    override suspend fun getDefaultCipherSuites(): Array&lt;String&gt; = sslContext.defaultSSLParameters.cipherSuites</span>
+
+<span class="nc" id="L52">    override suspend fun getSupportedCipherSuites(): Array&lt;String&gt; = sslContext.supportedSSLParameters.cipherSuites</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

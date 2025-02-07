@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KByteArrayInputStream.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.io</a> &gt; <span class="el_source">KByteArrayInputStream.kt</span></div><h1>KByteArrayInputStream.kt</h1><pre class="source lang-java linenums">package org.knio.core.io
+
+import org.knio.core.context.KnioContext
+import org.knio.core.context.getKnioContext
+import java.nio.ByteBuffer
+
+<span class="fc" id="L7">class KByteArrayInputStream(</span>
+<span class="fc" id="L8">    private val data: ByteArray,</span>
+    context: KnioContext
+<span class="fc" id="L10">): KInputStream(context) {</span>
+
+    companion object {
+        suspend fun open(data: ByteArray): KByteArrayInputStream {
+<span class="fc" id="L14">            return KByteArrayInputStream(data, getKnioContext())</span>
+        }
+    }
+
+    private var position = 0
+
+    override suspend fun read(b: ByteBuffer): Int {
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        if (position &gt;= data.size) {</span>
+<span class="fc" id="L22">            return -1</span>
+        }
+
+<span class="fc" id="L25">        val remaining = b.remaining()</span>
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">        if (remaining == 0) {</span>
+<span class="pc" id="L27">            return 0</span>
+        }
+
+<span class="fc" id="L30">        val length = minOf(remaining, data.size - position)</span>
+<span class="fc" id="L31">        b.put(data, position, length)</span>
+<span class="fc" id="L32">        position += length</span>
+<span class="fc" id="L33">        return length</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

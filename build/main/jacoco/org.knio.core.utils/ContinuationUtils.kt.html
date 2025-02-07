@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContinuationUtils.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.utils</a> &gt; <span class="el_source">ContinuationUtils.kt</span></div><h1>ContinuationUtils.kt</h1><pre class="source lang-java linenums">package org.knio.core.utils
+
+import kotlinx.coroutines.*
+import java.nio.channels.CompletionHandler
+import java.util.concurrent.TimeoutException
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+
+<span class="fc" id="L10">private val DEFAULT_ON_FAIL: (Throwable) -&gt; Nothing = { throw it }</span>
+
+internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
+
+/**
+ * A CompletionHandler implementation that resumes a Continuation with the result or exception.
+ *
+ * @param T The type of the result.
+ * @param R The type of the continuation result.
+ * @property onComplete The block to execute on completion.
+ * @property onFail The block to execute on failure.
+ * @property timeoutJob The job to cancel on completion or failure.
+ */
+<span class="fc" id="L23">private class ContinuationCompletionHandler&lt;T, R&gt;(</span>
+<span class="pc" id="L24">    val onComplete: CompletionBlock&lt;T, R&gt;,</span>
+<span class="pc" id="L25">    val onFail: (Throwable) -&gt; R,</span>
+<span class="pc" id="L26">    val timeoutJob: Job?</span>
+): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {
+
+    /**
+     * Called when the operation completes successfully.
+     *
+     * @param result The result of the operation.
+     * @param attachment The continuation to resume.
+     */
+    override fun completed(result: T, attachment: Continuation&lt;R&gt;) {
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        timeoutJob?.cancel()</span>
+<span class="fc" id="L37">        try {</span>
+<span class="fc" id="L38">            attachment.resume(onComplete(result))</span>
+<span class="nc" id="L39">        } catch (e: Throwable) {</span>
+<span class="nc" id="L40">            attachment.resumeWithException(e)</span>
+        }
+<span class="fc" id="L42">    }</span>
+
+    /**
+     * Called when the operation fails.
+     *
+     * @param exc The exception that caused the failure.
+     * @param attachment The continuation to resume with the exception.
+     */
+    override fun failed(exc: Throwable, attachment: Continuation&lt;R&gt;) {
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        timeoutJob?.cancel()</span>
+<span class="fc" id="L52">        try {</span>
+<span class="nc" id="L53">            attachment.resume(onFail(exc))</span>
+<span class="fc" id="L54">        } catch (e: Throwable) {</span>
+<span class="fc" id="L55">            attachment.resumeWithException(e)</span>
+        }
+<span class="fc" id="L57">    }</span>
+}
+
+/**
+ * Creates a CompletionHandler that resumes a Continuation with the result or exception.
+ *
+ * @param R The type of the continuation result.
+ * @param timeoutJob The job to cancel on completion or failure.
+ * @param onFail The block to execute on failure.
+ * @return A CompletionHandler that resumes a Continuation.
+ */
+<span class="fc" id="L68">internal fun &lt;R&gt; fromResult(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;R, Continuation&lt;R&gt;&gt; {</span>
+<span class="fc" id="L69">    return ContinuationCompletionHandler({ it }, onFail = onFail, timeoutJob = timeoutJob)</span>
+}
+
+/**
+ * Converts a result to a CompletionHandler that resumes a Continuation.
+ *
+ * @param T The type of the result.
+ * @param R The type of the continuation result.
+ * @param timeoutJob The job to cancel on completion or failure.
+ * @param onFail The block to execute on failure.
+ * @return A CompletionHandler that resumes a Continuation.
+ */
+<span class="pc" id="L81">internal fun &lt;T,R&gt; R.asCompletionHandler(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {</span>
+<span class="fc" id="L82">    return ContinuationCompletionHandler({ this }, onFail = onFail ,timeoutJob = timeoutJob)</span>
+}
+
+/**
+ * Converts a CompletionBlock to a CompletionHandler that resumes a Continuation.
+ *
+ * @param T The type of the result.
+ * @param R The type of the continuation result.
+ * @param timeoutJob The job to cancel on completion or failure.
+ * @param onFail The block to execute on failure.
+ * @return A CompletionHandler that resumes a Continuation.
+ */
+<span class="nc" id="L94">internal fun &lt;T, R&gt; CompletionBlock&lt;T, R&gt;.asCompletionHandler(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {</span>
+<span class="nc" id="L95">    return ContinuationCompletionHandler(this, onFail = onFail, timeoutJob = timeoutJob)</span>
+}
+
+/**
+ * Sets a timeout for a Continuation.
+ *
+ * @param R The type of the continuation result.
+ * @param timeout The timeout duration in milliseconds.
+ * @param scope The CoroutineScope to launch the timeout job in.
+ * @param exc The exception to throw on timeout.
+ * @return A Job representing the timeout.
+ */
+<span class="nc" id="L107">@OptIn(DelicateCoroutinesApi::class)</span>
+internal fun &lt;R&gt; Continuation&lt;R&gt;.timeout (
+    timeout: Long,
+<span class="nc" id="L110">    scope: CoroutineScope = GlobalScope,</span>
+<span class="nc" id="L111">    exc: () -&gt; Throwable = { TimeoutException() }</span>
+<span class="nc" id="L112">): Job = scope.launch {</span>
+<span class="nc" id="L113">    delay(timeout)</span>
+<span class="nc" id="L114">    resumeWithException(exc())</span>
+<span class="nc" id="L115">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

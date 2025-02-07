@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KReader.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.io</a> &gt; <span class="el_source">KReader.kt</span></div><h1>KReader.kt</h1><pre class="source lang-java linenums">package org.knio.core.io
+
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.knio.core.context.KnioContext
+import org.knio.core.context.acquireReleasableCharBuffer
+import org.knio.core.lang.KAutoCloseable
+import java.io.IOException
+import java.nio.CharBuffer
+import kotlin.jvm.Throws
+import kotlin.math.min
+
+/**
+ * Abstract class for reading character streams. The only methods that a subclass must implement are
+ * read(char[], int, int) and close(). Most subclasses, however, will override some of the methods defined here in order
+ * to provide higher efficiency, additional functionality, or both.
+ *
+ * The coroutine equivalent to the [java.io.Reader] class.
+ */
+<span class="fc" id="L20">abstract class KReader(</span>
+<span class="fc" id="L21">    protected val context: KnioContext,</span>
+<span class="fc" id="L22">    protected val lock: Mutex = Mutex()</span>
+<span class="fc" id="L23">): KAutoCloseable {</span>
+
+    /**
+     * Marks the present position in the stream. Subsequent calls to reset() will attempt to reposition the stream to
+     * this point. Not all character-input streams support the mark() operation.
+     *
+     * @param readLimit the maximum limit of bytes that can be read before the mark position becomes invalid
+     * @throws IOException if the stream does not support mark(), or if some other I/O error occurs
+     */
+    @Throws(IOException::class)
+<span class="nc" id="L33">    open suspend fun mark(readLimit: Int): Unit = throw IOException(&quot;mark not supported&quot;)</span>
+
+    /**
+     * Tells whether this stream supports the mark() operation. The default implementation always returns false.
+     *
+     * @return true if this stream supports the mark() operation; false otherwise
+     */
+<span class="nc" id="L40">    open suspend fun markSupported(): Boolean = false</span>
+
+    /**
+     * Reads a single character.
+     *
+     * Subclasses that intend to support efficient single-character input should override this method.
+     *
+     * @return The character read, as an integer in the range 0 to 65535 (0x00-0xffff), or -1 if the end of the stream
+     * has been reached
+     *
+     * @throws IOException if an I/O error occurs
+     */
+    @Throws(IOException::class)
+    open suspend fun read(): Int {
+<span class="fc" id="L54">        val buffer = CharArray(1)</span>
+<span class="fc" id="L55">        val read = read(buffer)</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        return if (read == -1) -1 else buffer[0].code</span>
+    }
+
+    /**
+     * Reads characters into an array.
+     *
+     * @param b the buffer into which the data is read
+     *
+     * @return The total number of characters read into the buffer, or -1 if there is no more data because the end of
+     * the stream has been reached
+     *
+     * @throws IOException if an I/O error occurs
+     */
+    @Throws(IOException::class)
+<span class="fc" id="L70">    open suspend fun read(b: CharArray): Int = read(b, 0, b.size)</span>
+
+    /**
+     * Reads characters into a portion of an array.
+     *
+     * @param b the buffer into which the data is read
+     * @param off the start offset in the destination array b
+     * @param len the maximum number of characters read
+     *
+     * @return The total number of characters read into the buffer, or -1 if there is no more data because the end of
+     * the stream has been reached
+     */
+    @Throws(IOException::class)
+<span class="fc" id="L83">    open suspend fun read(b: CharArray, off: Int, len: Int): Int = read(CharBuffer.wrap(b, off, len))</span>
+
+    /**
+     * Attempts to read characters into the specified character buffer. The buffer is used as a repository of characters
+     * as-is: the only changes made are the results of a put operation. No flipping or rewinding of the buffer is
+     * performed.
+     *
+     * @param b the buffer into which the data is read
+     * @return The total number of characters read into the buffer, or -1 if there is no more data because the end of
+     * the stream has been reached
+     * @throws IOException if an I/O error occurs
+     * @throws java.nio.ReadOnlyBufferException if the buffer is read-only
+     */
+    @Throws(IOException::class)
+    abstract suspend fun read(b: CharBuffer): Int
+<span class="nc" id="L98">    open suspend fun ready(): Boolean = true</span>
+<span class="nc" id="L99">    open suspend fun reset(): Unit = throw IOException(&quot;reset not supported&quot;)</span>
+
+    /**
+     * Skips characters. This method will block until some characters are available, an I/O error occurs, or the end of
+     * the stream is reached. If the stream is already at its end before this method is invoked, then no characters are skipped and zero is returned.
+     *
+     */
+    open suspend fun skip(n: Long): Long {
+        // Note: If skip is called frequently, it's better to use a real buffer pool rather than creating a new buffer each time
+        // It's best to override this method in the subclass to provide a longer lived buffer
+
+<span class="nc bnc" id="L110" title="All 4 branches missed.">        require(n &gt;= 0L) { &quot;skip value is negative&quot; }</span>
+
+<span class="nc" id="L112">        val nn = min(n, context.maxTaskBufferSize.toLong()).toInt()</span>
+
+<span class="nc" id="L114">        val buffer = context.byteBufferPool.acquireReleasableCharBuffer(nn)</span>
+<span class="nc" id="L115">        try {</span>
+<span class="nc" id="L116">            lock.withLock {</span>
+<span class="nc" id="L117">                return skip0(n, buffer.value)</span>
+            }
+        } finally {
+<span class="nc" id="L120">            buffer.release()</span>
+        }
+    }
+
+    private suspend fun skip0(n: Long, c: CharBuffer): Long {
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if(c.remaining()&gt;n) {</span>
+<span class="nc" id="L126">            c.limit(c.position() + n.toInt())</span>
+        }
+
+<span class="nc" id="L129">        var r = n</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        while (r &gt; 0) {</span>
+<span class="nc" id="L131">            val nc = read(c)</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">            if (nc == -1) break</span>
+<span class="nc" id="L133">            r -= nc</span>
+        }
+<span class="nc" id="L135">        return n - r</span>
+    }
+
+    /**
+     * Closes the stream and releases any system resources associated with it. Once the stream has been closed, further
+     * read(), ready(), mark(), reset(), or skip() invocations will throw an IOException. Closing a previously closed
+     * stream has no effect.
+     */
+    @Throws(IOException::class)
+    abstract override suspend fun close()
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

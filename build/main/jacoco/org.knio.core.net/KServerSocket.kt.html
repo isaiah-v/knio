@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KServerSocket.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.net</a> &gt; <span class="el_source">KServerSocket.kt</span></div><h1>KServerSocket.kt</h1><pre class="source lang-java linenums">package org.knio.core.net
+
+
+import org.knio.core.lang.KAutoCloseable
+import java.io.IOException
+import java.net.InetAddress
+import java.net.SocketAddress
+import kotlin.jvm.Throws
+
+interface KServerSocket: KAutoCloseable {
+
+    @Throws(IOException::class)
+    suspend fun accept(): KSocket
+
+<span class="fc" id="L15">    @Throws(IOException::class)</span>
+<span class="fc" id="L16">    suspend fun bind(endpoint: SocketAddress, backlog: Int = 0)</span>
+
+    @Throws(IOException::class)
+    override suspend fun close()
+
+    @Throws(IOException::class)
+    suspend fun getInetAddress(): InetAddress?
+
+    @Throws(IOException::class)
+    suspend fun getLocalPort(): Int
+
+    @Throws(IOException::class)
+    suspend fun getLocalSocketAddress(): SocketAddress?
+
+    @Throws(IOException::class)
+    suspend fun setAcceptTimeout(timeout: Long)
+
+    @Throws(IOException::class)
+    suspend fun getAcceptTimeout(): Long
+
+    @Throws(IOException::class)
+    suspend fun setReuseAddress(on: Boolean)
+
+    @Throws(IOException::class)
+    suspend fun getReuseAddress(): Boolean
+
+    @Throws(IOException::class)
+    suspend fun setReceiveBufferSize(size: Int)
+
+    @Throws(IOException::class)
+    suspend fun getReceiveBufferSize(): Int
+
+    @Throws(IOException::class)
+    suspend fun isBound(): Boolean
+
+    @Throws(IOException::class)
+    suspend fun isClosed(): Boolean
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

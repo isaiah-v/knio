@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KnioContext.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.context</a> &gt; <span class="el_source">KnioContext.kt</span></div><h1>KnioContext.kt</h1><pre class="source lang-java linenums">package org.knio.core.context
+
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.coroutineContext
+
+import java.nio.ByteBuffer
+import java.nio.CharBuffer
+import java.nio.channels.Channel
+
+<span class="fc" id="L10">private val DEFAULT_BYTE_BUFFER_POOL = ByteBufferPoolNone()</span>
+<span class="fc" id="L11">private val DEFAULT_CHANNEL_FACTORY = ChannelFactoryDefault()</span>
+
+<span class="fc" id="L13">private val DEFAULT_KNIO_CONTEXT = KnioContext()</span>
+
+/**
+ * The coroutine context element for the knio library.
+ *
+ * @property maxTaskBufferSize The size of buffers used for short-lived tasks. The memory used for these buffers depends on
+ * the data type. For example, a [ByteBuffer] is 1:1, but a [CharBuffer] is 2:1.
+ *
+ * @property maxStreamBufferSize The size of buffers used for streams. The memory used for these buffers depends on the
+ * data type. For example, a [ByteBuffer] is 1:1, but a [CharBuffer] is 2:1.
+ *
+ * @property byteBufferPool The pool to use for acquiring [ByteBuffer] instances. This pool is used to create byte
+ * buffers, but other buffers types are also pulled from this pool and a view is created.
+ *
+ * @property channelFactory The factory to use for creating [Channel] instances.
+ */
+<span class="pc" id="L29">data class KnioContext (</span>
+<span class="fc" id="L30">    val maxTaskBufferSize: Int = DEFAULT_TASK_BUFFER_SIZE,</span>
+<span class="fc" id="L31">    val maxStreamBufferSize: Int = DEFAULT_STREAM_BUFFER_SIZE,</span>
+<span class="fc" id="L32">    val byteBufferPool: ByteBufferPool = DEFAULT_BYTE_BUFFER_POOL,</span>
+<span class="fc" id="L33">    val channelFactory: ChannelFactory = DEFAULT_CHANNEL_FACTORY</span>
+<span class="fc" id="L34">): CoroutineContext.Element {</span>
+
+    companion object Key: CoroutineContext.Key&lt;KnioContext&gt;
+
+    override val key: CoroutineContext.Key&lt;KnioContext&gt;
+<span class="fc" id="L39">        get() = Key</span>
+}
+
+internal suspend fun getKnioContext(): KnioContext {
+<span class="fc bfc" id="L43" title="All 2 branches covered.">    return coroutineContext[KnioContext] ?: DEFAULT_KNIO_CONTEXT</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

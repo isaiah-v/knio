@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KInputStreamReader.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.io</a> &gt; <span class="el_source">KInputStreamReader.kt</span></div><h1>KInputStreamReader.kt</h1><pre class="source lang-java linenums">package org.knio.core.io
+
+import kotlinx.coroutines.sync.withLock
+import org.knio.core.context.KnioContext
+import org.knio.core.context.getKnioContext
+import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.CharBuffer
+import java.nio.ReadOnlyBufferException
+import java.nio.charset.Charset
+import java.nio.charset.CoderResult
+
+/**
+ * A reader that reads characters from an [KInputStream].
+ *
+ * This class is equivalent to the [java.io.InputStreamReader].
+ *
+ * @property inputStream the input stream to read from
+ * @property byteBufferPool the buffer pool to use for acquiring buffers
+ * @property bufferSize the size of the buffer to use
+ */
+<span class="fc" id="L22">class KInputStreamReader private constructor (</span>
+<span class="fc" id="L23">    private val inputStream: KInputStream,</span>
+<span class="nc" id="L24">    charset: Charset = Charsets.UTF_8,</span>
+<span class="fc" id="L25">    private val bufferSize: Int = 8192,</span>
+    context: KnioContext
+<span class="fc" id="L27">): KReader(context) {</span>
+
+    companion object {
+<span class="nc" id="L30">        suspend fun open(inputStream: KInputStream, charset: Charset = Charsets.UTF_8): KInputStreamReader {</span>
+<span class="fc" id="L31">            return KInputStreamReader(inputStream, charset, context = getKnioContext())</span>
+        }
+    }
+
+<span class="fc" id="L35">    private val buffer: ByteBuffer = context.byteBufferPool.acquire(bufferSize).flip()</span>
+<span class="fc" id="L36">    private val decoder = charset.newDecoder()</span>
+    private var eof = false
+    private var isClosed = false
+
+    /**
+     * The name of the character encoding being used by this stream.
+     */
+    val encoding: String
+<span class="fc" id="L44">        get() = decoder.charset().name()</span>
+
+    /**
+     * Reads characters into the given [CharBuffer].
+     *
+     * @param b the buffer to read characters into
+     * @return the number of characters read, or -1 if the end of the stream has been reached
+     * @throws ReadOnlyBufferException if the buffer is read-only
+     * @throws IOException if an I/O error occurs
+     */
+    override suspend fun read(b: CharBuffer): Int {
+<span class="fc" id="L55">        lock.withLock {</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">            if (b.isReadOnly) {</span>
+<span class="nc" id="L57">                throw ReadOnlyBufferException()</span>
+            }
+
+<span class="fc" id="L60">            val startPosition = b.position()</span>
+<span class="fc" id="L61">            var r: CoderResult</span>
+            do {
+<span class="fc" id="L63">                r = decoder.decode(buffer, b, eof)</span>
+<span class="fc" id="L64">                when {</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">                    r.isMalformed -&gt; throw IOException(&quot;malformed input&quot;)</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">                    r.isUnmappable -&gt; throw IOException(&quot;unmappable input&quot;)</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                    r.isOverflow -&gt; {</span>
+<span class="fc" id="L68">                        return b.position() - startPosition</span>
+                    }
+
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                    r.isUnderflow -&gt; {</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                        if (b.position() &gt; startPosition) {</span>
+<span class="fc" id="L73">                            return b.position() - startPosition</span>
+                        }
+
+<span class="fc bfc" id="L76" title="All 2 branches covered.">                        if (eof) {</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">                            if (buffer.hasRemaining()) {</span>
+<span class="nc" id="L78">                                throw IOException(&quot;unexpected end of stream&quot;)</span>
+                            }
+<span class="fc" id="L80">                            return -1</span>
+                        }
+
+<span class="fc" id="L83">                        buffer.apply {</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">                            if (hasRemaining()) compact() else clear()</span>
+<span class="fc" id="L85">                        }</span>
+
+<span class="fc bfc" id="L87" title="All 2 branches covered.">                        if (inputStream.read(buffer) == -1) {</span>
+<span class="fc" id="L88">                            eof = true</span>
+                        }
+<span class="fc" id="L90">                        buffer.flip()</span>
+                    }
+                }
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">            } while (!r.isError)</span>
+
+<span class="nc bnc" id="L95" title="All 4 branches missed.">            return if (r.length() == 0 &amp;&amp; eof) -1 else r.length()</span>
+        }
+    }
+
+    /**
+     * Closes this reader and releases any system resources associated with it.
+     *
+     * @throws IOException if an I/O error occurs
+     */
+<span class="fc" id="L104">    override suspend fun close() = lock.withLock {</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        if (isClosed) {</span>
+<span class="nc" id="L106">            return</span>
+        }
+<span class="fc" id="L108">        isClosed = true</span>
+<span class="fc" id="L109">        context.byteBufferPool.release(buffer)</span>
+<span class="fc" id="L110">        inputStream.close()</span>
+<span class="fc" id="L111">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

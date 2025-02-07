@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KBufferedReader.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.io</a> &gt; <span class="el_source">KBufferedReader.kt</span></div><h1>KBufferedReader.kt</h1><pre class="source lang-java linenums">package org.knio.core.io
+
+import kotlinx.coroutines.sync.withLock
+import org.knio.core.context.KnioContext
+import org.knio.core.context.acquireReleasableCharBuffer
+import org.knio.core.context.getKnioContext
+import java.io.IOException
+import java.nio.CharBuffer
+import java.util.*
+
+private const val UNMARKED = -1
+
+/**
+ * A buffered reader that reads characters from a KReader.
+ *
+ * @param reader The KReader to read characters from.
+ * @param bufferSize The size of the buffer to use.
+ */
+<span class="fc" id="L19">class KBufferedReader(</span>
+    reader: KReader,
+    bufferSize: Int,
+    context: KnioContext
+<span class="fc" id="L23">): KReader(context) {</span>
+
+    companion object {
+
+        /**
+         * Opens a buffered reader that reads characters from a [KReader].
+         *
+         * @param reader The KReader to read characters from.
+         * @param bufferSize The size of the buffer to use. If null, the default buffer size will be used.
+         *
+         * @return The buffered reader.
+         */
+<span class="pc" id="L35">        suspend fun open(reader: KReader, bufferSize: Int? = null): KBufferedReader {</span>
+<span class="fc" id="L36">            val context = getKnioContext()</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">            val buffSize = bufferSize ?: context.maxStreamBufferSize</span>
+
+<span class="fc" id="L39">            return KBufferedReader(reader, buffSize, context)</span>
+        }
+    }
+
+<span class="fc" id="L43">    private var inStream: KReader? = reader</span>
+<span class="fc" id="L44">    private var buffer = context.byteBufferPool.acquireReleasableCharBuffer(bufferSize).apply { value.flip() }</span>
+
+<span class="fc" id="L46">    private var mark: Int = UNMARKED</span>
+    private var readAhead: Int = 0 /* Valid only when markedChar &gt; 0 */
+
+
+    /** Checks to make sure that the stream has not been closed  */
+    @Throws(IOException::class)
+    private fun ensureOpen() {
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (buffer.released) throw IOException(&quot;Stream closed&quot;)</span>
+<span class="fc" id="L54">    }</span>
+
+    /**
+     * Fills the input buffer, taking the mark into account if it is valid.
+     *
+     * @throws IOException If an I/O error occurs.
+     */
+    @Throws(IOException::class)
+    private suspend fun fill(): Int {
+        // not synchronized, as only called from other synchronized methods
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if(inStream == null) {</span>
+<span class="fc" id="L66">            return -1</span>
+        }
+
+<span class="fc" id="L69">        val buffer = buffer.value</span>
+<span class="fc" id="L70">        var delta = 0</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if(isMarked()) {</span>
+<span class="fc" id="L72">            delta = buffer.position() - mark</span>
+<span class="fc" id="L73">            val readAheadLimit = readAhead + mark</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            if(delta &gt;= readAheadLimit) {</span>
+                // delta is larger than the readAhead limit, invalidate the mark
+<span class="fc" id="L76">                mark = UNMARKED</span>
+<span class="fc" id="L77">                buffer.clear()</span>
+            } else {
+<span class="fc" id="L79">                buffer.position(mark)</span>
+<span class="fc" id="L80">                buffer.compact()</span>
+<span class="fc" id="L81">                mark = 0</span>
+<span class="fc" id="L82">                buffer.position(delta)</span>
+            }
+        } else {
+<span class="fc" id="L85">            buffer.clear()</span>
+        }
+
+<span class="fc" id="L88">        val read = inStream!!.read(buffer)</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if(read == -1) {</span>
+            // Nothing read, EOF reached, clean up, and return
+<span class="fc" id="L91">            inStream = null</span>
+        }
+<span class="fc" id="L93">        buffer.flip()</span>
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if(isMarked()) {</span>
+<span class="fc" id="L96">            buffer.position(buffer.position() + delta)</span>
+        }
+
+<span class="fc" id="L99">        return read</span>
+    }
+
+    /**
+     * Reads a single character.
+     *
+     * @return The character read, as an integer in the range 0 to 65535 (0x00-0xffff), or -1 if the end of the stream has been reached.
+     * @throws IOException If an I/O error occurs.
+     */
+    @Throws(IOException::class)
+    override suspend fun read(): Int {
+<span class="fc" id="L110">        lock.withLock {</span>
+<span class="fc" id="L111">            ensureOpen()</span>
+<span class="fc" id="L112">            val buffer = buffer.value</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if(!buffer.hasRemaining()) {</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">                if(fill()==-1) return -1</span>
+            }
+
+<span class="fc" id="L117">            return buffer.get().code</span>
+        }
+    }
+
+    /**
+     * Reads characters into a portion of an array.
+     *
+     * @param cbuf The destination buffer.
+     * @param off The offset at which to start storing characters.
+     * @param len The maximum number of characters to read.
+     * @return The number of characters read, or -1 if the end of the stream has been reached.
+     * @throws IOException If an I/O error occurs.
+     */
+    @Throws(IOException::class)
+    override suspend fun read(cbuf: CharArray, off: Int, len: Int): Int {
+<span class="fc" id="L132">        lock.withLock {</span>
+<span class="fc" id="L133">            ensureOpen()</span>
+
+<span class="fc" id="L135">            val buffer = buffer.value</span>
+<span class="fc" id="L136">            var read = 0</span>
+<span class="fc" id="L137">            var eof = false</span>
+
+<span class="fc bfc" id="L139" title="All 4 branches covered.">            while (read!=len &amp;&amp; !eof) {</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">                if(buffer.hasRemaining()) {</span>
+<span class="fc" id="L141">                    val toRead = minOf(len-read, buffer.remaining())</span>
+<span class="fc" id="L142">                    buffer.get(cbuf, read+off, toRead)</span>
+<span class="fc" id="L143">                    read += toRead</span>
+                } else {
+<span class="fc bfc" id="L145" title="All 2 branches covered.">                    if(fill() == -1) {</span>
+<span class="fc" id="L146">                        eof = true</span>
+                    }
+                }
+            }
+
+<span class="pc bpc" id="L151" title="3 of 4 branches missed.">            return if(read==0 &amp;&amp; eof) -1 else read</span>
+        }
+    }
+
+    /**
+     * Reads characters into a CharBuffer.
+     *
+     * @param b The CharBuffer to read characters into.
+     * @return The number of characters read, or -1 if the end of the stream has been reached.
+     * @throws IOException If an I/O error occurs.
+     */
+    override suspend fun read(b: CharBuffer): Int {
+<span class="fc" id="L163">        lock.withLock {</span>
+<span class="fc" id="L164">            ensureOpen()</span>
+
+<span class="fc" id="L166">            val buffer = buffer.value</span>
+
+<span class="fc" id="L168">            var read = 0</span>
+<span class="fc" id="L169">            var eof = false</span>
+
+<span class="fc bfc" id="L171" title="All 4 branches covered.">            while(b.hasRemaining() &amp;&amp; !eof) {</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">                if(!buffer.hasRemaining()) {</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">                    if(fill() == -1) eof = true</span>
+                } else {
+<span class="fc" id="L175">                    val toRead = minOf(b.remaining(), buffer.remaining())</span>
+<span class="fc" id="L176">                    b.put(b.position(), buffer, buffer.position(), toRead)</span>
+<span class="fc" id="L177">                    b.position(b.position() + toRead)</span>
+<span class="fc" id="L178">                    buffer.position(buffer.position() + toRead)</span>
+
+<span class="fc" id="L180">                    read += toRead</span>
+                }
+            }
+
+<span class="pc bpc" id="L184" title="3 of 4 branches missed.">            return if(read==0 &amp;&amp; eof) -1 else read</span>
+        }
+    }
+
+    /**
+     * Reads a line of text. A line is considered to be terminated by any one of a line feed ('\n'), a carriage return ('\r'), or a carriage return followed immediately by a linefeed.
+     *
+     * @param ignoreLF If true, the next '\n' will be skipped.
+     * @return A String containing the contents of the line, not including any line-termination characters, or null if the end of the stream has been reached.
+     * @throws IOException If an I/O error occurs.
+     */
+    @Throws(IOException::class)
+    suspend fun readLine(): String? {
+<span class="fc" id="L197">        val s: StringBuilder = StringBuilder()</span>
+
+<span class="fc" id="L199">        lock.withLock {</span>
+<span class="fc" id="L200">            ensureOpen()</span>
+
+<span class="fc" id="L202">            val buffer = buffer.value</span>
+
+<span class="fc" id="L204">            bufferLoop@ while (true) {</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">                if(!buffer.hasRemaining()) {</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">                    if(fill() == -1) {</span>
+<span class="fc bfc" id="L207" title="All 4 branches covered.">                        return if (s.isNotEmpty()) {</span>
+<span class="fc" id="L208">                            s.toString()</span>
+                        } else{
+<span class="fc" id="L210">                            null</span>
+                        }
+                    }
+                }
+
+<span class="fc" id="L215">                var eol = false</span>
+<span class="fc" id="L216">                var c: Char</span>
+
+<span class="fc bfc" id="L218" title="All 2 branches covered.">                charLoop@ while (buffer.hasRemaining()) {</span>
+<span class="fc" id="L219">                    c = buffer.get()</span>
+<span class="fc bfc" id="L220" title="All 3 branches covered.">                    if (c == '\n') {</span>
+<span class="fc" id="L221">                        eol = true</span>
+<span class="fc" id="L222">                        break@charLoop</span>
+                    } else if (c == '\r') {
+<span class="fc" id="L224">                        eol = true</span>
+<span class="pc bpc" id="L225" title="1 of 4 branches missed.">                        if (buffer.hasRemaining() &amp;&amp; buffer.get() != '\n') {</span>
+<span class="fc" id="L226">                            buffer.position(buffer.position() - 1)</span>
+                        }
+<span class="fc" id="L228">                        break@charLoop</span>
+                    } else {
+<span class="fc" id="L230">                        s.append(c)</span>
+                    }
+                }
+
+<span class="fc bfc" id="L234" title="All 2 branches covered.">                if (eol) {</span>
+<span class="fc" id="L235">                    return s.toString()</span>
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Skips characters.
+     *
+     * @param n The number of characters to skip.
+     * @return The number of characters actually skipped.
+     * @throws IllegalArgumentException If `n` is negative.
+     * @throws IOException If an I/O error occurs.
+     */
+    @Throws(IOException::class)
+    override suspend fun skip(n: Long): Long {
+<span class="pc bpc" id="L252" title="2 of 4 branches missed.">        require(n &gt;= 0L) { &quot;skip value is negative&quot; }</span>
+
+<span class="fc" id="L254">        lock.withLock {</span>
+<span class="fc" id="L255">            ensureOpen()</span>
+
+<span class="fc" id="L257">            val buffer = buffer.value</span>
+
+<span class="fc" id="L259">            var r = n</span>
+<span class="pc bpc" id="L260" title="1 of 2 branches missed.">            while (r &gt; 0) {</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">                if(!buffer.hasRemaining()) {</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">                    if(fill() == -1) {</span>
+<span class="nc" id="L263">                        break</span>
+                    }
+                }
+
+
+<span class="fc bfc" id="L268" title="All 2 branches covered.">                if(buffer.remaining() &gt;= r) {</span>
+<span class="fc" id="L269">                    buffer.position(buffer.position() + r.toInt())</span>
+<span class="fc" id="L270">                    r = 0</span>
+<span class="fc" id="L271">                    break</span>
+                } else {
+<span class="fc" id="L273">                    r -= buffer.remaining()</span>
+<span class="fc" id="L274">                    buffer.position(buffer.limit())</span>
+                }
+            }
+<span class="fc" id="L277">            return n - r</span>
+        }
+    }
+
+    /**
+     * Tells whether this stream is ready to be read. A buffered character stream is ready if the buffer is not empty,
+     * or if the underlying character stream is ready.
+     *
+     * @return `true` if the stream is ready to be read, false otherwise.
+     * @throws IOException If an I/O error occurs.
+     */
+    @Throws(IOException::class)
+    override suspend fun ready(): Boolean {
+<span class="nc" id="L290">        lock.withLock {</span>
+<span class="nc" id="L291">            ensureOpen()</span>
+<span class="nc bnc" id="L292" title="All 4 branches missed.">            return buffer.value.hasRemaining() || inStream!!.ready()</span>
+        }
+    }
+
+    /**
+     * Tells whether this stream supports the mark() operation, which it does.
+     *
+     * @return True if the stream supports the mark() operation, false otherwise.
+     */
+<span class="fc" id="L301">    override suspend fun markSupported(): Boolean = true</span>
+
+    /**
+     * Marks the present position in the stream. Subsequent calls to reset() will attempt to reposition the stream to
+     * this point.
+     *
+     * @param readLimit  Limit on the number of characters that may be read while still preserving the mark. An attempt
+     * to reset the stream after reading characters up to this limit or beyond may fail. A limit value larger than the size of the input buffer will cause a new buffer to be allocated whose size is no smaller than limit. Therefore large values should be used with care.
+     *
+     * @throws IllegalArgumentException If readAheadLimit is &lt; 0.
+     * @throws IOException If an I/O error occurs.
+     */
+    @Throws(IOException::class)
+    override suspend fun mark(readLimit: Int) {
+<span class="fc bfc" id="L315" title="All 4 branches covered.">        require(readLimit &gt;= 0) { &quot;Read-ahead limit &lt; 0&quot; }</span>
+
+<span class="fc" id="L317">        lock.withLock {</span>
+<span class="fc" id="L318">            ensureOpen()</span>
+<span class="fc" id="L319">            setMark(readLimit)</span>
+        }
+<span class="fc" id="L321">    }</span>
+
+    /**
+     * Resets the stream to the most recent mark.
+     *
+     * @throws IOException If the stream has never been marked, or if the mark has been invalidated.
+     */
+    @Throws(IOException::class)
+    override suspend fun reset() {
+<span class="fc" id="L330">        lock.withLock {</span>
+<span class="fc" id="L331">            ensureOpen()</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">            if (!resetToMark()) {</span>
+<span class="fc" id="L333">                throw IOException(&quot;Mark invalid&quot;)</span>
+            }
+<span class="fc" id="L335">        }</span>
+<span class="fc" id="L336">    }</span>
+
+    /**
+     * Closes the stream and releases any system resources associated with it.
+     *
+     * @throws IOException If an I/O error occurs.
+     */
+    @Throws(IOException::class)
+    override suspend fun close() {
+<span class="fc" id="L345">        lock.withLock {</span>
+<span class="fc bfc" id="L346" title="All 2 branches covered.">            if (inStream == null) return</span>
+
+<span class="fc" id="L348">            inStream!!.close()</span>
+<span class="fc" id="L349">            inStream = null</span>
+
+<span class="fc" id="L351">            buffer.release()</span>
+<span class="fc" id="L352">        }</span>
+<span class="fc" id="L353">    }</span>
+
+
+    private fun isMarked(): Boolean {
+<span class="fc bfc" id="L357" title="All 2 branches covered.">        return mark &gt; UNMARKED</span>
+    }
+
+    private fun setMark(readLimit: Int): Int {
+<span class="fc bfc" id="L361" title="All 2 branches covered.">        if(buffer.value.limit() &lt; readLimit) {</span>
+<span class="fc" id="L362">            buffer.resize(readLimit)</span>
+        }
+
+<span class="fc" id="L365">        val mark = this.buffer.value.position()</span>
+
+<span class="fc" id="L367">        this.mark = mark</span>
+<span class="fc" id="L368">        this.readAhead = readLimit</span>
+<span class="fc" id="L369">        return mark</span>
+    }
+
+    private fun resetToMark(): Boolean {
+<span class="fc bfc" id="L373" title="All 2 branches covered.">        if(!isMarked()) {</span>
+<span class="fc" id="L374">            return false</span>
+        }
+
+<span class="fc" id="L377">        this.buffer.value.position(mark)</span>
+<span class="fc" id="L378">        return true</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

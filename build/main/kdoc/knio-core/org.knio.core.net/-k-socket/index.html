@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>KSocket</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+    <nav class="navigation theme-dark" id="navigation-wrapper">
+            <a class="library-name--link" href="../../../index.html">
+                    knio-core
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+0.1.0-SNAPSHOT        </div>
+        <div class="navigation-controls">
+        <div class="filter-section filter-section_loading" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active=""
+                        data-filter=":/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
+                    <div class="dropdown--header"><span>Platform filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":/main"
+                                       data-filter=":/main"/>
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </div>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                        data-role="dropdown-listbox">
+                        <div class="dropdown--header">
+                            <span>
+                                    knio-core
+                            </span>
+                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar--inner" id="sideMenu"></div>
+                    </ul>
+                    <div class="dropdown--overlay"></div>
+                </div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="knio-core::org.knio.core.net/KSocket///PointingToDeclaration//-251573632">
+  <div class="breadcrumbs"><a href="../../../index.html">knio-core</a><span class="delimiter">/</span><a href="../index.html">org.knio.core.net</a><span class="delimiter">/</span><span class="current">KSocket</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>KSocket</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">KSocket</a> : <a href="../../org.knio.core.lang/-k-auto-closeable/index.html">KAutoCloseable</a></div><p class="paragraph">This class implements client sockets (also called just &quot;sockets&quot;). A socket is an endpoint for communication between two machines.</p><p class="paragraph">This is a non-block equivalent to <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/Socket.html">java.net.Socket</a>, backed by an <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/channels/AsynchronousSocketChannel.html">java.nio.channels.AsynchronousSocketChannel</a>.</p><h4 class="">Inheritors</h4><div class="table"><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../org.knio.core.net.ssl/-k-s-s-l-socket/index.html">KSSLSocket</a></div></span></div><div></div></div></div></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="FUNCTION">
+        <h2 class="">Functions</h2>
+        <div class="table"><a data-name="695432670%2FFunctions%2F-251573632" anchor-label="bind" id="695432670%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="bind.html"><span><span>bind</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="695432670%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="bind.html"><span class="token function">bind</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">local<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketAddress.html">SocketAddress</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Binds the socket to a local address. If the address is null, then the system will pick up an ephemeral port and a valid local address to bind the socket.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-373260708%2FFunctions%2F-251573632" anchor-label="close" id="-373260708%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="close.html"><span><span>close</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-373260708%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend override </span><span class="token keyword">fun </span><a href="close.html"><span class="token function">close</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Closes this socket.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="185099648%2FFunctions%2F-251573632" anchor-label="connect" id="185099648%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="connect.html"><span><span>connect</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="185099648%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="connect.html"><span class="token function">connect</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">endpoint<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketAddress.html">SocketAddress</a><span class="token punctuation">, </span></span><span class="parameter ">timeout<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator"> = </span><span class="token constant">0</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Connects this socket to the server with a specified timeout value. A timeout of zero is interpreted as an infinite timeout. The connection will then suspend until established or an error occurs.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="220926908%2FFunctions%2F-251573632" anchor-label="getInetAddress" id="220926908%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-inet-address.html"><span>get</span><wbr></wbr><span>Inet</span><wbr></wbr><span><span>Address</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="220926908%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-inet-address.html"><span class="token function">getInetAddress</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/InetAddress.html">InetAddress</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Returns the address to which the socket is connected.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-511228974%2FFunctions%2F-251573632" anchor-label="getInputStream" id="-511228974%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-input-stream.html"><span>get</span><wbr></wbr><span>Input</span><wbr></wbr><span><span>Stream</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-511228974%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-input-stream.html"><span class="token function">getInputStream</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../org.knio.core.io/-k-input-stream/index.html">KInputStream</a></div><div class="brief "><p class="paragraph">Returns the <a href="../../org.knio.core.io/-k-input-stream/index.html">KInputStream</a> for this socket.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-428959500%2FFunctions%2F-251573632" anchor-label="getKeepAlive" id="-428959500%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-keep-alive.html"><span>get</span><wbr></wbr><span>Keep</span><wbr></wbr><span><span>Alive</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-428959500%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-keep-alive.html"><span class="token function">getKeepAlive</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Tests if <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#SO_KEEPALIVE()">SO_KEEPALIVE</a> is enabled.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1232152331%2FFunctions%2F-251573632" anchor-label="getLocalAddress" id="-1232152331%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-local-address.html"><span>get</span><wbr></wbr><span>Local</span><wbr></wbr><span><span>Address</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1232152331%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-local-address.html"><span class="token function">getLocalAddress</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/InetAddress.html">InetAddress</a></div><div class="brief "><p class="paragraph">Gets the local address to which the socket is bound.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="932779824%2FFunctions%2F-251573632" anchor-label="getLocalPort" id="932779824%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-local-port.html"><span>get</span><wbr></wbr><span>Local</span><wbr></wbr><span><span>Port</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="932779824%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-local-port.html"><span class="token function">getLocalPort</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">Returns the local port number to which this socket is bound.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="145473416%2FFunctions%2F-251573632" anchor-label="getLocalSocketAddress" id="145473416%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-local-socket-address.html"><span>get</span><wbr></wbr><span>Local</span><wbr></wbr><span>Socket</span><wbr></wbr><span><span>Address</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="145473416%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-local-socket-address.html"><span class="token function">getLocalSocketAddress</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketAddress.html">SocketAddress</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Returns the address of the endpoint this socket is bound to.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="922714653%2FFunctions%2F-251573632" anchor-label="getOutputStream" id="922714653%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-output-stream.html"><span>get</span><wbr></wbr><span>Output</span><wbr></wbr><span><span>Stream</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="922714653%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-output-stream.html"><span class="token function">getOutputStream</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../../org.knio.core.io/-k-output-stream/index.html">KOutputStream</a></div><div class="brief "><p class="paragraph">Returns a <a href="../../org.knio.core.io/-k-output-stream/index.html">KOutputStream</a> for this socket.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1133010557%2FFunctions%2F-251573632" anchor-label="getPort" id="1133010557%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-port.html"><span>get</span><wbr></wbr><span><span>Port</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1133010557%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-port.html"><span class="token function">getPort</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">Returns the remote port number to which this socket is connected.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="26498033%2FFunctions%2F-251573632" anchor-label="getReadTimeout" id="26498033%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-read-timeout.html"><span>get</span><wbr></wbr><span>Read</span><wbr></wbr><span><span>Timeout</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="26498033%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-read-timeout.html"><span class="token function">getReadTimeout</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div><div class="brief "><p class="paragraph">Gets the read timeout.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1815558680%2FFunctions%2F-251573632" anchor-label="getReceiveBufferSize" id="1815558680%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-receive-buffer-size.html"><span>get</span><wbr></wbr><span>Receive</span><wbr></wbr><span>Buffer</span><wbr></wbr><span><span>Size</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1815558680%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-receive-buffer-size.html"><span class="token function">getReceiveBufferSize</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">Gets the value of the <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#SO_RCVBUF()">SO_RCVBUF</a> option for this Socket, that is the buffer size used by the platform for input on this Socket.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1384225919%2FFunctions%2F-251573632" anchor-label="getRemoteSocketAddress" id="-1384225919%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-remote-socket-address.html"><span>get</span><wbr></wbr><span>Remote</span><wbr></wbr><span>Socket</span><wbr></wbr><span><span>Address</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1384225919%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-remote-socket-address.html"><span class="token function">getRemoteSocketAddress</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketAddress.html">SocketAddress</a><span class="token operator">?</span></div><div class="brief "><p class="paragraph">Returns the address of the endpoint this socket is connected to, or null if it is unconnected.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1197949954%2FFunctions%2F-251573632" anchor-label="getReuseAddress" id="-1197949954%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-reuse-address.html"><span>get</span><wbr></wbr><span>Reuse</span><wbr></wbr><span><span>Address</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1197949954%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-reuse-address.html"><span class="token function">getReuseAddress</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Tests if <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#SO_REUSEADDR()">SO_REUSEADDR</a> is enabled.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1433837749%2FFunctions%2F-251573632" anchor-label="getSendBufferSize" id="1433837749%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-send-buffer-size.html"><span>get</span><wbr></wbr><span>Send</span><wbr></wbr><span>Buffer</span><wbr></wbr><span><span>Size</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1433837749%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-send-buffer-size.html"><span class="token function">getSendBufferSize</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></div><div class="brief "><p class="paragraph">Get value of the <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#SO_SNDBUF()">SO_SNDBUF</a> option for this Socket, that is the buffer size used by the platform for output on this Socket.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2034137373%2FFunctions%2F-251573632" anchor-label="getTcpNoDelay" id="2034137373%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-tcp-no-delay.html"><span>get</span><wbr></wbr><span>Tcp</span><wbr></wbr><span>No</span><wbr></wbr><span><span>Delay</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2034137373%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-tcp-no-delay.html"><span class="token function">getTcpNoDelay</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Tests if <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#TCP_NODELAY()">TCP_NODELAY</a> is enabled.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1160358756%2FFunctions%2F-251573632" anchor-label="getWriteTimeout" id="-1160358756%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-write-timeout.html"><span>get</span><wbr></wbr><span>Write</span><wbr></wbr><span><span>Timeout</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1160358756%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="get-write-timeout.html"><span class="token function">getWriteTimeout</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a></div><div class="brief "><p class="paragraph">Gets the write timeout.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-106713184%2FFunctions%2F-251573632" anchor-label="isBound" id="-106713184%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-bound.html"><span>is</span><wbr></wbr><span><span>Bound</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-106713184%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="is-bound.html"><span class="token function">isBound</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Returns the binding state of the socket.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-2066011056%2FFunctions%2F-251573632" anchor-label="isClosed" id="-2066011056%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-closed.html"><span>is</span><wbr></wbr><span><span>Closed</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-2066011056%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="is-closed.html"><span class="token function">isClosed</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Returns the closed state of the socket.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-836993035%2FFunctions%2F-251573632" anchor-label="isConnected" id="-836993035%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-connected.html"><span>is</span><wbr></wbr><span><span>Connected</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-836993035%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="is-connected.html"><span class="token function">isConnected</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Returns the connection state of the socket.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-999023074%2FFunctions%2F-251573632" anchor-label="isInputShutdown" id="-999023074%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-input-shutdown.html"><span>is</span><wbr></wbr><span>Input</span><wbr></wbr><span><span>Shutdown</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-999023074%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="is-input-shutdown.html"><span class="token function">isInputShutdown</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Returns whether the read-half of the socket connection is closed.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1748557477%2FFunctions%2F-251573632" anchor-label="isOutputShutdown" id="1748557477%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="is-output-shutdown.html"><span>is</span><wbr></wbr><span>Output</span><wbr></wbr><span><span>Shutdown</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1748557477%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="is-output-shutdown.html"><span class="token function">isOutputShutdown</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Returns whether the write-half of the socket connection is closed.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-929617339%2FFunctions%2F-251573632" anchor-label="setKeepAlive" id="-929617339%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-keep-alive.html"><span>set</span><wbr></wbr><span>Keep</span><wbr></wbr><span><span>Alive</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-929617339%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="set-keep-alive.html"><span class="token function">setKeepAlive</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">keepAlive<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Enable/disable <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#SO_KEEPALIVE()">SO_KEEPALIVE</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1501002311%2FFunctions%2F-251573632" anchor-label="setReadTimeout" id="1501002311%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-read-timeout.html"><span>set</span><wbr></wbr><span>Read</span><wbr></wbr><span><span>Timeout</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1501002311%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="set-read-timeout.html"><span class="token function">setReadTimeout</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">timeout<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the read timeout.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1216443586%2FFunctions%2F-251573632" anchor-label="setReceiveBufferSize" id="1216443586%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-receive-buffer-size.html"><span>set</span><wbr></wbr><span>Receive</span><wbr></wbr><span>Buffer</span><wbr></wbr><span><span>Size</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1216443586%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="set-receive-buffer-size.html"><span class="token function">setReceiveBufferSize</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">size<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#SO_RCVBUF()">SO_RCVBUF</a> option to the specified value for this Socket. The <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#SO_RCVBUF()">SO_RCVBUF</a> option is used by the platform's networking code as a hint for the size to set the underlying network I/O buffers.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="438222391%2FFunctions%2F-251573632" anchor-label="setReuseAddress" id="438222391%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-reuse-address.html"><span>set</span><wbr></wbr><span>Reuse</span><wbr></wbr><span><span>Address</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="438222391%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="set-reuse-address.html"><span class="token function">setReuseAddress</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">reuse<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Enable/disable the <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#SO_REUSEADDR()">SO_REUSEADDR</a> socket option.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1800521593%2FFunctions%2F-251573632" anchor-label="setSendBufferSize" id="-1800521593%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-send-buffer-size.html"><span>set</span><wbr></wbr><span>Send</span><wbr></wbr><span>Buffer</span><wbr></wbr><span><span>Size</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1800521593%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="set-send-buffer-size.html"><span class="token function">setSendBufferSize</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">size<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html">Int</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#SO_SNDBUF()">SO_SNDBUF</a> option to the specified value for this Socket. The <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#SO_SNDBUF()">SO_SNDBUF</a> option is used by the platform's networking code as a hint for the size to set the underlying network I/O buffers.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="568649238%2FFunctions%2F-251573632" anchor-label="setTcpNoDelay" id="568649238%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-tcp-no-delay.html"><span>set</span><wbr></wbr><span>Tcp</span><wbr></wbr><span>No</span><wbr></wbr><span><span>Delay</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="568649238%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="set-tcp-no-delay.html"><span class="token function">setTcpNoDelay</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">on<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Enable/disable <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/SocketOptions.html#TCP_NODELAY()">TCP_NODELAY</a> (disable/enable Nagle's algorithm).</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1931433510%2FFunctions%2F-251573632" anchor-label="setWriteTimeout" id="-1931433510%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="set-write-timeout.html"><span>set</span><wbr></wbr><span>Write</span><wbr></wbr><span><span>Timeout</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1931433510%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="set-write-timeout.html"><span class="token function">setWriteTimeout</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">timeout<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-long/index.html">Long</a><span class="token operator">?</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the write timeout.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1190189632%2FFunctions%2F-251573632" anchor-label="shutdownInput" id="-1190189632%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="shutdown-input.html"><span>shutdown</span><wbr></wbr><span><span>Input</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1190189632%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="shutdown-input.html"><span class="token function">shutdownInput</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Places the input stream for this socket at &quot;end of stream&quot;. Any data sent to the input stream side of the socket is acknowledged and then silently discarded.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1957883119%2FFunctions%2F-251573632" anchor-label="shutdownOutput" id="1957883119%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="shutdown-output.html"><span>shutdown</span><wbr></wbr><span><span>Output</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1957883119%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="shutdown-output.html"><span class="token function">shutdownOutput</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Disables the output stream for this socket. For a TCP socket, any previously written data will be sent followed by TCP's normal connection termination sequence. If you write to a socket output stream after invoking <code class="lang-kotlin">shutdownOutput()</code> on the socket, the stream will throw an <code class="lang-kotlin">IOException</code>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+        <span>© 2025 Copyright</span>
+        <span class="pull-right">
+            <span>Generated by </span>
+            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                <span>dokka</span>
+            </a>
+        </span>
+    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

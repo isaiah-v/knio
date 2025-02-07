@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AsynchronousSocketChannelExt.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.nio</a> &gt; <span class="el_source">AsynchronousSocketChannelExt.kt</span></div><h1>AsynchronousSocketChannelExt.kt</h1><pre class="source lang-java linenums">package org.knio.core.nio
+
+import org.knio.core.utils.fromResult
+import java.io.IOException
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousSocketChannel
+import java.nio.channels.InterruptedByTimeoutException
+import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
+
+/**
+ * Handles errors by throwing a `SocketTimeoutException` if the error is an `InterruptedByTimeoutException`,
+ * otherwise rethrows the original exception.
+ *
+ * @param e The throwable to handle.
+ * @return Nothing, as this function always throws an exception.
+ * @throws SocketTimeoutException if the throwable is an `InterruptedByTimeoutException`.
+ * @throws Throwable the original throwable if it is not an `InterruptedByTimeoutException`.
+ */
+private fun &lt;T&gt; errorHandler(e: Throwable): T {
+<span class="fc" id="L24">    when (e) {</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        is InterruptedByTimeoutException -&gt; throw SocketTimeoutException(&quot;Connection timed out&quot;)</span>
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">        is IOException -&gt; throw SocketException(e.message, e)</span>
+<span class="nc" id="L27">        else -&gt; throw e</span>
+    }
+}
+
+/**
+ * Suspends the coroutine and reads data from the `AsynchronousSocketChannel` into the provided `ByteBuffer`.
+ *
+ * @param b The `ByteBuffer` to read data into.
+ * @param timeout The timeout in milliseconds, or `null` for no timeout.
+ * @return The number of bytes read.
+ * @throws SocketTimeoutException if the read operation times out.
+ * @throws Throwable if any other error occurs during the read operation.
+ */
+<span class="fc" id="L40">internal suspend fun AsynchronousSocketChannel.readSuspend(</span>
+    b: ByteBuffer,
+<span class="fc" id="L42">    timeout: Long? = null</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">): Int = suspendCoroutine {</span>
+<span class="fc" id="L44">    try {</span>
+
+        // Call the callback version of the non-blocking read function, un-suspending the coroutine when complete.
+<span class="fc bfc" id="L47" title="All 4 branches covered.">        if (timeout != null &amp;&amp; timeout &gt; 0) {</span>
+            // with timeout
+<span class="fc" id="L49">            read(b, timeout, TimeUnit.MILLISECONDS, it, fromResult(onFail = ::errorHandler))</span>
+        } else {
+            // without timeout
+<span class="fc" id="L52">            read(b, it, fromResult(onFail = ::errorHandler))</span>
+        }
+
+<span class="nc" id="L55">    } catch (e: Throwable) {</span>
+<span class="nc" id="L56">        it.resumeWithException(e)</span>
+    }
+<span class="fc" id="L58">}</span>
+
+/**
+ * Suspends the coroutine and writes data from the provided `ByteBuffer` to the `AsynchronousSocketChannel`.
+ *
+ * @param b The `ByteBuffer` containing data to write.
+ * @param timeout The timeout in milliseconds, or `null` for no timeout.
+ * @return The number of bytes written.
+ * @throws SocketTimeoutException if the write operation times out.
+ * @throws Throwable if any other error occurs during the write operation.
+ */
+<span class="nc" id="L69">internal suspend fun AsynchronousSocketChannel.writeSuspend(</span>
+    b: ByteBuffer,
+<span class="nc" id="L71">    timeout: Long? = null</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">): Int = suspendCoroutine {</span>
+<span class="fc" id="L73">    try {</span>
+        // Call the callback version of the non-blocking write function, un-suspending the coroutine when complete.
+<span class="pc bpc" id="L75" title="1 of 4 branches missed.">        if (timeout != null &amp;&amp; timeout &gt; 0) {</span>
+            // with timeout
+<span class="fc" id="L77">            write(b, timeout, TimeUnit.MILLISECONDS, it, fromResult(onFail = ::errorHandler))</span>
+        } else {
+            // without timeout
+<span class="fc" id="L80">            write(b, it, fromResult(onFail = ::errorHandler))</span>
+        }
+
+<span class="nc" id="L83">    } catch (e: Throwable) {</span>
+<span class="nc" id="L84">        it.resumeWithException(e)</span>
+    }
+<span class="fc" id="L86">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

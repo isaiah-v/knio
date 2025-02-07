@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KSocketImpl.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.net</a> &gt; <span class="el_source">KSocketImpl.kt</span></div><h1>KSocketImpl.kt</h1><pre class="source lang-java linenums">package org.knio.core.net
+
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.knio.core.context.KnioContext
+import org.knio.core.io.KInputStream
+import org.knio.core.io.KOutputStream
+import org.knio.core.nio.readSuspend
+import org.knio.core.nio.writeSuspend
+import java.io.IOException
+import java.net.SocketException
+import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousSocketChannel
+import java.util.concurrent.atomic.AtomicBoolean
+
+<span class="fc" id="L16">internal class KSocketImpl internal constructor(</span>
+    /** The underlying AsynchronousSocketChannel. */
+    channel: AsynchronousSocketChannel,
+    context: KnioContext
+<span class="fc" id="L20">): KSocketAbstract(channel) {</span>
+
+    /** The input shutdown flag. */
+<span class="fc" id="L23">    private var isInputShutdown = AtomicBoolean(false)</span>
+
+    /** The output shutdown flag. */
+<span class="fc" id="L26">    private var isOutputShutdown = AtomicBoolean(false)</span>
+
+    /** The input stream of the socket. */
+<span class="fc" id="L29">    private val inputStream = object : KInputStream(context) {</span>
+        /** read mutex */
+<span class="fc" id="L31">        private val readMutex = Mutex()</span>
+
+        /**
+         * Reads data into the provided ByteBuffer.
+         *
+         * @param b The ByteBuffer to read data into.
+         * @return The number of bytes read.
+         */
+<span class="fc" id="L39">        override suspend fun read(b: ByteBuffer): Int = readMutex.withLock {</span>
+<span class="fc" id="L40">            return read0(b)</span>
+        }
+
+        private suspend fun read0(b: ByteBuffer): Int {
+<span class="fc bfc" id="L44" title="All 2 branches covered.">            if(isInputShutdown()) {</span>
+<span class="fc" id="L45">                return -1</span>
+            }
+
+<span class="fc" id="L48">            var total = 0</span>
+
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">            while (b.hasRemaining()) {</span>
+<span class="fc" id="L51">                val result = channel.readSuspend(b, getReadTimeout())</span>
+
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                if (result == -1) {</span>
+                    // Blocking
+<span class="fc" id="L55">                    shutdownInput()</span>
+<span class="fc" id="L56">                    return -1</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">                } else if (result &gt; 0) {</span>
+<span class="fc" id="L58">                    total += result</span>
+<span class="fc" id="L59">                    return total</span>
+                }
+            }
+
+<span class="nc" id="L63">            return total</span>
+        }
+
+        /**
+         * Closes the socket as per the [java.net.Socket.getInputStream] says.
+         */
+        override suspend fun close() {
+<span class="fc" id="L70">            this@KSocketImpl.close()</span>
+<span class="fc" id="L71">        }</span>
+    }
+
+    /** The output stream of the socket. */
+<span class="fc" id="L75">    private val outputStream = object : KOutputStream() {</span>
+        /** write mutex */
+<span class="fc" id="L77">        private val writeMutex = Mutex()</span>
+
+        /**
+         * Writes data from the provided ByteBuffer.
+         *
+         * @param b The ByteBuffer containing data to write.
+         */
+<span class="fc" id="L84">        override suspend fun write(b: ByteBuffer):Unit = writeMutex.withLock {</span>
+            // only one thread can write at a time to avoid WritePendingException
+
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            while(b.hasRemaining()) {</span>
+<span class="fc" id="L88">                val result = channel.writeSuspend(b, getWriteTimeout())</span>
+
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">                if (result == -1) {</span>
+<span class="nc" id="L91">                    shutdownOutput()</span>
+<span class="nc" id="L92">                    break</span>
+                }
+            }
+<span class="fc" id="L95">        }</span>
+
+        /**
+         * Closes the socket as per the [java.net.Socket.getOutputStream] says.
+         */
+        override suspend fun close() {
+<span class="fc" id="L101">            this@KSocketImpl.close()</span>
+<span class="fc" id="L102">        }</span>
+    }
+
+
+
+
+    /**
+     * Gets the input stream of the socket.
+     *
+     * @return The KInputStream.
+     */
+    override suspend fun getInputStream(): KInputStream {
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if(!ch.isOpen) {</span>
+<span class="fc" id="L115">            throw SocketException(&quot;Socket is closed&quot;)</span>
+        }
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if(isInputShutdown()) {</span>
+<span class="fc" id="L118">            throw SocketException(&quot;Socket input is shutdown&quot;)</span>
+        }
+
+<span class="fc" id="L121">        return this.inputStream</span>
+    }
+
+
+
+    /**
+     * Gets the output stream of the socket.
+     *
+     * @return The KOutputStream.
+     */
+    override suspend fun getOutputStream(): KOutputStream {
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        if(isOutputShutdown()) {</span>
+<span class="fc" id="L133">            throw SocketException(&quot;Socket output is shutdown&quot;)</span>
+        }
+
+<span class="fc" id="L136">        return outputStream</span>
+    }
+
+    /**
+     * Checks if the input is shutdown.
+     *
+     * @return True if the input is shutdown, false otherwise.
+     */
+<span class="fc" id="L144">    override suspend fun isInputShutdown(): Boolean = isInputShutdown.get()</span>
+
+    /**
+     * Checks if the output is shutdown.
+     *
+     * @return True if the output is shutdown, false otherwise.
+     */
+<span class="fc" id="L151">    override suspend fun isOutputShutdown(): Boolean = isOutputShutdown.get()</span>
+
+    /**
+     * Shuts down the input side of the socket.
+     *
+     * @throws IOException if an I/O error occurs.
+     */
+    @Throws(IOException::class)
+    override suspend fun shutdownInput() {
+<span class="fc bfc" id="L160" title="All 2 branches covered.">        if(!isInputShutdown.getAndSet(true)) {</span>
+            @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
+<span class="fc" id="L162">            ch.shutdownInput()</span>
+        }
+<span class="fc" id="L164">    }</span>
+
+
+    /**
+     * Shuts down the output side of the socket.
+     *
+     * @throws IOException if an I/O error occurs.
+     */
+    @Throws(IOException::class)
+    override suspend fun shutdownOutput() {
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        if(!isOutputShutdown.getAndSet(true)) {</span>
+            @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
+<span class="fc" id="L176">            ch.shutdownOutput()</span>
+        }
+<span class="fc" id="L178">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

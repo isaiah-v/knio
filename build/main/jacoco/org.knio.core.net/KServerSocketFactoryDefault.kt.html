@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KServerSocketFactoryDefault.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.net</a> &gt; <span class="el_source">KServerSocketFactoryDefault.kt</span></div><h1>KServerSocketFactoryDefault.kt</h1><pre class="source lang-java linenums">package org.knio.core.net
+
+import org.knio.core.context.KnioContext
+import java.net.InetAddress
+import java.net.InetSocketAddress
+
+<span class="fc" id="L7">internal class KServerSocketFactoryDefault (</span>
+<span class="fc" id="L8">    private val context: KnioContext</span>
+): KServerSocketFactory {
+    override suspend fun createServerSocket() =
+<span class="fc" id="L11">        KServerSocketImpl(context.channelFactory.openServerSocketChannel())</span>
+
+    override suspend fun createServerSocket(port: Int) =
+<span class="fc" id="L14">        createServerSocket().open(port)</span>
+
+    override suspend fun createServerSocket(port: Int, backlog: Int) =
+<span class="nc" id="L17">        createServerSocket().open(port, backlog)</span>
+
+    override suspend fun createServerSocket(port: Int, backlog: Int, ifAddress: InetAddress) =
+<span class="nc" id="L20">        createServerSocket().open(port, backlog, ifAddress)</span>
+
+<span class="fc" id="L22">    private suspend fun KServerSocket.open(port: Int, backlog: Int = 0, bindAddress: InetAddress? = null): KServerSocket {</span>
+<span class="fc" id="L23">        try {</span>
+<span class="pc bpc" id="L24" title="3 of 6 branches missed.">            require(port in 1..0xfffe) { &quot;Port value out of range: $port&quot; }</span>
+
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">            val bkLog = if (backlog &lt; 1) 50 else backlog</span>
+<span class="fc" id="L27">            val local = InetSocketAddress(bindAddress, port)</span>
+
+<span class="fc" id="L29">            bind(local, bkLog)</span>
+<span class="nc" id="L30">        } catch  (th: Throwable) {</span>
+<span class="nc" id="L31">            close()</span>
+        }
+
+<span class="pc" id="L34">        return this</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

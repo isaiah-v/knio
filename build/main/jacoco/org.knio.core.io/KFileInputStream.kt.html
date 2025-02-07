@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KFileInputStream.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.io</a> &gt; <span class="el_source">KFileInputStream.kt</span></div><h1>KFileInputStream.kt</h1><pre class="source lang-java linenums">package org.knio.core.io
+
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.knio.core.context.KnioContext
+import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousFileChannel
+import org.knio.core.nio.readSuspend
+import org.knio.core.context.getKnioContext
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption
+import kotlin.Throws
+
+/**
+ * A FileInputStream obtains input bytes from a file in a file system.
+ *
+ * This is a coroutine-based asynchronous equivalent of [java.io.FileInputStream].
+ *
+ * @param path The path to the file to read.
+ */
+<span class="fc" id="L22">class KFileInputStream private constructor(</span>
+<span class="fc" id="L23">    private val path: Path,</span>
+    context: KnioContext
+<span class="fc" id="L25">): KInputStream(context) {</span>
+
+<span class="fc" id="L27">    private val mutex = Mutex()</span>
+<span class="fc" id="L28">    private val channel: AsynchronousFileChannel = context.channelFactory.openFileChannel(path, StandardOpenOption.READ)</span>
+
+    companion object {
+        /**
+         * Opens a file input stream for the specified file.
+         *
+         * @param path The path to the file to read.
+         * @return The file input stream.
+         */
+        suspend fun open(path: Path): KFileInputStream {
+<span class="fc" id="L38">            return KFileInputStream(path, getKnioContext())</span>
+        }
+
+        /**
+         * Opens a file input stream for the specified file path.
+         *
+         * @param path The path to the file to read as a String.
+         * @return The file input stream.
+         */
+        suspend fun open(path: String): KFileInputStream {
+<span class="fc" id="L48">            return open(Path.of(path))</span>
+        }
+    }
+
+    /** The current position in the file. */
+    private var position: Long = 0
+
+    /** The mark position in the file. */
+    private var markPosition: Long? = null
+
+    /** The mark limit for the read-ahead limit. */
+    private var markLimit: Int = 0
+
+
+    @Throws(IOException::class)
+    override suspend fun available(): Int {
+        // all reads perform I/O operations, so we can't know how many bytes are available without reading
+<span class="nc" id="L65">        return 0</span>
+    }
+
+    /**
+     * Returns the total number of bytes in the file.
+     *
+     * @return The total number of bytes in the file.
+     */
+    @Throws(IOException::class)
+    suspend fun size(): Long {
+        @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
+<span class="fc" id="L76">        return channel.size()</span>
+    }
+
+    private suspend fun remaining(): Long {
+<span class="fc" id="L80">        return size() - position</span>
+    }
+
+
+    @Throws(IOException::class)
+    override suspend fun mark(readLimit: Int) {
+<span class="fc" id="L86">        markPosition = position</span>
+<span class="fc" id="L87">        markLimit = readLimit</span>
+<span class="fc" id="L88">    }</span>
+
+    /**
+     * Checks if mark and reset are supported.
+     *
+     * @return True if mark and reset are supported, false otherwise.
+     */
+    @Throws(IOException::class)
+    override suspend fun markSupported(): Boolean {
+<span class="fc" id="L97">        return true</span>
+    }
+
+    /**
+     * Reads bytes from the input stream into the specified ByteBuffer.
+     *
+     * An attempt is made to read `b.remaining()` bytes, but a smaller number may be read.
+     *
+     * @return The number of bytes read, or -1 if the end of the file is reached.
+     */
+    @Throws(IOException::class)
+<span class="fc" id="L108">    override suspend fun read(b: ByteBuffer): Int = mutex.withLock {</span>
+<span class="fc" id="L109">        return read0(b)</span>
+    }
+
+    private suspend fun read0(buffer: ByteBuffer): Int {
+<span class="fc" id="L113">        val count = channel.readSuspend(buffer, position)</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (count &gt; 0) {</span>
+<span class="fc" id="L115">            position += count</span>
+        }
+
+<span class="fc" id="L118">        return count</span>
+    }
+
+    /**
+     * Resets the input stream to the previously marked position.
+     *
+     * @throws IOException If the mark position is invalid.
+     */
+    @Throws(IOException::class)
+<span class="fc" id="L127">    override suspend fun reset() = mutex.withLock {</span>
+<span class="fc" id="L128">        reset0()</span>
+<span class="fc" id="L129">    }</span>
+
+    private suspend fun reset0() {
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        val markPosition = markPosition ?: throw IOException(&quot;Mark not set&quot;)</span>
+
+<span class="pc bpc" id="L134" title="2 of 4 branches missed.">        if (position &lt; markPosition || position - markPosition &gt; markLimit) {</span>
+<span class="nc" id="L135">            throw IOException(&quot;Mark invalid&quot;)</span>
+        }
+
+<span class="fc" id="L138">        position = markPosition</span>
+<span class="fc" id="L139">    }</span>
+
+    /**
+     * Skips over and discards n bytes of data from the input stream.
+     *
+     * The skip method may, for a variety of reasons, end up skipping over some smaller number of bytes, possibly 0.
+     * If n is negative, the method will try to skip backwards. The actual number of bytes skipped is returned.
+     * If it skips forwards, it returns a positive value. If it skips backwards, it returns a negative value.
+     *
+     * @param n The number of bytes to skip.
+     * @return The actual number of bytes skipped.
+     * @throws IOException If an I/O error occurs.
+     */
+    @Throws(IOException::class)
+<span class="fc" id="L153">    override suspend fun skip(n: Long): Long = mutex.withLock {</span>
+<span class="fc" id="L154">        return skip0(n)</span>
+    }
+
+    private suspend fun skip0(n: Long): Long {
+        // This differs from the Java implementation in that will only skip up to the end of the file or the beginning.
+        // It returns the number of skipped bytes, as the documentation states, rather than going past or throwing an
+        // exception.
+
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (n &gt;= 0) {</span>
+<span class="fc" id="L163">            val skip = minOf(n, remaining())</span>
+<span class="fc" id="L164">            position += skip</span>
+<span class="fc" id="L165">            return skip</span>
+        } else {
+<span class="fc" id="L167">            val rewind = -1 * minOf(-n, position)</span>
+<span class="fc" id="L168">            position += rewind</span>
+<span class="fc" id="L169">            return rewind</span>
+        }
+    }
+
+    /**
+     * Closes this file input stream and releases any system resources associated with the stream.
+     */
+    @Throws(IOException::class)
+<span class="fc" id="L177">    override suspend fun close() = mutex.withLock {</span>
+<span class="fc" id="L178">        close0()</span>
+<span class="fc" id="L179">    }</span>
+
+    /**
+     * Closes the file input stream without locking the mutex.
+     */
+    private suspend fun close0() {
+        @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
+<span class="fc" id="L186">        channel.close()</span>
+<span class="fc" id="L187">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
