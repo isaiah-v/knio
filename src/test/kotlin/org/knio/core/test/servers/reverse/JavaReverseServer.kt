@@ -4,6 +4,7 @@ import org.knio.core.test.servers.TestServer
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.ServerSocket
+import java.net.Socket
 import javax.net.ssl.SSLSocket
 
 /**
@@ -22,27 +23,32 @@ class JavaReverseServer(
     override fun run() = serverSocket.use {
         while (!serverSocket.isClosed) {
             try {
-                serverSocket.accept().use { client ->
-                    if(client is SSLSocket) {
-                        client.startHandshake()
-                    }
-
-                    // read the input
-                    val input = readInput(client.getInputStream())
-                    client.shutdownInput()
-
-                    // reverse the input
-                    val reverse = input.reversed()
-
-                    // write the reversed input
-                    writeOutput(reverse, client.getOutputStream())
-                    client.shutdownOutput()
-                }
+                runClient(serverSocket.accept()).start()
             } catch (e: Throwable) {
                 // socket closed
-                e.printStackTrace()
             }
         }
+    }
+
+    private fun runClient(client: Socket) = Thread {
+        client.use {
+            if(client is SSLSocket) {
+                client.startHandshake()
+            }
+
+            // read the input
+            val input = readInput(client.getInputStream())
+            client.shutdownInput()
+
+            // reverse the input
+            val reverse = input.reversed()
+
+            // write the reversed input
+            writeOutput(reverse, client.getOutputStream())
+            client.shutdownOutput()
+        }
+    }.apply {
+        isDaemon = true
     }
 
     /**

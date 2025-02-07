@@ -5,6 +5,7 @@ import org.knio.core.io.KInputStream
 import org.knio.core.io.KOutputStream
 import org.knio.core.lang.use
 import org.knio.core.net.KServerSocket
+import org.knio.core.net.KSocket
 import org.knio.core.test.servers.TestServer
 import java.net.SocketException
 import javax.net.ssl.SSLSocket
@@ -25,24 +26,29 @@ class KnioReverseServer(
     private suspend fun run() = serverSocket.use {
         while (!serverSocket.isClosed()) {
             try {
-                serverSocket.accept().use { client ->
-                    if(client is SSLSocket) {
-                        client.startHandshake()
-                    }
-                    // read the input
-                    val input = readInput(client.getInputStream())
-                    client.shutdownInput()
-
-                    // reverse the input
-                    val reverse = input.reversed()
-
-                    // write the reversed input
-                    writeOutput(reverse, client.getOutputStream())
-                    client.shutdownOutput()
-                }
+                runClient(serverSocket.accept())
             } catch (e: SocketException) {
                 // socket closed
             }
+        }
+    }
+
+    private fun runClient(client: KSocket) = CoroutineScope(Dispatchers.Default).launch {
+        client.use {
+            if(client is SSLSocket) {
+                client.startHandshake()
+            }
+
+            // read the input
+            val input = readInput(client.getInputStream())
+            client.shutdownInput()
+
+            // reverse the input
+            val reverse = input.reversed()
+
+            // write the reversed input
+            writeOutput(reverse, client.getOutputStream())
+            client.shutdownOutput()
         }
     }
 

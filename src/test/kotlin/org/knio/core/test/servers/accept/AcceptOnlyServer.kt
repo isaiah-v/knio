@@ -3,6 +3,7 @@ package org.knio.core.test.servers.accept
 import org.knio.core.test.servers.TestServer
 import java.lang.Thread.sleep
 import java.net.ServerSocket
+import java.net.Socket
 import java.net.SocketException
 import javax.net.ssl.SSLSocket
 
@@ -13,19 +14,24 @@ class AcceptOnlyServer(
     override fun run() {
         while(!serverSocket.isClosed) {
             try {
-                val socket = serverSocket.accept()
-                if(socket is SSLSocket) {
-                    socket.startHandshake()
-                }
-
-                Thread {
-                    sleep(10000)
-                    socket.close()
-                }.start()
+                runClient(serverSocket.accept()).start()
             } catch (e: SocketException) {
-                // socket closed
+                // socket closed, probably
             }
         }
+    }
+
+    private fun runClient(client: Socket) = Thread {
+        client.use {
+            if (client is SSLSocket) {
+                client.startHandshake()
+            }
+
+            // block until the client closes the connection, or until the client sends data
+            client.getInputStream().read()
+        }
+    }.apply {
+        isDaemon = true
     }
 
     override suspend fun start(): TestServer {
