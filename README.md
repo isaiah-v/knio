@@ -1,6 +1,6 @@
 [![Knio Build](https://github.com/isaiah-v/Knio/actions/workflows/build.yml/badge.svg)](https://github.com/isaiah-v/Knio/actions/workflows/build.yml)
-[![Test Coverage](https://www.knio.org/build/main/badges/Test-Coverage.svg)](https://www.knio.org/build/main/jacoco/)
-[![Kdoc](https://img.shields.io/badge/Kdoc-green)](https://www.knio.org/build/main/kdoc/)
+[![Test Coverage](https://www.knio.org/knio-core/build/main/badges/Test-Coverage.svg)](https://www.knio.org/knio-core/build/main/jacoco/)
+[![Kdoc](https://img.shields.io/badge/Kdoc-green)](https://www.knio.org/knio-core/build/main/kdoc/)
 ----  
 
 # Knio
@@ -51,10 +51,10 @@ Snapshot builds are available from the `main` branch. To use the latest snapshot
 `build.gradle.kts`
 ```kotlin
 repositories {
-    maven("https://maven.pkg.github.com/isaiah-v/Knio")
+    maven("https://maven.pkg.github.com/knio-org/knio-core")
 }
 
 dependencies {
-    implementation("org.ivcode:knio:0.1.0-SNAPSHOT")
+    implementation("org.knio:knio-core:0.1.0-SNAPSHOT")
 }
 ```
