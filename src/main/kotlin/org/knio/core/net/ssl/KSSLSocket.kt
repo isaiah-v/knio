@@ -143,14 +143,6 @@ interface KSSLSocket: KSocket {
     suspend fun getSession(): SSLSession
 
     /**
-     * Returns the SSLParameters in effect for this SSLSocket. The ciphersuites and protocols of the returned
-     * [SSLParameters] are always non-null.
-     *
-     * @return the [SSLParameters] in effect for this connection.
-     */
-    suspend fun getSSLParameters(): SSLParameters
-
-    /**
      * Returns the names of the cipher suites which could be enabled for use on this connection. Normally, only a subset
      * of these will actually be enabled by default, since this list may include cipher suites which do not meet quality
      * of service requirements for those defaults. Such cipher suites might be useful in specialized applications.
@@ -251,8 +243,7 @@ interface KSSLSocket: KSocket {
 
     /**
      * Registers a callback function that selects an application protocol value for an SSL/TLS/DTLS handshake. The
-     * function overrides any values supplied using SSLParameters.setApplicationProtocols, and it supports the following
-     * type parameters:
+     * supports the following type parameters:
      *
      *  - `SSLSocket`
      *        The function's first argument allows the current SSLSocket to be inspected, including the handshake
@@ -285,7 +276,6 @@ interface KSSLSocket: KSocket {
      * This method should be called by TLS server applications before the TLS handshake begins. Also, this [KSSLSocket]
      * should be configured with parameters that are compatible with the application protocol selected by the callback
      * function. For example, enabling a poor choice of cipher suites could result in no suitable application protocol.
-     * See [SSLParameters].
      *
      * @param selector - the callback function, or null to de-register.
      *
@@ -310,29 +300,6 @@ interface KSSLSocket: KSocket {
      * desired.
      */
     suspend fun setNeedClientAuth(need: Boolean)
-
-    /**
-     * Applies SSLParameters to this socket.
-     * This means:
-     *
-     * - If params [SSLParameters.getCipherSuites] is non-null, [setEnabledCipherSuites] is called with that value.
-     *
-     * - If params [SSLParameters.getProtocols] is non-null, [setEnabledProtocols] is called with that value.
-     *
-     * - If params [SSLParameters.getNeedClientAuth] or params [SSLParameters.getWantClientAuth] return `true`,
-     * [setNeedClientAuth] and [setWantClientAuth] are called, respectively; otherwise [setWantClientAuth] is called.
-     *
-     * - If params [SSLParameters.getServerNames] is non-null, the socket will configure its server names with that
-     * value.
-     *
-     * - If params [SSLParameters.getSNIMatchers] is non-null, the socket will configure its SNI matchers with that
-     * value.
-     *
-     * @param params the parameters
-     * @throws IllegalArgumentException  if the [setEnabledCipherSuites] or the [setEnabledProtocols] call fails
-     */
-    @Throws(IllegalArgumentException::class)
-    suspend fun setSSLParameters(params: SSLParameters)
 
     /**
      * Configures the socket to use client (or server) mode when handshaking.

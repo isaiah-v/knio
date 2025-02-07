@@ -78,34 +78,6 @@ internal abstract class KSSLSocketAbstract(
         return sslEngine.enableSessionCreation
     }
 
-    override suspend fun getSSLParameters(): SSLParameters {
-        val params = SSLParameters()
-        params.cipherSuites = getEnabledCipherSuites()
-        params.protocols = getEnabledProtocols()
-        if (getNeedClientAuth()) {
-            params.needClientAuth = true
-        } else if (getWantClientAuth()) {
-            params.wantClientAuth = true
-        }
-        return params
-    }
-
-    override suspend fun setSSLParameters(params: SSLParameters) {
-        var s = params.cipherSuites
-        if (s != null) {
-            setEnabledCipherSuites(s)
-        }
-        s = params.protocols
-        if (s != null) {
-            setEnabledProtocols(s)
-        }
-        if (params.needClientAuth) {
-            setNeedClientAuth(true)
-        } else {
-            setWantClientAuth(params.wantClientAuth)
-        }
-    }
-
     override suspend fun getApplicationProtocol(): String {
         return sslEngine.applicationProtocol
     }
