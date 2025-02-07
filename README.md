@@ -23,9 +23,9 @@ perform other tasks. And with `nio`, we aren't blocking a thread elsewhere. The 
 non-blocking. With no complicated callbacks or process streams, the code is easy to read and maintain.
 
 ```kotlin  
-import org.ivcode.knio.io.bufferedReader  
-import org.ivcode.knio.io.knioInputStream  
-import org.ivcode.knio.lang.use  
+import org.knio.core.io.bufferedReader  
+import org.knio.core.io.knioInputStream  
+import org.knio.core.lang.use  
 import java.io.File  
 
 suspend fun main() {  

@@ -9,12 +9,12 @@ gradlePlugin {
     plugins {
         create("badges") {
             id = "badges"
-            implementationClass = "org.ivcode.gradle.badges.BadgesPlugin"
+            implementationClass = "org.knio.gradle.badges.BadgesPlugin"
         }
 
         create("mvnGitHub") {
             id = "mvnGitHub"
-            implementationClass = "org.ivcode.gradle.mvngithub.MvnGitHubPlugin"
+            implementationClass = "org.knio.gradle.mvngithub.MvnGitHubPlugin"
         }
     }
 }

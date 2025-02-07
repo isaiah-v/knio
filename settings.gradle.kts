@@ -4,4 +4,4 @@ buildscript {
     }
 }
 
-rootProject.name = "knio"
+rootProject.name = "knio-core"
