@@ -82,12 +82,21 @@ internal class KSSLSocketImpl (
         return outputStream
     }
 
-    override suspend fun startHandshake() = handshakeMutex.withLock {
-        startHandshake0()
+    /**
+     * Starts the handshake process.
+     */
+    override suspend fun doHandshake() = handshakeMutex.withLock {
+        // lock to prevent multiple handshakes
+        doHandshake0()
     }
 
+    /**
+     * The non-locked logic for starting the handshake.
+     */
+    private suspend fun doHandshake0() {
+        // Note: ONLY `doHandshake` should call this method. Use `startHandshake`
+        // to start the handshake.
 
-    private suspend fun startHandshake0() {
         if(isHandshakeCompleted) return
 
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -96,7 +105,7 @@ internal class KSSLSocketImpl (
         networkRead!!.clear().flip()
         networkWrite!!.clear()
 
-        while (sslEngine.isHandshakeRequired) {
+        while (sslEngine.isHandshaking) {
             when(sslEngine.handshakeStatus!!) {
                 SSLEngineResult.HandshakeStatus.NEED_TASK -> {
                     runHandshakeTasks()
@@ -231,11 +240,6 @@ internal class KSSLSocketImpl (
             }
         }
     }
-
-    private val SSLEngine.isHandshakeRequired: Boolean
-        get() = this.handshakeStatus != SSLEngineResult.HandshakeStatus.FINISHED
-                && this.handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING
-
 
     override suspend fun isInputShutdown(): Boolean {
         return isInputShutdown
@@ -460,4 +464,11 @@ internal class KSSLSocketImpl (
             }
         }
     }
+
+    /**
+     * Returns true if the SSLEngine is handshaking.
+     */
+    private val SSLEngine.isHandshaking: Boolean
+        get() = this.handshakeStatus != SSLEngineResult.HandshakeStatus.FINISHED
+                && this.handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING
 }

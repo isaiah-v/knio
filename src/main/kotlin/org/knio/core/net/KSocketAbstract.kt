@@ -66,6 +66,13 @@ internal abstract class KSocketAbstract(
     override suspend fun close() {
         if (!ch.isOpen) return
 
+        if(isConnected()) {
+            @Suppress("BlockingMethodInNonBlockingContext")
+            ch.shutdownInput()
+            @Suppress("BlockingMethodInNonBlockingContext")
+            ch.shutdownOutput()
+        }
+
         @Suppress("BlockingMethodInNonBlockingContext")
         ch.close()
     }

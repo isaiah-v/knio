@@ -2,8 +2,8 @@ package org.knio.core.net.ssl
 
 import org.knio.core.net.KSocket
 import java.io.IOException
-import javax.net.ssl.HandshakeCompletedListener
-import javax.net.ssl.SSLParameters
+import java.net.SocketException
+import java.util.function.BiFunction
 import javax.net.ssl.SSLSession
 
 /**
@@ -23,7 +23,7 @@ interface KSSLSocket: KSocket {
      *  - test listener is null
      */
     @Throws(IllegalArgumentException::class)
-    suspend fun addHandshakeCompletedListener(listener: HandshakeCompletedListener)
+    suspend fun addHandshakeCompletedListener(listener: KHandshakeCompletedListener)
 
     /**
      * Returns the most recent application protocol value negotiated for this connection.
@@ -93,7 +93,7 @@ interface KSSLSocket: KSocket {
      *
      * @returns the callback function, or null if none has been set.
      */
-    suspend fun getHandshakeApplicationProtocolSelector(): ((KSSLSocket, MutableList<String>) -> String?)?
+    suspend fun getHandshakeApplicationProtocolSelector(): BiFunction<KSSLSocket, List<String>, String?>?
 
     /**
      * Returns the SSLSession being constructed during an SSL/TLS handshake.
@@ -117,7 +117,7 @@ interface KSSLSocket: KSocket {
      *
      * @implNote TODO tests lots of test
      */
-    suspend fun getHandshakeSession(): SSLSession
+    suspend fun getHandshakeSession(): SSLSession?
 
     /**
      * Returns true if the socket will _require_ client authentication. This option is only useful to sockets in the
@@ -186,7 +186,7 @@ interface KSSLSocket: KSocket {
      * - test listener is not registered
      */
     @Throws(IllegalArgumentException::class)
-    suspend fun removeHandshakeCompletedListener(listener: HandshakeCompletedListener)
+    suspend fun removeHandshakeCompletedListener(listener: KHandshakeCompletedListener)
 
 
     /**
@@ -280,7 +280,7 @@ interface KSSLSocket: KSocket {
      * @param selector - the callback function, or null to de-register.
      *
      */
-    suspend fun setHandshakeApplicationProtocolSelector(selector: (KSSLSocket, MutableList<String>) -> String?)
+    suspend fun setHandshakeApplicationProtocolSelector(selector: BiFunction<KSSLSocket, List<String>, String?>)
 
     /**
      * Configures the socket to _require_ client authentication. This option is only useful for sockets in the server

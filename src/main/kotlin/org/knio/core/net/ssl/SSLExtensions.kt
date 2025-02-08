@@ -10,6 +10,5 @@ suspend fun SSLContext.getKnioSSLSocketFactory(): KSSLSocketFactory {
 
 suspend fun SSLContext.getKnioSSLServerSocketFactory(
 ): KSSLServerSocketFactory {
-    @Suppress("BlockingMethodInNonBlockingContext")
     return KSSLServerSocketFactoryDefault(this, getKnioContext())
 }
