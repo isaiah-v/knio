@@ -10,7 +10,12 @@ import org.knio.core.test.servers.accept.AcceptOnlyServer
 import org.knio.core.test.servers.createJavaServerSocket
 import org.knio.core.test.servers.createJavaSocket
 import org.knio.core.test.servers.createKnioSocket
+import org.knio.core.test.utils.createTestSSLContext
+import java.net.InetSocketAddress
+import java.util.function.BiFunction
 import javax.net.ssl.HandshakeCompletedListener
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLParameters
 import javax.net.ssl.SSLSocket
 import kotlin.test.assertEquals
 
@@ -324,6 +329,165 @@ class KSSLSocketAbstractTest : TestServerTest<AcceptOnlyServer>() {
             assertFalse(sslClient.getUseClientMode())
         }
     }
+
+    @Test
+    fun `test set enabled cipher suites`()  = runServer(true) {
+        // java
+        createJavaSocket(true).use { client ->
+            val sslClient = client as SSLSocket
+            val suites = sslClient.supportedCipherSuites
+            sslClient.enabledCipherSuites = suites
+        }
+
+        // knio
+        createKnioSocket(true).use { client ->
+            val sslClient = client as KSSLSocket
+            val suites = sslClient.getSupportedCipherSuites()
+            sslClient.setEnabledCipherSuites(suites)
+        }
+    }
+
+    @Test
+    fun `test set enabled protocols`()  = runServer(true) {
+        // java
+        createJavaSocket(true).use { client ->
+            val sslClient = client as SSLSocket
+            val protocols = sslClient.supportedProtocols
+            sslClient.enabledProtocols = protocols
+        }
+
+        // knio
+        createKnioSocket(true).use { client ->
+            val sslClient = client as KSSLSocket
+            val protocols = sslClient.getSupportedProtocols()
+            sslClient.setEnabledProtocols(protocols)
+        }
+    }
+
+    @Test
+    fun `test get need client auth`()  = runServer(true) {
+        // java
+        createJavaSocket(true).use { client ->
+            val sslClient = client as SSLSocket
+            assertFalse(sslClient.needClientAuth)
+        }
+
+        // knio
+        createKnioSocket(true).use { client ->
+            val sslClient = client as KSSLSocket
+            assertFalse(sslClient.getNeedClientAuth())
+        }
+    }
+
+    @Test
+    fun `test set need client auth`() = runServer(true) {
+        // java
+        createJavaSocket(true).use { client ->
+            val sslClient = client as SSLSocket
+            sslClient.needClientAuth = true
+            assertTrue(sslClient.needClientAuth)
+        }
+
+        // knio
+        createKnioSocket(true).use { client ->
+            val sslClient = client as KSSLSocket
+            sslClient.setNeedClientAuth(true)
+            assertTrue(sslClient.getNeedClientAuth())
+        }
+    }
+
+    @Test
+    fun `test want client auth`() = runServer(true) {
+        // java
+        createJavaSocket(true).use { client ->
+            val sslClient = client as SSLSocket
+            sslClient.wantClientAuth = true
+            assertTrue(sslClient.wantClientAuth)
+        }
+
+        // knio
+        createKnioSocket(true).use { client ->
+            val sslClient = client as KSSLSocket
+            sslClient.setWantClientAuth(true)
+            assertTrue(sslClient.getWantClientAuth())
+        }
+    }
+
+    @Test
+    fun `test set want client auth`() = runServer(true) {
+        // java
+        createJavaSocket(true).use { client ->
+            val sslClient = client as SSLSocket
+            sslClient.wantClientAuth = true
+            assertTrue(sslClient.wantClientAuth)
+        }
+
+        // knio
+        createKnioSocket(true).use { client ->
+            val sslClient = client as KSSLSocket
+            sslClient.setWantClientAuth(true)
+            assertTrue(sslClient.getWantClientAuth())
+        }
+    }
+
+    @Test
+    fun `test enable session creation`() = runServer(true) {
+        // java
+        createJavaSocket(true).use { client ->
+            val sslClient = client as SSLSocket
+            sslClient.enableSessionCreation = true
+            assertTrue(sslClient.enableSessionCreation)
+        }
+
+        // knio
+        createKnioSocket(true).use { client ->
+            val sslClient = client as KSSLSocket
+            sslClient.setEnableSessionCreation(true)
+            assertTrue(sslClient.getEnableSessionCreation())
+        }
+    }
+
+    @Test
+    fun `test set protocol selector function`() = runServer(true) {
+        // java
+        createJavaSocket(true).use { client ->
+            val sslClient = client as SSLSocket
+
+            val function = BiFunction<SSLSocket, List<String>, String?> {_, list ->
+                if(list.isNotEmpty()) {
+                    list[0]
+                } else {
+                    ""
+                }
+            }
+
+            sslClient.handshakeApplicationProtocolSelector = function
+
+            assertEquals(function, sslClient.handshakeApplicationProtocolSelector)
+        }
+
+        // knio
+        createKnioSocket(true).use { client ->
+            val sslClient = client as KSSLSocket
+
+            val function = BiFunction<KSSLSocket, List<String>, String?> {_, list ->
+                if(list.isNotEmpty()) {
+                    list[0]
+                } else {
+                    ""
+                }
+            }
+
+            sslClient.setHandshakeApplicationProtocolSelector(function)
+
+            assertEquals(function, sslClient.getHandshakeApplicationProtocolSelector())
+        }
+    }
+
+
+
+
+
 
 
 

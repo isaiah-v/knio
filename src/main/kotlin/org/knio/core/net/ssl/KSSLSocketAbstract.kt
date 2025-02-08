@@ -101,7 +101,7 @@ internal abstract class KSSLSocketAbstract(
         return sslEngine.enableSessionCreation
     }
 
-    override suspend fun getApplicationProtocol(): String {
+    override suspend fun getApplicationProtocol(): String? {
         return sslEngine.applicationProtocol
     }
 
@@ -109,8 +109,12 @@ internal abstract class KSSLSocketAbstract(
         return sslEngine.handshakeApplicationProtocol
     }
 
-    override suspend fun setHandshakeApplicationProtocolSelector(selector: BiFunction<KSSLSocket, List<String>, String?>) {
-        sslEngine.handshakeApplicationProtocolSelector = HandshakeApplicationProtocolSelector(selector)
+    override suspend fun setHandshakeApplicationProtocolSelector(selector: BiFunction<KSSLSocket, List<String>, String?>?) {
+        if(selector == null) {
+            sslEngine.handshakeApplicationProtocolSelector = null
+        } else {
+            sslEngine.handshakeApplicationProtocolSelector = HandshakeApplicationProtocolSelector(selector)
+        }
     }
 
     override suspend fun getHandshakeApplicationProtocolSelector(): BiFunction<KSSLSocket, List<String>, String?>? {
@@ -121,6 +125,14 @@ internal abstract class KSSLSocketAbstract(
                 null
             }
         }
+    }
+
+    override suspend fun getSSLParameters(): SSLParameters {
+        return sslEngine.sslParameters
+    }
+
+    override suspend fun setSSLParameters(params: SSLParameters) {
+        sslEngine.sslParameters = params
     }
 
     final override suspend fun startHandshake() {

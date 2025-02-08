@@ -4,6 +4,7 @@ import org.knio.core.net.KSocket
 import java.io.IOException
 import java.net.SocketException
 import java.util.function.BiFunction
+import javax.net.ssl.SSLParameters
 import javax.net.ssl.SSLSession
 
 /**
@@ -280,7 +281,7 @@ interface KSSLSocket: KSocket {
      * @param selector - the callback function, or null to de-register.
      *
      */
-    suspend fun setHandshakeApplicationProtocolSelector(selector: BiFunction<KSSLSocket, List<String>, String?>)
+    suspend fun setHandshakeApplicationProtocolSelector(selector: BiFunction<KSSLSocket, List<String>, String?>?)
 
     /**
      * Configures the socket to _require_ client authentication. This option is only useful for sockets in the server
@@ -349,4 +350,25 @@ interface KSSLSocket: KSocket {
      */
     @Throws(IOException::class)
     suspend fun startHandshake()
+
+    /**
+     * Returns the SSLParameters in effect for this SSLSocket. The cipher-suites and protocols of the returned
+     * SSLParameters are always non-null.
+     */
+    suspend fun getSSLParameters(): SSLParameters
+
+    /**
+     * Applies SSLParameters to this socket.
+     *
+     * This means:
+     *  - If [SSLParameters.getCipherSuites] is non-null, setEnabledCipherSuites() is called with that value.
+     *  - If [SSLParameters.getProtocols] is non-null, setEnabledProtocols() is called with that value.
+     *  - If [SSLParameters.getNeedClientAuth] or params.getWantClientAuth() return true, setNeedClientAuth(true) and setWantClientAuth(true) are called, respectively; otherwise setWantClientAuth(false) is called.
+     *  - If [SSLParameters.getServerNames] is non-null, the socket will configure its server names with that value.
+     *  - If [SSLParameters.getSNIMatchers] is non-null, the socket will configure its SNI matchers with that value.
+     *
+     *  @throws IllegalArgumentException if the setEnabledCipherSuites() or the setEnabledProtocols() call fails
+     */
+    @Throws(IllegalArgumentException::class)
+    suspend fun setSSLParameters(params: SSLParameters)
 }

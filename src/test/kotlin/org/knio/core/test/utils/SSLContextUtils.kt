@@ -19,6 +19,7 @@ fun createTrustAllManagers(): Array<TrustManager> {
 }
 
 fun createTestSSLContext () = createSSLContext(
+    protocol = "TLSv1.3",
     keystore = "src/test/resources/keystore.p12",
     keystorePassword = "password",
     truststore = "src/test/resources/keystore.p12",
