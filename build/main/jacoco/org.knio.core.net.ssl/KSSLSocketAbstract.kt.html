@@ -32,8 +32,8 @@ import kotlin.coroutines.coroutineContext
     }
 
     override suspend fun setEnabledCipherSuites(suites: Array&lt;String&gt;) {
-<span class="nc" id="L35">        sslEngine.enabledCipherSuites = suites</span>
-<span class="nc" id="L36">    }</span>
+<span class="fc" id="L35">        sslEngine.enabledCipherSuites = suites</span>
+<span class="fc" id="L36">    }</span>
 
     override suspend fun getSupportedProtocols(): Array&lt;String&gt; {
 <span class="fc" id="L39">        return sslEngine.supportedProtocols</span>
@@ -44,8 +44,8 @@ import kotlin.coroutines.coroutineContext
     }
 
     override suspend fun setEnabledProtocols(protocols: Array&lt;String&gt;) {
-<span class="nc" id="L47">        sslEngine.enabledProtocols = protocols</span>
-<span class="nc" id="L48">    }</span>
+<span class="fc" id="L47">        sslEngine.enabledProtocols = protocols</span>
+<span class="fc" id="L48">    }</span>
 
     override suspend fun getSession(): SSLSession {
 <span class="fc" id="L51">        startHandshake()</span>
@@ -78,99 +78,111 @@ import kotlin.coroutines.coroutineContext
     }
 
     override suspend fun setNeedClientAuth(need: Boolean) {
-<span class="nc" id="L81">        sslEngine.needClientAuth = need</span>
-<span class="nc" id="L82">    }</span>
+<span class="fc" id="L81">        sslEngine.needClientAuth = need</span>
+<span class="fc" id="L82">    }</span>
 
     override suspend fun getNeedClientAuth(): Boolean {
-<span class="nc" id="L85">        return sslEngine.needClientAuth</span>
+<span class="fc" id="L85">        return sslEngine.needClientAuth</span>
     }
 
     override suspend fun setWantClientAuth(want: Boolean) {
-<span class="nc" id="L89">        sslEngine.wantClientAuth = want</span>
-<span class="nc" id="L90">    }</span>
+<span class="fc" id="L89">        sslEngine.wantClientAuth = want</span>
+<span class="fc" id="L90">    }</span>
 
     override suspend fun getWantClientAuth(): Boolean {
-<span class="nc" id="L93">        return sslEngine.wantClientAuth</span>
+<span class="fc" id="L93">        return sslEngine.wantClientAuth</span>
     }
 
     override suspend fun setEnableSessionCreation(flag: Boolean) {
-<span class="nc" id="L97">        sslEngine.enableSessionCreation = flag</span>
-<span class="nc" id="L98">    }</span>
+<span class="fc" id="L97">        sslEngine.enableSessionCreation = flag</span>
+<span class="fc" id="L98">    }</span>
 
     override suspend fun getEnableSessionCreation(): Boolean {
-<span class="nc" id="L101">        return sslEngine.enableSessionCreation</span>
+<span class="fc" id="L101">        return sslEngine.enableSessionCreation</span>
     }
 
-    override suspend fun getApplicationProtocol(): String {
-<span class="nc" id="L105">        return sslEngine.applicationProtocol</span>
+    override suspend fun getApplicationProtocol(): String? {
+<span class="fc" id="L105">        return sslEngine.applicationProtocol</span>
     }
 
     override suspend fun getHandshakeApplicationProtocol(): String {
 <span class="nc" id="L109">        return sslEngine.handshakeApplicationProtocol</span>
     }
 
-    override suspend fun setHandshakeApplicationProtocolSelector(selector: BiFunction&lt;KSSLSocket, List&lt;String&gt;, String?&gt;) {
-<span class="nc" id="L113">        sslEngine.handshakeApplicationProtocolSelector = HandshakeApplicationProtocolSelector(selector)</span>
-<span class="nc" id="L114">    }</span>
+    override suspend fun setHandshakeApplicationProtocolSelector(selector: BiFunction&lt;KSSLSocket, List&lt;String&gt;, String?&gt;?) {
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        if(selector == null) {</span>
+<span class="nc" id="L114">            sslEngine.handshakeApplicationProtocolSelector = null</span>
+        } else {
+<span class="fc" id="L116">            sslEngine.handshakeApplicationProtocolSelector = HandshakeApplicationProtocolSelector(selector)</span>
+        }
+<span class="fc" id="L118">    }</span>
 
     override suspend fun getHandshakeApplicationProtocolSelector(): BiFunction&lt;KSSLSocket, List&lt;String&gt;, String?&gt;? {
-<span class="nc bnc" id="L117" title="All 2 branches missed.">        return sslEngine.handshakeApplicationProtocolSelector?.let {</span>
-<span class="nc bnc" id="L118" title="All 2 branches missed.">            if(it is HandshakeApplicationProtocolSelector) {</span>
-<span class="nc" id="L119">                it.selector</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        return sslEngine.handshakeApplicationProtocolSelector?.let {</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            if(it is HandshakeApplicationProtocolSelector) {</span>
+<span class="fc" id="L123">                it.selector</span>
             } else {
-<span class="nc" id="L121">                null</span>
-<span class="nc" id="L122">            }</span>
+<span class="nc" id="L125">                null</span>
+<span class="fc" id="L126">            }</span>
         }
     }
 
+    override suspend fun getSSLParameters(): SSLParameters {
+<span class="nc" id="L131">        return sslEngine.sslParameters</span>
+    }
+
+    override suspend fun setSSLParameters(params: SSLParameters) {
+<span class="fc" id="L135">        sslEngine.sslParameters = params</span>
+<span class="fc" id="L136">    }</span>
+
     final override suspend fun startHandshake() {
-<span class="fc" id="L127">        try {</span>
-<span class="fc" id="L128">            doHandshake()</span>
-<span class="fc" id="L129">            onSuccessfulHandshake()</span>
-<span class="fc" id="L130">        } catch (th: Throwable) {</span>
-<span class="fc" id="L131">            close()</span>
-<span class="fc" id="L132">            throw th</span>
+<span class="fc" id="L139">        try {</span>
+<span class="fc" id="L140">            doHandshake()</span>
+<span class="fc" id="L141">            onSuccessfulHandshake()</span>
+<span class="fc" id="L142">        } catch (th: Throwable) {</span>
+<span class="fc" id="L143">            close()</span>
+<span class="fc" id="L144">            throw th</span>
         }
-<span class="fc" id="L134">    }</span>
+<span class="fc" id="L146">    }</span>
 
     /**
      * Run all the handshake listeners. Runs as its own job.
      */
     private suspend fun onSuccessfulHandshake() {
         // get the listeners and close it so no more can be added
-<span class="fc bfc" id="L141" title="All 2 branches covered.">        val listeners = handshakeListenersMutex?.withLock {</span>
-<span class="fc" id="L142">            val listener = handshakeListeners</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        val listeners = handshakeListenersMutex?.withLock {</span>
+<span class="fc" id="L154">            val listener = handshakeListeners</span>
 
-<span class="fc" id="L144">            handshakeListeners = null</span>
-<span class="fc" id="L145">            handshakeListenersMutex = null</span>
+<span class="fc" id="L156">            handshakeListeners = null</span>
+<span class="fc" id="L157">            handshakeListenersMutex = null</span>
 
-<span class="fc" id="L147">            listener</span>
+<span class="fc" id="L159">            listener</span>
         }
 
-<span class="fc bfc" id="L150" title="All 6 branches covered.">        if(listeners.isNullOrEmpty()) {</span>
-<span class="fc" id="L151">            return</span>
+<span class="fc bfc" id="L162" title="All 6 branches covered.">        if(listeners.isNullOrEmpty()) {</span>
+<span class="fc" id="L163">            return</span>
         }
 
-<span class="fc" id="L154">        CoroutineScope(coroutineContext).launch {</span>
-<span class="fc" id="L155">            listeners.forEach {</span>
-<span class="fc" id="L156">                runHandshakeCompletedListener(it)</span>
-<span class="fc" id="L157">            }</span>
-<span class="fc" id="L158">        }</span>
-<span class="fc" id="L159">    }</span>
+<span class="fc" id="L166">        CoroutineScope(coroutineContext).launch {</span>
+<span class="fc" id="L167">            listeners.forEach {</span>
+<span class="fc" id="L168">                runHandshakeCompletedListener(it)</span>
+<span class="fc" id="L169">            }</span>
+<span class="fc" id="L170">        }</span>
+<span class="fc" id="L171">    }</span>
 
     private suspend fun runHandshakeCompletedListener(listener: KHandshakeCompletedListener) {
-<span class="fc" id="L162">        try {</span>
-<span class="fc" id="L163">            listener.handshakeCompleted(</span>
-<span class="fc" id="L164">                KHandshakeCompletedEvent(</span>
-<span class="fc" id="L165">                    this,</span>
-<span class="fc" id="L166">                    sslEngine.session</span>
+<span class="fc" id="L174">        try {</span>
+<span class="fc" id="L175">            listener.handshakeCompleted(</span>
+<span class="fc" id="L176">                KHandshakeCompletedEvent(</span>
+<span class="fc" id="L177">                    this,</span>
+<span class="fc" id="L178">                    sslEngine.session</span>
                 )
             )
-<span class="nc" id="L169">        } catch (th: Throwable) {</span>
+<span class="nc" id="L181">        } catch (th: Throwable) {</span>
             // nothing left to do. print the stack trace and move on
-<span class="nc" id="L171">            th.printStackTrace()</span>
+<span class="nc" id="L183">            th.printStackTrace()</span>
         }
-<span class="fc" id="L173">    }</span>
+<span class="fc" id="L185">    }</span>
 
     protected abstract suspend fun doHandshake()
 
@@ -180,11 +192,11 @@ import kotlin.coroutines.coroutineContext
      * @see SSLEngine.getHandshakeApplicationProtocolSelector
      * @see SSLEngine.setHandshakeApplicationProtocolSelector
      */
-<span class="nc" id="L183">    private class HandshakeApplicationProtocolSelector (</span>
-<span class="nc" id="L184">        val selector: BiFunction&lt;KSSLSocket, List&lt;String&gt;, String?&gt;</span>
+<span class="fc" id="L195">    private class HandshakeApplicationProtocolSelector (</span>
+<span class="fc" id="L196">        val selector: BiFunction&lt;KSSLSocket, List&lt;String&gt;, String?&gt;</span>
     ): BiFunction&lt;SSLEngine, List&lt;String&gt;, String?&gt; {
         override fun apply(t: SSLEngine, u: List&lt;String&gt;): String? {
-<span class="nc" id="L187">            return selector.apply(t as KSSLSocket, u)</span>
+<span class="nc" id="L199">            return selector.apply(t as KSSLSocket, u)</span>
         }
     }
 }

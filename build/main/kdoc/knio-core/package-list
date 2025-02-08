@@ -187,6 +187,7 @@ $dokka.location:org.knio.core.net.ssl/KSSLSocket/getHandshakeApplicationProtocol
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/getHandshakeApplicationProtocolSelector/#/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/get-handshake-application-protocol-selector.html
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/getHandshakeSession/#/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/get-handshake-session.html
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/getNeedClientAuth/#/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/get-need-client-auth.html
+$dokka.location:org.knio.core.net.ssl/KSSLSocket/getSSLParameters/#/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/get-s-s-l-parameters.html
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/getSession/#/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/get-session.html
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/getSupportedCipherSuites/#/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/get-supported-cipher-suites.html
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/getSupportedProtocols/#/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/get-supported-protocols.html
@@ -196,8 +197,9 @@ $dokka.location:org.knio.core.net.ssl/KSSLSocket/removeHandshakeCompletedListene
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/setEnableSessionCreation/#kotlin.Boolean/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/set-enable-session-creation.html
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/setEnabledCipherSuites/#kotlin.Array[kotlin.String]/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/set-enabled-cipher-suites.html
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/setEnabledProtocols/#kotlin.Array[kotlin.String]/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/set-enabled-protocols.html
-$dokka.location:org.knio.core.net.ssl/KSSLSocket/setHandshakeApplicationProtocolSelector/#java.util.function.BiFunction[org.knio.core.net.ssl.KSSLSocket,kotlin.collections.List[kotlin.String],kotlin.String?]/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/set-handshake-application-protocol-selector.html
+$dokka.location:org.knio.core.net.ssl/KSSLSocket/setHandshakeApplicationProtocolSelector/#java.util.function.BiFunction[org.knio.core.net.ssl.KSSLSocket,kotlin.collections.List[kotlin.String],kotlin.String?]?/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/set-handshake-application-protocol-selector.html
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/setNeedClientAuth/#kotlin.Boolean/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/set-need-client-auth.html
+$dokka.location:org.knio.core.net.ssl/KSSLSocket/setSSLParameters/#javax.net.ssl.SSLParameters/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/set-s-s-l-parameters.html
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/setUseClientMode/#kotlin.Boolean/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/set-use-client-mode.html
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/setWantClientAuth/#kotlin.Boolean/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/set-want-client-auth.html
 $dokka.location:org.knio.core.net.ssl/KSSLSocket/startHandshake/#/PointingToDeclaration/knio-core/org.knio.core.net.ssl/-k-s-s-l-socket/start-handshake.html
