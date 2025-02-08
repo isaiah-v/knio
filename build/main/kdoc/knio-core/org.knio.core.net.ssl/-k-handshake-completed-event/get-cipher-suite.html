@@ -2,7 +2,7 @@
 <html class="no-js">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
-    <title>removeHandshakeCompletedListener</title>
+    <title>getCipherSuite</title>
     <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
     <script>var pathToRoot = "../../../";</script>
     <script>document.documentElement.classList.replace("no-js","js");</script>
@@ -104,12 +104,12 @@
                 </div>
             </div>
             <div id="main">
-<div class="main-content" data-page-type="member" id="content" pageIds="knio-core::org.knio.core.net.ssl/KSSLSocket/removeHandshakeCompletedListener/#org.knio.core.net.ssl.KHandshakeCompletedListener/PointingToDeclaration//-251573632">
-  <div class="breadcrumbs"><a href="../../../index.html">knio-core</a><span class="delimiter">/</span><a href="../index.html">org.knio.core.net.ssl</a><span class="delimiter">/</span><a href="index.html">KSSLSocket</a><span class="delimiter">/</span><span class="current">removeHandshakeCompletedListener</span></div>
+<div class="main-content" data-page-type="member" id="content" pageIds="knio-core::org.knio.core.net.ssl/KHandshakeCompletedEvent/getCipherSuite/#/PointingToDeclaration//-251573632">
+  <div class="breadcrumbs"><a href="../../../index.html">knio-core</a><span class="delimiter">/</span><a href="../index.html">org.knio.core.net.ssl</a><span class="delimiter">/</span><a href="index.html">KHandshakeCompletedEvent</a><span class="delimiter">/</span><span class="current">getCipherSuite</span></div>
   <div class="cover ">
-    <h1 class="cover"><span>remove</span><wbr></wbr><span>Handshake</span><wbr></wbr><span>Completed</span><wbr></wbr><span><span>Listener</span></span></h1>
+    <h1 class="cover"><span>get</span><wbr></wbr><span>Cipher</span><wbr></wbr><span><span>Suite</span></span></h1>
   </div>
-  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="remove-handshake-completed-listener.html"><span class="token function">removeHandshakeCompletedListener</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">listener<span class="token operator">: </span><a href="../-k-handshake-completed-listener/index.html">KHandshakeCompletedListener</a></span></span><span class="token punctuation">)</span></div><p class="paragraph">Removes a previously registered handshake completion listener.</p><h4 class="">Parameters</h4><div class="table"><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>listener</span></span></u></div></span></div><div><div class="title"><p class="paragraph">the HandShake Completed event listener</p></div></div></div></div></div><h4 class="">Throws</h4><div class="table"><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-illegal-argument-exception/index.html"><span>Illegal</span><wbr></wbr><span>Argument</span><wbr></wbr><span><span>Exception</span></span></a></div></span></div><div><div class="title"><p class="paragraph">if the listener is not registered, or the argument is <code class="lang-kotlin">null</code>.</p></div></div></div></div></div></div></div>
+  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="get-cipher-suite.html"><span class="token function">getCipherSuite</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div><p class="paragraph">Returns the cipher suite in use by the session which was produced by the handshake.  (This is a convenience method for getting the ciphersuite from the SSLsession.)</p><span class="kdoc-tag"><h4 class="">Return</h4><p class="paragraph">the name of the cipher suite negotiated during this session.</p></span></div></div>
 </div>
     <div class="footer">
         <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>

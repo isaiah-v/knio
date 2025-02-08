@@ -2,7 +2,7 @@
 <html class="no-js">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
-    <title>removeHandshakeCompletedListener</title>
+    <title>handshakeCompleted</title>
     <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
     <script>var pathToRoot = "../../../";</script>
     <script>document.documentElement.classList.replace("no-js","js");</script>
@@ -104,12 +104,12 @@
                 </div>
             </div>
             <div id="main">
-<div class="main-content" data-page-type="member" id="content" pageIds="knio-core::org.knio.core.net.ssl/KSSLSocket/removeHandshakeCompletedListener/#org.knio.core.net.ssl.KHandshakeCompletedListener/PointingToDeclaration//-251573632">
-  <div class="breadcrumbs"><a href="../../../index.html">knio-core</a><span class="delimiter">/</span><a href="../index.html">org.knio.core.net.ssl</a><span class="delimiter">/</span><a href="index.html">KSSLSocket</a><span class="delimiter">/</span><span class="current">removeHandshakeCompletedListener</span></div>
+<div class="main-content" data-page-type="member" id="content" pageIds="knio-core::org.knio.core.net.ssl/KHandshakeCompletedListener/handshakeCompleted/#org.knio.core.net.ssl.KHandshakeCompletedEvent/PointingToDeclaration//-251573632">
+  <div class="breadcrumbs"><a href="../../../index.html">knio-core</a><span class="delimiter">/</span><a href="../index.html">org.knio.core.net.ssl</a><span class="delimiter">/</span><a href="index.html">KHandshakeCompletedListener</a><span class="delimiter">/</span><span class="current">handshakeCompleted</span></div>
   <div class="cover ">
-    <h1 class="cover"><span>remove</span><wbr></wbr><span>Handshake</span><wbr></wbr><span>Completed</span><wbr></wbr><span><span>Listener</span></span></h1>
+    <h1 class="cover"><span>handshake</span><wbr></wbr><span><span>Completed</span></span></h1>
   </div>
-  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="remove-handshake-completed-listener.html"><span class="token function">removeHandshakeCompletedListener</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">listener<span class="token operator">: </span><a href="../-k-handshake-completed-listener/index.html">KHandshakeCompletedListener</a></span></span><span class="token punctuation">)</span></div><p class="paragraph">Removes a previously registered handshake completion listener.</p><h4 class="">Parameters</h4><div class="table"><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>listener</span></span></u></div></span></div><div><div class="title"><p class="paragraph">the HandShake Completed event listener</p></div></div></div></div></div><h4 class="">Throws</h4><div class="table"><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-illegal-argument-exception/index.html"><span>Illegal</span><wbr></wbr><span>Argument</span><wbr></wbr><span><span>Exception</span></span></a></div></span></div><div><div class="title"><p class="paragraph">if the listener is not registered, or the argument is <code class="lang-kotlin">null</code>.</p></div></div></div></div></div></div></div>
+  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">suspend </span><span class="token keyword">fun </span><a href="handshake-completed.html"><span class="token function">handshakeCompleted</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">event<span class="token operator">: </span><a href="../-k-handshake-completed-event/index.html">KHandshakeCompletedEvent</a></span></span><span class="token punctuation">)</span></div><p class="paragraph">This method is invoked on registered objects when a SSL handshake is completed.</p><h4 class="">Parameters</h4><div class="table"><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><u><span><span>event</span></span></u></div></span></div><div><div class="title"><p class="paragraph">the event identifying when the SSL Handshake     completed on a given SSL connection</p></div></div></div></div></div></div></div>
 </div>
     <div class="footer">
         <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>

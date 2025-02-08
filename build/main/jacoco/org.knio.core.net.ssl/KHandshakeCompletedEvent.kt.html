@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KHandshakeCompletedEvent.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.net.ssl</a> &gt; <span class="el_source">KHandshakeCompletedEvent.kt</span></div><h1>KHandshakeCompletedEvent.kt</h1><pre class="source lang-java linenums">package org.knio.core.net.ssl
+
+import java.security.Principal
+import java.security.cert.Certificate
+import java.util.*
+import javax.net.ssl.SSLPeerUnverifiedException
+import javax.net.ssl.SSLSession
+
+<span class="fc" id="L9">class KHandshakeCompletedEvent(</span>
+    sock: KSSLSocket,
+<span class="fc" id="L11">    private val session: SSLSession</span>
+<span class="fc" id="L12">): EventObject(sock) {</span>
+
+    /**
+     * Returns the session that triggered this event.
+     *
+     * @return the `SSLSession` for this handshake
+     */
+    fun getSession(): SSLSession {
+<span class="nc" id="L20">        return session</span>
+    }
+
+
+    /**
+     * Returns the cipher suite in use by the session which was produced
+     * by the handshake.  (This is a convenience method for
+     * getting the ciphersuite from the SSLsession.)
+     *
+     * @return the name of the cipher suite negotiated during this session.
+     */
+    fun getCipherSuite(): String {
+<span class="nc" id="L32">        return session.cipherSuite</span>
+    }
+
+
+    /**
+     * Returns the certificate(s) that were sent to the peer during
+     * handshaking.
+     * Note: This method is useful only when using certificate-based
+     * cipher suites.
+     *
+     * When multiple certificates are available for use in a
+     * handshake, the implementation chooses what it considers the
+     * &quot;best&quot; certificate chain available, and transmits that to
+     * the other side.  This method allows the caller to know
+     * which certificate chain was actually used.
+     *
+     * @return an ordered array of certificates, with the local
+     * certificate first followed by any
+     * certificate authorities.  If no certificates were sent,
+     * then null is returned.
+     * @see .getLocalPrincipal
+     */
+    fun getLocalCertificates(): Array&lt;Certificate&gt; {
+<span class="nc" id="L55">        return session.localCertificates</span>
+    }
+
+
+    /**
+     * Returns the identity of the peer which was established as part
+     * of defining the session.
+     * Note: This method can be used only when using certificate-based
+     * cipher suites; using it with non-certificate-based cipher suites,
+     * such as Kerberos, will throw an SSLPeerUnverifiedException.
+     * &lt;P&gt;
+     * Note: The returned value may not be a valid certificate chain
+     * and should not be relied on for trust decisions.
+     *
+     * @return an ordered array of the peer certificates,
+     * with the peer's own certificate first followed by
+     * any certificate authorities.
+     * @exception SSLPeerUnverifiedException if the peer is not verified.
+     * @see .getPeerPrincipal
+    &lt;/P&gt; */
+    @Throws(SSLPeerUnverifiedException::class)
+    fun getPeerCertificates(): Array&lt;Certificate&gt; {
+<span class="nc" id="L77">        return session.peerCertificates</span>
+    }
+
+
+    /**
+     * Returns the identity of the peer which was established as part of
+     * defining the session.
+     *
+     * @return the peer's principal. Returns an X500Principal of the
+     * end-entity certificate for X509-based cipher suites, and
+     * KerberosPrincipal for Kerberos cipher suites.
+     *
+     * @throws SSLPeerUnverifiedException if the peer's identity has not
+     * been verified
+     *
+     * @see .getPeerCertificates
+     * @see .getLocalPrincipal
+     * @since 1.5
+     */
+    @Throws(SSLPeerUnverifiedException::class)
+    fun getPeerPrincipal(): Principal {
+<span class="nc" id="L98">        var principal: Principal</span>
+<span class="nc" id="L99">        try {</span>
+<span class="nc" id="L100">            principal = session.peerPrincipal</span>
+<span class="nc" id="L101">        } catch (e: AbstractMethodError) {</span>
+            // if the provider does not support it, fallback to peer certs.
+            // return the X500Principal of the end-entity cert.
+<span class="nc" id="L104">            val certs = getPeerCertificates()</span>
+<span class="nc" id="L105">            principal = (certs[0] as java.security.cert.X509Certificate).subjectX500Principal</span>
+        }
+<span class="nc" id="L107">        return principal</span>
+    }
+
+    /**
+     * Returns the principal that was sent to the peer during handshaking.
+     *
+     * @return the principal sent to the peer. Returns an X500Principal
+     * of the end-entity certificate for X509-based cipher suites, and
+     * KerberosPrincipal for Kerberos cipher suites. If no principal was
+     * sent, then null is returned.
+     *
+     * @see .getLocalCertificates
+     * @see .getPeerPrincipal
+     * @since 1.5
+     */
+    fun getLocalPrincipal(): Principal? {
+<span class="nc" id="L123">        var principal: Principal?</span>
+<span class="nc" id="L124">        try {</span>
+<span class="nc" id="L125">            principal = session.localPrincipal</span>
+<span class="nc" id="L126">        } catch (e: AbstractMethodError) {</span>
+            // if the provider does not support it, fallback to local certs.
+            // return the X500Principal of the end-entity cert.
+<span class="nc" id="L129">            val certs = getLocalCertificates()</span>
+<span class="nc" id="L130">            principal =</span>
+<span class="nc" id="L131">                (certs[0] as java.security.cert.X509Certificate).subjectX500Principal</span>
+        }
+<span class="nc" id="L133">        return principal</span>
+    }
+
+    /**
+     * Returns the socket which is the source of this event.
+     * (This is a convenience function, to let applications
+     * write code without type casts.)
+     *
+     * @return the socket on which the connection was made.
+     */
+    fun getSocket(): KSSLSocket {
+<span class="nc" id="L144">        return getSource() as KSSLSocket</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
