@@ -127,7 +127,7 @@ internal interface ReleasableBuffer&lt;T: Buffer&gt; {
 <span class="fc" id="L127">    }</span>
 }
 
-<span class="nc" id="L130">private fun asByteBuffer(buffer: ByteBuffer): ByteBuffer = buffer</span>
+<span class="fc" id="L130">private fun asByteBuffer(buffer: ByteBuffer): ByteBuffer = buffer</span>
 
 
 /**
@@ -147,7 +147,7 @@ internal interface ReleasableBuffer&lt;T: Buffer&gt; {
  * @return a ReleasableBuffer containing the acquired ByteBuffer
  */
 internal fun ByteBufferPool.acquireReleasableByteBuffer(size: Int): ReleasableBuffer&lt;ByteBuffer&gt; =
-<span class="nc" id="L150">    ReleasableBufferImpl(this, size, BYTES_PER_BYTE, ::asByteBuffer)</span>
+<span class="fc" id="L150">    ReleasableBufferImpl(this, size, BYTES_PER_BYTE, ::asByteBuffer)</span>
 
 
 /**

@@ -107,11 +107,11 @@ import javax.net.ssl.SSLParameters
     }
 
     override suspend fun getLocalPort(): Int {
-<span class="nc bnc" id="L110" title="All 2 branches missed.">        val address = serverChannel.localAddress ?: return -1</span>
-<span class="nc bnc" id="L111" title="All 2 branches missed.">        return if(address is java.net.InetSocketAddress) {</span>
-<span class="nc" id="L112">            address.port</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        val address = serverChannel.localAddress ?: return -1</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        return if(address is java.net.InetSocketAddress) {</span>
+<span class="fc" id="L112">            address.port</span>
         } else {
-<span class="nc" id="L114">            -1</span>
+<span class="pc" id="L114">            -1</span>
         }
     }
 
@@ -144,7 +144,7 @@ import javax.net.ssl.SSLParameters
     }
 
     override suspend fun isClosed(): Boolean {
-<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        return !serverChannel.isOpen</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        return !serverChannel.isOpen</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

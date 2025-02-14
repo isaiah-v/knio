@@ -127,7 +127,7 @@ internal const val UNDEFINED_LOCAL_PORT = -1
 <span class="fc bfc" id="L127" title="All 2 branches covered.">        if(!ch.isOpen) {</span>
 <span class="fc" id="L128">            return ANY_LOCAL_ADDRESS</span>
         }
-<span class="pc bpc" id="L130" title="1 of 4 branches missed.">        return this.localAddress?.address ?: ANY_LOCAL_ADDRESS</span>
+<span class="pc bpc" id="L130" title="2 of 4 branches missed.">        return this.localAddress?.address ?: InetAddress.getLoopbackAddress()</span>
     }
 
     @NotSuspended

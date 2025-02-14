@@ -6,10 +6,13 @@ import java.util.*
 import javax.net.ssl.SSLPeerUnverifiedException
 import javax.net.ssl.SSLSession
 
-<span class="fc" id="L9">class KHandshakeCompletedEvent(</span>
+/**
+ * Equivalent to [javax.net.ssl.HandshakeCompletedEvent].
+ */
+<span class="fc" id="L12">class KHandshakeCompletedEvent(</span>
     sock: KSSLSocket,
-<span class="fc" id="L11">    private val session: SSLSession</span>
-<span class="fc" id="L12">): EventObject(sock) {</span>
+<span class="fc" id="L14">    private val session: SSLSession</span>
+<span class="fc" id="L15">): EventObject(sock) {</span>
 
     /**
      * Returns the session that triggered this event.
@@ -17,7 +20,7 @@ import javax.net.ssl.SSLSession
      * @return the `SSLSession` for this handshake
      */
     fun getSession(): SSLSession {
-<span class="nc" id="L20">        return session</span>
+<span class="nc" id="L23">        return session</span>
     }
 
 
@@ -29,7 +32,7 @@ import javax.net.ssl.SSLSession
      * @return the name of the cipher suite negotiated during this session.
      */
     fun getCipherSuite(): String {
-<span class="nc" id="L32">        return session.cipherSuite</span>
+<span class="nc" id="L35">        return session.cipherSuite</span>
     }
 
 
@@ -52,7 +55,7 @@ import javax.net.ssl.SSLSession
      * @see .getLocalPrincipal
      */
     fun getLocalCertificates(): Array&lt;Certificate&gt; {
-<span class="nc" id="L55">        return session.localCertificates</span>
+<span class="nc" id="L58">        return session.localCertificates</span>
     }
 
 
@@ -74,7 +77,7 @@ import javax.net.ssl.SSLSession
     &lt;/P&gt; */
     @Throws(SSLPeerUnverifiedException::class)
     fun getPeerCertificates(): Array&lt;Certificate&gt; {
-<span class="nc" id="L77">        return session.peerCertificates</span>
+<span class="nc" id="L80">        return session.peerCertificates</span>
     }
 
 
@@ -95,16 +98,16 @@ import javax.net.ssl.SSLSession
      */
     @Throws(SSLPeerUnverifiedException::class)
     fun getPeerPrincipal(): Principal {
-<span class="nc" id="L98">        var principal: Principal</span>
-<span class="nc" id="L99">        try {</span>
-<span class="nc" id="L100">            principal = session.peerPrincipal</span>
-<span class="nc" id="L101">        } catch (e: AbstractMethodError) {</span>
+<span class="nc" id="L101">        var principal: Principal</span>
+<span class="nc" id="L102">        try {</span>
+<span class="nc" id="L103">            principal = session.peerPrincipal</span>
+<span class="nc" id="L104">        } catch (e: AbstractMethodError) {</span>
             // if the provider does not support it, fallback to peer certs.
             // return the X500Principal of the end-entity cert.
-<span class="nc" id="L104">            val certs = getPeerCertificates()</span>
-<span class="nc" id="L105">            principal = (certs[0] as java.security.cert.X509Certificate).subjectX500Principal</span>
+<span class="nc" id="L107">            val certs = getPeerCertificates()</span>
+<span class="nc" id="L108">            principal = (certs[0] as java.security.cert.X509Certificate).subjectX500Principal</span>
         }
-<span class="nc" id="L107">        return principal</span>
+<span class="nc" id="L110">        return principal</span>
     }
 
     /**
@@ -120,17 +123,17 @@ import javax.net.ssl.SSLSession
      * @since 1.5
      */
     fun getLocalPrincipal(): Principal? {
-<span class="nc" id="L123">        var principal: Principal?</span>
-<span class="nc" id="L124">        try {</span>
-<span class="nc" id="L125">            principal = session.localPrincipal</span>
-<span class="nc" id="L126">        } catch (e: AbstractMethodError) {</span>
+<span class="nc" id="L126">        var principal: Principal?</span>
+<span class="nc" id="L127">        try {</span>
+<span class="nc" id="L128">            principal = session.localPrincipal</span>
+<span class="nc" id="L129">        } catch (e: AbstractMethodError) {</span>
             // if the provider does not support it, fallback to local certs.
             // return the X500Principal of the end-entity cert.
-<span class="nc" id="L129">            val certs = getLocalCertificates()</span>
-<span class="nc" id="L130">            principal =</span>
-<span class="nc" id="L131">                (certs[0] as java.security.cert.X509Certificate).subjectX500Principal</span>
+<span class="nc" id="L132">            val certs = getLocalCertificates()</span>
+<span class="nc" id="L133">            principal =</span>
+<span class="nc" id="L134">                (certs[0] as java.security.cert.X509Certificate).subjectX500Principal</span>
         }
-<span class="nc" id="L133">        return principal</span>
+<span class="nc" id="L136">        return principal</span>
     }
 
     /**
@@ -141,7 +144,7 @@ import javax.net.ssl.SSLSession
      * @return the socket on which the connection was made.
      */
     fun getSocket(): KSSLSocket {
-<span class="nc" id="L144">        return getSource() as KSSLSocket</span>
+<span class="nc" id="L147">        return getSource() as KSSLSocket</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

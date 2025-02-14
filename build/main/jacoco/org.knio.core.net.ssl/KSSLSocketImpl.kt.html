@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KSSLSocketImpl.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.net.ssl</a> &gt; <span class="el_source">KSSLSocketImpl.kt</span></div><h1>KSSLSocketImpl.kt</h1><pre class="source lang-java linenums">package org.knio.core.net.ssl
 
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.knio.core.nio.readSuspend
 import org.knio.core.nio.writeSuspend
-import org.knio.core.utils.compactOrIncreaseSize
 import org.knio.core.context.KnioContext
+import org.knio.core.context.ReleasableBuffer
+import org.knio.core.context.acquireReleasableByteBuffer
 import org.knio.core.io.KInputStream
 import org.knio.core.io.KOutputStream
 import java.io.IOException
@@ -28,448 +28,538 @@ import kotlin.math.min
 <span class="fc" id="L28">    useClientMode</span>
 ) {
 
-<span class="fc" id="L31">    private var handshakeMutex: Mutex = Mutex()</span>
-    private var isHandshakeCompleted = false
-
     private var isInputShutdown = false
-    private var networkRead: ByteBuffer?
-    private var applicationRead: ByteBuffer?
+<span class="fc" id="L32">    private val networkRead = ReadWriteBuffer(context.byteBufferPool.acquireReleasableByteBuffer(sslEngine.session.packetBufferSize).apply { value.limit(0) })</span>
+<span class="fc" id="L33">    private val application = ReadWriteBuffer(context.byteBufferPool.acquireReleasableByteBuffer(sslEngine.session.applicationBufferSize).apply { value.limit(0) })</span>
 
     private var isOutputShutdown = false
-    private var networkWrite: ByteBuffer?
+<span class="fc" id="L36">    private var networkWrite = ReadWriteBuffer(context.byteBufferPool.acquireReleasableByteBuffer(sslEngine.session.packetBufferSize).apply { value.limit(0) })</span>
 
-<span class="fc" id="L41">    init {</span>
-<span class="fc" id="L42">        networkRead = context.byteBufferPool.acquire(sslEngine.session.packetBufferSize)</span>
-<span class="fc" id="L43">        networkWrite = context.byteBufferPool.acquire(sslEngine.session.packetBufferSize)</span>
-<span class="fc" id="L44">        applicationRead = context.byteBufferPool.acquire(sslEngine.session.applicationBufferSize).flip()</span>
-<span class="fc" id="L45">    }</span>
-
-<span class="fc" id="L47">    private val inputStream = object : KInputStream(context) {</span>
+<span class="fc" id="L38">    private val inputStream = object : KInputStream(context) {</span>
 
         override suspend fun read(b: ByteBuffer): Int {
-<span class="fc" id="L50">            return this@KSSLSocketImpl.read(b)</span>
+<span class="fc" id="L41">            return this@KSSLSocketImpl.read(b)</span>
         }
 
         override suspend fun close() {
-<span class="fc" id="L54">            this@KSSLSocketImpl.close()</span>
-<span class="fc" id="L55">        }</span>
+<span class="fc" id="L45">            this@KSSLSocketImpl.close()</span>
+<span class="fc" id="L46">        }</span>
     }
 
-<span class="fc" id="L58">    private val outputStream = object : KOutputStream() {</span>
-
+<span class="fc" id="L49">    private val outputStream = object : KOutputStream() {</span>
         override suspend fun write(b: ByteBuffer) {
-<span class="fc" id="L61">            this@KSSLSocketImpl.write(b)</span>
-<span class="fc" id="L62">        }</span>
+<span class="fc" id="L51">            this@KSSLSocketImpl.write(b)</span>
+<span class="fc" id="L52">        }</span>
 
         override suspend fun close() {
-<span class="fc" id="L65">            this@KSSLSocketImpl.close()</span>
-<span class="fc" id="L66">        }</span>
+<span class="fc" id="L55">            this@KSSLSocketImpl.close()</span>
+<span class="fc" id="L56">        }</span>
     }
 
-    override suspend fun getInputStream(): KInputStream {
-<span class="fc bfc" id="L70" title="All 2 branches covered.">        if(!ch.isOpen) {</span>
-<span class="fc" id="L71">            throw SocketException(&quot;Socket is closed&quot;)</span>
+<span class="fc" id="L59">    override suspend fun getInputStream(): KInputStream = lock.withLock {</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if(!ch.isOpen) {</span>
+<span class="fc" id="L61">            throw SocketException(&quot;Socket is closed&quot;)</span>
         }
-<span class="fc bfc" id="L73" title="All 2 branches covered.">        if(isInputShutdown()) {</span>
-<span class="fc" id="L74">            throw SocketException(&quot;Socket input is shutdown&quot;)</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if(isInputShutdown) {</span>
+<span class="fc" id="L64">            throw SocketException(&quot;Socket input is shutdown&quot;)</span>
         }
-<span class="fc" id="L76">        return inputStream</span>
+<span class="fc" id="L66">        return inputStream</span>
     }
-    override suspend fun getOutputStream(): KOutputStream {
-<span class="fc bfc" id="L79" title="All 2 branches covered.">        if(isOutputShutdown()) {</span>
-<span class="fc" id="L80">            throw SocketException(&quot;Socket output is shutdown&quot;)</span>
+
+<span class="fc" id="L69">    override suspend fun getOutputStream(): KOutputStream = lock.withLock {</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if(isOutputShutdown) {</span>
+<span class="fc" id="L71">            throw SocketException(&quot;Socket output is shutdown&quot;)</span>
         }
-<span class="fc" id="L82">        return outputStream</span>
+<span class="fc" id="L73">        return outputStream</span>
     }
+
+    override suspend fun softStartHandshake() {
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        if(!sslEngine.session.isValid) {</span>
+<span class="pc" id="L78">            startHandshake0()</span>
+        }
+<span class="nc" id="L80">    }</span>
+
+<span class="fc" id="L82">    override suspend fun startHandshake() = lock.withLock {</span>
+        // initiates or renegotiates the SSL handshake
+<span class="fc" id="L84">        startHandshake0()</span>
+<span class="fc" id="L85">    }</span>
 
     /**
-     * Starts the handshake process.
+     * Same as [KSSLSocket.startHandshake] except that this is an internal function that executes without
+     * acquiring the lock.
+     *
+     * @see [KSSLSocket.startHandshake]
      */
-<span class="fc" id="L88">    override suspend fun doHandshake() = handshakeMutex.withLock {</span>
-        // lock to prevent multiple handshakes
-<span class="fc" id="L90">        doHandshake0()</span>
-<span class="fc" id="L91">    }</span>
-
-    /**
-     * The non-locked logic for starting the handshake.
-     */
-    private suspend fun doHandshake0() {
-        // Note: ONLY `doHandshake` should call this method. Use `startHandshake`
-        // to start the handshake.
-
-<span class="fc bfc" id="L100" title="All 2 branches covered.">        if(isHandshakeCompleted) return</span>
-
+    private suspend fun startHandshake0() {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L103">        sslEngine.beginHandshake()</span>
+<span class="fc" id="L95">        sslEngine.beginHandshake()</span>
+<span class="pc" id="L96">        handleHandshake0()</span>
+<span class="nc" id="L97">    }</span>
 
-<span class="fc" id="L105">        networkRead!!.clear().flip()</span>
-<span class="fc" id="L106">        networkWrite!!.clear()</span>
+    /**
+     * Handles the handshake process.
+     *
+     * A handshake may be initiated at any time, and may be initiated multiple times. This method will handle processing
+     * the handshake until it is complete.
+     */
+    private suspend fun handleHandshake0() {
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        if(!sslEngine.isHandshaking) {</span>
+<span class="nc" id="L107">            return</span>
+        }
 
-<span class="fc bfc" id="L108" title="All 2 branches covered.">        while (sslEngine.isHandshaking) {</span>
-<span class="pc bpc" id="L109" title="1 of 4 branches missed.">            when(sslEngine.handshakeStatus!!) {</span>
-                SSLEngineResult.HandshakeStatus.NEED_TASK -&gt; {
-<span class="fc" id="L111">                    runHandshakeTasks()</span>
-                }
-                SSLEngineResult.HandshakeStatus.NEED_WRAP -&gt; {
-                    @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L115">                    wrapHandshake()</span>
-                }
-                SSLEngineResult.HandshakeStatus.NEED_UNWRAP,
-                SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN-&gt; {
-                    @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L120">                    unwrapHandshake()</span>
-                }
-                SSLEngineResult.HandshakeStatus.FINISHED,
-                SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING -&gt; {
-                    // DONE!
-<span class="nc" id="L125">                    continue</span>
+<span class="fc" id="L110">        var handshakeSession: SSLSession? = null</span>
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        while (sslEngine.isHandshaking) {</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if(handshakeSession == null) {</span>
+<span class="fc" id="L114">                val session = sslEngine.handshakeSession</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">                if(session != null) {</span>
+<span class="fc" id="L116">                    handshakeSession = session</span>
+<span class="fc" id="L117">                    initBuffersForHandshake(session)</span>
                 }
             }
+
+<span class="fc" id="L121">            handshakeIteration0()</span>
         }
 
-        // clear buffers
-        //networkRead?.clear()
-<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        networkWrite?.clear()</span>
-<span class="pc bpc" id="L133" title="2 of 4 branches missed.">        applicationRead?.clear()?.flip()</span>
-        //applicationWrite?.clear()
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if(handshakeSession != null) {</span>
+<span class="fc" id="L125">            super.triggerHandshakeCompletion(handshakeSession)</span>
+        }
+<span class="fc" id="L127">    }</span>
 
-<span class="fc" id="L136">        isHandshakeCompleted = true</span>
-<span class="fc" id="L137">    }</span>
+    private suspend fun initBuffersForHandshake(session: SSLSession) {
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">        if(networkRead.value.capacity()&lt;session.packetBufferSize) {</span>
+<span class="nc" id="L131">            networkRead.releasable.resize(session.packetBufferSize)</span>
+        }
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if(networkWrite.value.capacity()&lt;session.packetBufferSize) {</span>
+<span class="nc" id="L134">            networkWrite.releasable.resize(session.packetBufferSize)</span>
+        }
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        if(application.value.capacity()&lt;session.applicationBufferSize) {</span>
+<span class="nc" id="L137">            application.releasable.resize(session.applicationBufferSize)</span>
+        }
+<span class="fc" id="L139">    }</span>
+
+    private suspend fun handshakeIteration0() {
+<span class="pc bpc" id="L142" title="1 of 4 branches missed.">        when(sslEngine.handshakeStatus!!) {</span>
+            SSLEngineResult.HandshakeStatus.NEED_TASK -&gt; {
+<span class="fc" id="L144">                runHandshakeTasks()</span>
+            }
+            SSLEngineResult.HandshakeStatus.NEED_WRAP -&gt; {
+<span class="fc" id="L147">                wrapHandshake()</span>
+            }
+            SSLEngineResult.HandshakeStatus.NEED_UNWRAP,
+            SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN-&gt; {
+<span class="fc" id="L151">                unwrapHandshake()</span>
+            }
+            SSLEngineResult.HandshakeStatus.FINISHED,
+            SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING -&gt; {
+                // DONE!
+            }
+        }
+<span class="pc" id="L158">    }</span>
 
     private fun runHandshakeTasks() {
-<span class="fc" id="L140">        while (true) {</span>
-<span class="fc bfc" id="L141" title="All 2 branches covered.">            val task = sslEngine.delegatedTask ?: break</span>
-<span class="fc" id="L142">            task.run()</span>
+<span class="fc" id="L161">        while (true) {</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">            val task = sslEngine.delegatedTask ?: break</span>
+<span class="fc" id="L163">            task.run()</span>
         }
-<span class="fc" id="L144">    }</span>
+<span class="fc" id="L165">    }</span>
 
     private suspend fun wrapHandshake() {
-<span class="fc" id="L147">        val dummyBuffer = ByteBuffer.allocate(0)</span>
+<span class="fc" id="L168">        wrap(src = ByteBuffer.wrap(ByteArray(0)))</span>
+<span class="fc" id="L169">    }</span>
 
-<span class="fc" id="L149">        while (true) {</span>
-<span class="fc" id="L150">            networkWrite!!.clear()</span>
+<span class="fc" id="L171">    private suspend fun wrap (</span>
+        src: ByteBuffer,
+<span class="fc" id="L173">        dst: ReadWriteBuffer = networkWrite</span>
+    ) {
+<span class="fc" id="L175">        while (true) {</span>
+<span class="fc" id="L176">            @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)</span>
+<span class="fc" id="L177">            val result = sslEngine.wrap(src, dst.write)</span>
 
-<span class="fc" id="L152">            @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)</span>
-<span class="fc" id="L153">            val result = sslEngine.wrap(dummyBuffer, networkWrite)</span>
-
-<span class="pc bpc" id="L155" title="3 of 4 branches missed.">            when (result.status!!) {</span>
+<span class="pc bpc" id="L179" title="2 of 4 branches missed.">            when (result.status!!) {</span>
                 SSLEngineResult.Status.BUFFER_UNDERFLOW -&gt; {
-                    //
-<span class="nc" id="L158">                    throw SSLException(&quot;Buffer underflow while wrapping in handshake&quot;)</span>
+                    // Dummy buffer used. If thrown, bad assumptions made
+<span class="nc" id="L182">                    throw SSLException(&quot;Buffer underflow while wrapping in handshake&quot;)</span>
                 }
 
                 SSLEngineResult.Status.BUFFER_OVERFLOW -&gt; {
-                    // Increase network buffer size. This shouldn't typically happen during handshake.
-                    // The network buffer is clear and the size should be the same as the packet buffer size.
-<span class="nc" id="L164">                    networkWrite = networkWrite!!.compactOrIncreaseSize(</span>
-<span class="nc" id="L165">                        sslEngine.session.packetBufferSize,</span>
-<span class="nc" id="L166">                        context.byteBufferPool</span>
-                    )
+<span class="nc" id="L186">                    handleOverflow(dst.writeReleasable)</span>
                 }
 
                 SSLEngineResult.Status.OK -&gt; {
                     // Unwrap was successful. Write the data to the channel.
-<span class="fc" id="L172">                    networkWrite!!.flip()</span>
-<span class="fc bfc" id="L173" title="All 2 branches covered.">                    while (networkWrite!!.hasRemaining()) {</span>
-<span class="fc" id="L174">                        val read = ch.writeSuspend(networkWrite!!, getWriteTimeout())</span>
-<span class="pc bpc" id="L175" title="1 of 2 branches missed.">                        if (read == -1) {</span>
-<span class="nc" id="L176">                            throw SSLException(&quot;Connection closed during handshake&quot;)</span>
+<span class="fc" id="L191">                    dst.toMode(ReadWriteBuffer.Mode.READ)</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                    while (dst.value.hasRemaining()) {</span>
+<span class="fc" id="L193">                        val read = ch.writeSuspend(dst.value, getWriteTimeout())</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">                        if (read == -1) {</span>
+<span class="nc" id="L195">                            throw SSLException(&quot;Connection closed during handshake&quot;)</span>
                         }
-<span class="pc bpc" id="L178" title="1 of 2 branches missed.">                        if (read == 0) {</span>
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">                        if (read == 0) {</span>
                             // TODO
-<span class="nc" id="L180">                            throw SSLException(&quot;?? no data written during handshake. try again or error ??&quot;)</span>
+<span class="nc" id="L199">                            throw SSLException(&quot;?? no data written during handshake. try again or error ??&quot;)</span>
                         }
                     }
-<span class="fc" id="L183">                    break</span>
+<span class="fc" id="L202">                    break</span>
                 }
 
                 SSLEngineResult.Status.CLOSED -&gt; {
                     // closed
-<span class="nc" id="L188">                    throw SSLException(&quot;Connection closed during handshake&quot;)</span>
+<span class="fc" id="L207">                    throw SSLException(&quot;Connection closed during handshake&quot;)</span>
                 }
             }
         }
-<span class="fc" id="L192">    }</span>
+<span class="fc" id="L211">    }</span>
 
     private suspend fun unwrapHandshake() {
-<span class="fc" id="L195">        val dummyBuffer = ByteBuffer.allocate(0)</span>
 
-<span class="fc" id="L197">        while (true) {</span>
+<span class="fc" id="L215">        while (true) {</span>
             // try to unwrap data from the network buffer
-<span class="fc" id="L199">            @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)</span>
-<span class="fc" id="L200">            val result = sslEngine.unwrap(networkRead, dummyBuffer)</span>
 
-<span class="pc bpc" id="L202" title="2 of 4 branches missed.">            when (result.status!!) {</span>
+<span class="fc" id="L218">            @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)</span>
+<span class="fc" id="L219">            val result = sslEngine.unwrap(networkRead.read, application.write)</span>
+
+<span class="pc bpc" id="L221" title="2 of 4 branches missed.">            when (result.status!!) {</span>
                 SSLEngineResult.Status.BUFFER_UNDERFLOW -&gt; {
-                    // An underflow implies there wasn't enough information in the network buffer to unwrap
-
-                    // increase the available network buffer size
-<span class="fc" id="L207">                    networkRead = networkRead!!.compactOrIncreaseSize(</span>
-<span class="fc" id="L208">                        sslEngine.session.packetBufferSize,</span>
-<span class="fc" id="L209">                        context.byteBufferPool</span>
-                    )
-
-                    // read more data from the channel
-<span class="fc" id="L213">                    val count = ch.readSuspend(networkRead!!)</span>
-<span class="fc bfc" id="L214" title="All 2 branches covered.">                    if(count == -1) {</span>
-<span class="fc" id="L215">                        throw SSLException(&quot;Connection closed during handshake&quot;)</span>
-                    }
-<span class="pc bpc" id="L217" title="1 of 2 branches missed.">                    if(count == 0) {</span>
-                        // TODO
-<span class="nc" id="L219">                        throw SSLException(&quot;?? no data read during handshake. try again or error ??&quot;)</span>
+                    // If there's no room to read, increase buffer size
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">                    if (!networkRead.write.hasRemaining()) {</span>
+<span class="nc" id="L225">                        val buffer = networkRead.releasable</span>
+<span class="nc" id="L226">                        buffer.resize(buffer.value.capacity() + sslEngine.session.packetBufferSize)</span>
                     }
 
-                    // flip the buffer to prepare for unwrapping
-<span class="fc" id="L223">                    networkRead!!.flip()</span>
+                    // Read more data from the channel
+<span class="fc" id="L230">                    val count = ch.readSuspend(networkRead.write, getReadTimeout())</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">                    if (count == -1) {</span>
+<span class="fc" id="L232">                        throw SSLException(&quot;Connection closed during handshake&quot;)</span>
+                    }
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">                    if (count == 0) {</span>
+<span class="nc" id="L235">                        throw SSLException(&quot;?? no data read during handshake. try again or error ??&quot;)</span>
+                    }
                 }
 
                 SSLEngineResult.Status.BUFFER_OVERFLOW -&gt; {
-                    // shouldn't happen during handshake
-<span class="nc" id="L228">                    throw SSLException(&quot;Buffer underflow while unwrapping in handshake&quot;)</span>
+<span class="nc" id="L240">                    handleOverflow(networkRead.writeReleasable)</span>
                 }
 
                 SSLEngineResult.Status.OK -&gt; {
                     // unwrap was successful. leave the data in the network buffer for the next unwrap
-<span class="fc" id="L233">                    break</span>
+<span class="fc" id="L245">                    break</span>
                 }
 
                 SSLEngineResult.Status.CLOSED -&gt; {
                     // closed
-<span class="nc" id="L238">                    throw SSLException(&quot;Connection closed during handshake&quot;)</span>
+<span class="nc" id="L250">                    throw SSLException(&quot;Connection closed during handshake&quot;)</span>
                 }
             }
         }
-<span class="fc" id="L242">    }</span>
+<span class="fc" id="L254">    }</span>
 
-    override suspend fun isInputShutdown(): Boolean {
-<span class="fc" id="L245">        return isInputShutdown</span>
+    private fun handleOverflow(buffer: ReleasableBuffer&lt;ByteBuffer&gt;) {
+<span class="nc" id="L257">        val limit = buffer.value.limit()</span>
+<span class="nc" id="L258">        val capacity = buffer.value.capacity()</span>
+
+<span class="nc bnc" id="L260" title="All 2 branches missed.">        if (limit == capacity) {</span>
+<span class="nc" id="L261">            buffer.resize(capacity + sslEngine.session.packetBufferSize)</span>
+        } else {
+<span class="nc" id="L263">            buffer.value.limit(capacity)</span>
+        }
+<span class="nc" id="L265">    }</span>
+
+<span class="nc" id="L267">    override suspend fun isInputShutdown(): Boolean = lock.withLock {</span>
+<span class="nc" id="L268">        return isInputShutdown</span>
     }
 
-    override suspend fun isOutputShutdown(): Boolean {
-<span class="fc" id="L249">        return isOutputShutdown</span>
+<span class="nc" id="L271">    override suspend fun isOutputShutdown(): Boolean = lock.withLock {</span>
+<span class="nc" id="L272">        return isOutputShutdown</span>
     }
 
-    override suspend fun shutdownInput() {
-<span class="fc bfc" id="L253" title="All 2 branches covered.">        val netBuff = networkRead ?: return</span>
-<span class="fc" id="L254">        networkRead = null</span>
+<span class="fc" id="L275">    override suspend fun shutdownInput() = lock.withLock {</span>
+<span class="fc" id="L276">        shutdownInput0()</span>
+<span class="fc" id="L277">    }</span>
 
-<span class="fc" id="L256">        try {</span>
-<span class="fc" id="L257">            try {</span>
+    private suspend fun shutdownInput0() {
+<span class="fc bfc" id="L280" title="All 2 branches covered.">        if(networkRead.releasable.released) {</span>
+<span class="fc" id="L281">            return</span>
+        }
+
+<span class="fc" id="L284">        try {</span>
+<span class="fc" id="L285">            try {</span>
                 @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L259">                sslEngine.closeInbound()</span>
-<span class="fc" id="L260">            } catch (e: SSLException) {</span>
+<span class="fc" id="L287">                sslEngine.closeInbound()</span>
+<span class="fc" id="L288">            } catch (e: SSLException) {</span>
                 // ignore
             }
 
             // Clear buffer for reuse or release
-<span class="fc" id="L265">            netBuff.clear()</span>
+<span class="fc" id="L293">            networkRead.value.clear()</span>
         } finally {
-<span class="fc" id="L267">            isInputShutdown = true</span>
-<span class="fc" id="L268">            context.byteBufferPool.release(netBuff)</span>
+<span class="fc" id="L295">            isInputShutdown = true</span>
+<span class="fc" id="L296">            networkRead.releasable.release()</span>
         }
-<span class="fc" id="L270">    }</span>
+<span class="fc" id="L298">    }</span>
 
-    override suspend fun shutdownOutput() {
-<span class="pc bpc" id="L273" title="1 of 2 branches missed.">        var netBuff = networkWrite ?: return</span>
-<span class="fc" id="L274">        networkWrite = null</span>
+<span class="fc" id="L300">    override suspend fun shutdownOutput() = lock.withLock {</span>
+<span class="fc" id="L301">        shutdownOutput0()</span>
+<span class="fc" id="L302">    }</span>
 
-<span class="fc" id="L276">        try {</span>
-<span class="fc" id="L277">            sslEngine.closeOutbound()</span>
+    private suspend fun shutdownOutput0() {
+<span class="fc" id="L305">        try {</span>
+<span class="fc" id="L306">            sslEngine.closeOutbound()</span>
 
-<span class="fc" id="L279">            netBuff.clear()</span>
-<span class="fc" id="L280">            out@ while (true) {</span>
-<span class="fc" id="L281">                @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)</span>
-<span class="fc" id="L282">                val result = sslEngine.wrap(ByteBuffer.allocate(0), netBuff)</span>
+<span class="fc" id="L308">            out@ while (true) {</span>
+<span class="fc" id="L309">                @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)</span>
+<span class="fc" id="L310">                val result = sslEngine.wrap(ByteBuffer.allocate(0), networkWrite.write)</span>
 
-<span class="pc bpc" id="L284" title="3 of 4 branches missed.">                when (result.status!!) {</span>
+<span class="pc bpc" id="L312" title="3 of 4 branches missed.">                when (result.status!!) {</span>
 
                     SSLEngineResult.Status.BUFFER_OVERFLOW -&gt; {
-                        // increase network buffer size
-<span class="nc" id="L288">                        netBuff = netBuff.compactOrIncreaseSize(</span>
-<span class="nc" id="L289">                            sslEngine.session.packetBufferSize,</span>
-<span class="nc" id="L290">                            context.byteBufferPool</span>
-                        )
+<span class="nc" id="L315">                        handleOverflow(networkWrite.writeReleasable)</span>
                     }
 
                     SSLEngineResult.Status.OK -&gt; {
-<span class="nc" id="L295">                        try {</span>
-<span class="nc" id="L296">                            netBuff.flip()</span>
-<span class="nc bnc" id="L297" title="All 2 branches missed.">                            while (netBuff.hasRemaining()) {</span>
-<span class="nc" id="L298">                                var written = 0;</span>
-<span class="nc bnc" id="L299" title="All 2 branches missed.">                                repeat(3) { attempt -&gt;</span>
-<span class="nc" id="L300">                                    written = ch.writeSuspend(netBuff)</span>
-<span class="nc bnc" id="L301" title="All 2 branches missed.">                                    if (written &gt; 0) return@repeat</span>
-<span class="nc" id="L302">                                    delay(100L * attempt) // Backoff delay</span>
-<span class="nc" id="L303">                                }</span>
+<span class="nc" id="L319">                        try {</span>
+<span class="nc" id="L320">                            networkWrite.toMode(ReadWriteBuffer.Mode.READ)</span>
+<span class="nc bnc" id="L321" title="All 2 branches missed.">                            while (networkWrite.value.hasRemaining()) {</span>
+<span class="nc" id="L322">                                var written = 0</span>
+<span class="nc bnc" id="L323" title="All 2 branches missed.">                                repeat(3) { attempt -&gt;</span>
+<span class="nc" id="L324">                                    written = ch.writeSuspend(networkWrite.value)</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">                                    if (written &gt; 0) return@repeat</span>
+<span class="nc" id="L326">                                    delay(100L * attempt) // Backoff delay</span>
+<span class="nc" id="L327">                                }</span>
 
-<span class="nc bnc" id="L305" title="All 2 branches missed.">                                if (written &lt;= 0) {</span>
-<span class="nc" id="L306">                                    break@out</span>
+<span class="nc bnc" id="L329" title="All 2 branches missed.">                                if (written &lt;= 0) {</span>
+<span class="nc" id="L330">                                    break@out</span>
                                 }
                             }
-<span class="nc" id="L309">                            netBuff.clear()</span>
-<span class="nc" id="L310">                            break</span>
-<span class="nc" id="L311">                        } catch (e: ClosedChannelException) {</span>
+<span class="nc" id="L333">                            networkWrite.value.clear()</span>
+<span class="nc" id="L334">                            break</span>
+<span class="nc" id="L335">                        } catch (e: ClosedChannelException) {</span>
                             // ignore
-<span class="nc" id="L313">                        } catch (e: IOException) {</span>
-<span class="nc" id="L314">                            throw e</span>
+<span class="nc" id="L337">                        } catch (e: IOException) {</span>
+<span class="nc" id="L338">                            throw e</span>
                         }
                     }
 
                     SSLEngineResult.Status.CLOSED -&gt; {
                         // closed
-<span class="fc" id="L320">                        break@out</span>
+<span class="fc" id="L344">                        break@out</span>
                     }
 
                     else -&gt; {
-<span class="nc" id="L324">                        throw SSLException(&quot;Unexpected SSL wrap status: ${result.status}&quot;)</span>
+<span class="nc" id="L348">                        throw SSLException(&quot;Unexpected SSL wrap status: ${result.status}&quot;)</span>
                     }
                 }
             }
 
-<span class="fc" id="L329">            try {</span>
+<span class="fc" id="L353">            try {</span>
                 @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L331">                ch.shutdownOutput()</span>
-<span class="nc" id="L332">            } catch (e: ClosedChannelException) {</span>
+<span class="fc" id="L355">                ch.shutdownOutput()</span>
+<span class="nc" id="L356">            } catch (e: ClosedChannelException) {</span>
                 // ignore
-<span class="nc" id="L334">            } catch (e: IOException) {</span>
-<span class="nc" id="L335">                throw e</span>
+<span class="nc" id="L358">            } catch (e: IOException) {</span>
+<span class="nc" id="L359">                throw e</span>
             }
         } finally {
-<span class="fc" id="L338">            isOutputShutdown = true</span>
-<span class="fc" id="L339">            context.byteBufferPool.release(netBuff)</span>
+<span class="fc" id="L362">            isOutputShutdown = true</span>
+<span class="fc" id="L363">            networkWrite.releasable.release()</span>
         }
-<span class="fc" id="L341">    }</span>
+<span class="fc" id="L365">    }</span>
 
-    private suspend fun read(b: ByteBuffer): Int {
-<span class="pc bpc" id="L344" title="1 of 8 branches missed.">        if(isInputShutdown &amp;&amp; applicationRead?.hasRemaining() == false) {</span>
-<span class="fc" id="L345">            return -1</span>
+<span class="fc" id="L367">    private suspend fun read(b: ByteBuffer): Int  = lock.withLock {</span>
+<span class="fc" id="L368">        read0(b)</span>
+<span class="fc" id="L369">    }</span>
+
+
+    /**
+     * @implNote The `application` buffer must be empty or in a &quot;read state&quot; when exiting this method
+     *
+     * Buffer States:
+     *  - Undefined:   Buffer Empty
+     *  - Read State:  Bytes are read FROM the buffer
+     *  - Write State: Bytes are written TO the buffer
+     */
+    private suspend fun read0(b: ByteBuffer): Int {
+<span class="pc bpc" id="L381" title="1 of 4 branches missed.">        if(isInputShutdown &amp;&amp; !application.read.hasRemaining()) {</span>
+<span class="fc" id="L382">            return -1</span>
         }
 
-<span class="pc bpc" id="L348" title="1 of 4 branches missed.">        if(!isHandshakeCompleted &amp;&amp; isInputShutdown) {</span>
-<span class="nc" id="L349">            return -1</span>
+<span class="pc bpc" id="L385" title="2 of 4 branches missed.">        if (application.releasable.released || networkRead.releasable.released) {</span>
+<span class="nc" id="L386">            return -1</span>
+        }
+<span class="fc" id="L388">        val app = application</span>
+<span class="fc" id="L389">        val net = networkRead</span>
+
+<span class="fc bfc" id="L391" title="All 2 branches covered.">        if(!sslEngine.session.isValid) {</span>
+<span class="fc" id="L392">            startHandshake0() // &lt;-- flips application buffer to read mode</span>
         }
 
-<span class="fc bfc" id="L352" title="All 2 branches covered.">        if(!isHandshakeCompleted) {</span>
-<span class="pc bpc" id="L353" title="1 of 2 branches missed.">            applicationRead?.clear()</span>
-<span class="fc" id="L354">            startHandshake()</span>
-        }
+<span class="fc" id="L395">        val start = b.position()</span>
 
-<span class="pc bpc" id="L357" title="1 of 2 branches missed.">        var app = this@KSSLSocketImpl.applicationRead ?: return -1</span>
-<span class="fc bfc" id="L358" title="All 2 branches covered.">        var net = this@KSSLSocketImpl.networkRead ?: return -1</span>
+<span class="fc bfc" id="L397" title="All 2 branches covered.">        input@ while(b.hasRemaining()) {</span>
+<span class="fc" id="L398">            application.toMode(ReadWriteBuffer.Mode.READ)</span>
 
-<span class="fc" id="L360">        val start = b.position()</span>
+            // Add remaining application data to the buffer
+<span class="fc bfc" id="L401" title="All 2 branches covered.">            if(app.value.hasRemaining()) {</span>
+<span class="fc" id="L402">                val count = min(app.value.remaining(), b.remaining())</span>
+<span class="fc" id="L403">                b.put(b.position(), app.value, app.value.position(), count)</span>
 
-<span class="pc bpc" id="L362" title="1 of 2 branches missed.">        input@ while(b.hasRemaining()) {</span>
-<span class="fc bfc" id="L363" title="All 2 branches covered.">            if(app.hasRemaining()) {</span>
-<span class="fc" id="L364">                val count = min(app.remaining(), b.remaining())</span>
-<span class="fc" id="L365">                b.put(b.position(), app, app.position(), count)</span>
+<span class="fc" id="L405">                app.value.position(app.value.position() + count)</span>
+<span class="fc" id="L406">                b.position(b.position() + count)</span>
 
-<span class="fc" id="L367">                app.position(app.position() + count)</span>
-<span class="fc" id="L368">                b.position(b.position() + count)</span>
-
-<span class="fc" id="L370">                continue</span>
+<span class="fc" id="L408">                continue</span>
             }
 
-<span class="fc bfc" id="L373" title="All 2 branches covered.">            if(net.hasRemaining()) {</span>
-<span class="fc" id="L374">                app.clear()</span>
-<span class="fc" id="L375">                while(true) {</span>
+            // Check if we're handshaking (could be initiated at any time, any number of times)
+<span class="fc bfc" id="L412" title="All 2 branches covered.">            if(sslEngine.isHandshaking) {</span>
+<span class="fc" id="L413">                handleHandshake0()</span>
+<span class="fc" id="L414">                continue@input</span>
+            }
 
-<span class="fc" id="L377">                    @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)</span>
-<span class="fc" id="L378">                    val result = sslEngine.unwrap(net, app)</span>
-<span class="pc bpc" id="L379" title="2 of 4 branches missed.">                    when (result.status!!) {</span>
+<span class="fc bfc" id="L417" title="All 2 branches covered.">            if(net.value.hasRemaining()) {</span>
+
+<span class="fc" id="L419">                while(true) {</span>
+<span class="fc" id="L420">                    @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)</span>
+<span class="fc" id="L421">                    val result = sslEngine.unwrap(net.read, app.write)</span>
+
+<span class="pc bpc" id="L423" title="2 of 4 branches missed.">                    when (result.status!!) {</span>
                         SSLEngineResult.Status.BUFFER_UNDERFLOW -&gt; {
-<span class="nc" id="L381">                            networkRead = net.compactOrIncreaseSize(sslEngine.session.packetBufferSize, context.byteBufferPool)</span>
-<span class="nc" id="L382">                            net = networkRead!!</span>
+                            // If there's no room to read, increase buffer size
+<span class="nc bnc" id="L426" title="All 2 branches missed.">                            if(!net.write.hasRemaining()) {</span>
+<span class="nc" id="L427">                                val buffer = net.releasable</span>
+<span class="nc" id="L428">                                buffer.resize(buffer.value.capacity() + sslEngine.session.packetBufferSize)</span>
+                            }
                         }
                         SSLEngineResult.Status.BUFFER_OVERFLOW -&gt; {
-<span class="nc" id="L385">                            applicationRead = app.compactOrIncreaseSize(sslEngine.session.applicationBufferSize, context.byteBufferPool)</span>
-<span class="nc" id="L386">                            app = applicationRead!!</span>
+<span class="nc" id="L432">                            handleOverflow(app.writeReleasable)</span>
                         }
                         SSLEngineResult.Status.OK -&gt; {
-<span class="fc" id="L389">                            app.flip()</span>
-<span class="fc" id="L390">                            break</span>
+<span class="fc" id="L435">                            break</span>
                         }
                         SSLEngineResult.Status.CLOSED -&gt; {
-<span class="fc" id="L393">                            shutdownInput()</span>
-<span class="fc" id="L394">                            break@input</span>
+<span class="fc" id="L438">                            shutdownInput0()</span>
+<span class="fc" id="L439">                            break@input</span>
                         }
                     }
                 }
             } else {
-<span class="fc" id="L399">                net.clear()</span>
-<span class="fc" id="L400">                val count = ch.readSuspend(net, getReadTimeout())</span>
-<span class="fc bfc" id="L401" title="All 2 branches covered.">                if(count == -1) {</span>
-<span class="fc" id="L402">                    shutdownInput()</span>
-<span class="fc" id="L403">                    break@input</span>
+<span class="fc" id="L444">                val count = ch.readSuspend(net.write, getReadTimeout())</span>
+<span class="fc bfc" id="L445" title="All 2 branches covered.">                if(count == -1) {</span>
+<span class="fc" id="L446">                    shutdownInput0()</span>
+<span class="fc" id="L447">                    break@input</span>
                 }
-<span class="pc bpc" id="L405" title="1 of 2 branches missed.">                if (count == 0) {</span>
+<span class="pc bpc" id="L449" title="1 of 2 branches missed.">                if (count == 0) {</span>
                     // return if no data read
-<span class="nc" id="L407">                    break@input</span>
+<span class="nc" id="L451">                    break@input</span>
                 }
-<span class="fc" id="L409">                net.flip()</span>
             }
         }
 
-<span class="fc bfc" id="L413" title="All 2 branches covered.">        return if(b.position() == start) {</span>
-<span class="pc bpc" id="L414" title="1 of 2 branches missed.">            if(isInputShutdown) -1 else 0</span>
+        // In all cases the method exists with the application buffer in read mode or empty
+
+<span class="fc bfc" id="L458" title="All 2 branches covered.">        return if(b.position() == start) {</span>
+<span class="pc bpc" id="L459" title="1 of 2 branches missed.">            if(isInputShutdown) -1 else 0</span>
         } else {
-<span class="fc" id="L416">            b.position() - start</span>
+<span class="fc" id="L461">            b.position() - start</span>
         }
     }
 
-    private suspend fun write(b: ByteBuffer) {
-<span class="fc bfc" id="L421" title="All 2 branches covered.">        if(!isHandshakeCompleted) {</span>
-            @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L423">            startHandshake()</span>
+<span class="fc" id="L465">    private suspend fun write(b: ByteBuffer) = lock.withLock {</span>
+<span class="fc" id="L466">        write0(b)</span>
+<span class="fc" id="L467">    }</span>
+
+    private suspend fun write0(b: ByteBuffer) {
+<span class="fc bfc" id="L470" title="All 2 branches covered.">        if(!sslEngine.session.isValid) {</span>
+<span class="fc" id="L471">            startHandshake0()</span>
         }
 
-<span class="fc bfc" id="L426" title="All 2 branches covered.">        while(b.hasRemaining()) {</span>
-<span class="fc" id="L427">            @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)</span>
-<span class="fc" id="L428">            val result = sslEngine.wrap(b, networkWrite)</span>
+<span class="fc bfc" id="L474" title="All 2 branches covered.">        while(b.hasRemaining()) {</span>
 
-<span class="pc bpc" id="L430" title="2 of 4 branches missed.">            when (result.status!!) {</span>
-                SSLEngineResult.Status.BUFFER_UNDERFLOW -&gt; {
-                    // increase network buffer size
-<span class="nc" id="L433">                    throw SSLException(&quot;Buffer underflow while wrapping&quot;)</span>
-                }
-
-                SSLEngineResult.Status.BUFFER_OVERFLOW -&gt; {
-                    // increase network buffer size
-<span class="nc" id="L438">                    networkWrite = networkWrite!!.compactOrIncreaseSize(</span>
-<span class="nc" id="L439">                        sslEngine.session.packetBufferSize,</span>
-<span class="nc" id="L440">                        context.byteBufferPool</span>
-                    )
-                }
-
-                SSLEngineResult.Status.OK -&gt; {
-<span class="fc" id="L445">                    networkWrite!!.flip()</span>
-<span class="fc bfc" id="L446" title="All 2 branches covered.">                    while (networkWrite!!.hasRemaining()) {</span>
-<span class="fc" id="L447">                        val written = ch.writeSuspend(networkWrite!!, getWriteTimeout())</span>
-<span class="pc bpc" id="L448" title="1 of 2 branches missed.">                        if (written == -1) {</span>
-<span class="nc" id="L449">                            throw SSLException(&quot;Connection closed during handshake&quot;)</span>
-                        }
-<span class="pc bpc" id="L451" title="1 of 2 branches missed.">                        if (written == 0) {</span>
-                            // TODO
-<span class="nc" id="L453">                            throw SSLException(&quot;?? no data written during handshake. try again or error ??&quot;)</span>
-                        }
-                    }
-<span class="fc" id="L456">                    networkWrite!!.clear()</span>
-<span class="fc" id="L457">                    break</span>
-                }
-
-                SSLEngineResult.Status.CLOSED -&gt; {
-                    // closed
-<span class="fc" id="L462">                    throw SocketException(&quot;connection closed&quot;)</span>
-                }
+            // Check if we're handshaking (could be initiated at any time, any number of times)
+<span class="fc bfc" id="L477" title="All 2 branches covered.">            if(sslEngine.isHandshaking) {</span>
+<span class="nc" id="L478">                handleHandshake0()</span>
+<span class="nc" id="L479">                continue</span>
             }
+
+<span class="fc" id="L482">            wrap(src = b)</span>
         }
-<span class="fc" id="L466">    }</span>
+<span class="fc" id="L484">    }</span>
 
     /**
      * Returns true if the SSLEngine is handshaking.
      */
     private val SSLEngine.isHandshaking: Boolean
-<span class="pc bpc" id="L472" title="1 of 2 branches missed.">        get() = this.handshakeStatus != SSLEngineResult.HandshakeStatus.FINISHED</span>
-<span class="fc bfc" id="L473" title="All 2 branches covered.">                &amp;&amp; this.handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING</span>
+<span class="pc bpc" id="L490" title="1 of 2 branches missed.">        get() = this.handshakeStatus != SSLEngineResult.HandshakeStatus.FINISHED</span>
+<span class="fc bfc" id="L491" title="All 2 branches covered.">                &amp;&amp; this.handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING</span>
+
+
+    /**
+     * Keeps track of the read/write state of the buffer.
+     *
+     * - *Read Mode* is defined as the state in which data is read from this buffer
+     * - *Write Mode* is defined as the state in which data is written into this buffer
+     */
+<span class="fc" id="L500">    private class ReadWriteBuffer(</span>
+<span class="fc" id="L501">        val releasable: ReleasableBuffer&lt;ByteBuffer&gt;,</span>
+<span class="pc" id="L502">        var mode: Mode = Mode.READ</span>
+<span class="fc" id="L503">    ) {</span>
+        enum class Mode {
+<span class="fc" id="L505">            READ, WRITE;</span>
+
+<span class="fc bfc" id="L507" title="All 2 branches covered.">            fun isRead() = this === READ</span>
+<span class="nc bnc" id="L508" title="All 2 branches missed.">            fun isWrite() = this === WRITE</span>
+<span class="nc" id="L509">        }</span>
+
+        /** Returns the buffer */
+<span class="fc" id="L512">        val value: ByteBuffer get() = releasable.value</span>
+
+        /** Returns the buffer if in read-mode, otherwise throws an exception */
+        val read: ByteBuffer get() {
+<span class="fc" id="L516">            toMode(Mode.READ)</span>
+<span class="fc" id="L517">            return releasable.value</span>
+        }
+
+        val readReleasable: ReleasableBuffer&lt;ByteBuffer&gt; get() {
+<span class="nc" id="L521">            toMode(Mode.READ)</span>
+<span class="nc" id="L522">            return releasable</span>
+        }
+
+        /** Returns the buffer if in write-mode, otherwise throws an exception */
+        val write: ByteBuffer get() {
+<span class="fc" id="L527">            toMode(Mode.WRITE)</span>
+<span class="fc" id="L528">            return releasable.value</span>
+        }
+
+        val writeReleasable: ReleasableBuffer&lt;ByteBuffer&gt; get() {
+<span class="nc" id="L532">            toMode(Mode.WRITE)</span>
+<span class="nc" id="L533">            return releasable</span>
+        }
+
+        /**
+         * Swaps the buffer between read and write mode, preparing it for the opposite operation.
+         */
+        fun swap(): ByteBuffer {
+<span class="fc" id="L540">            val buffer = releasable.value</span>
+
+<span class="fc bfc" id="L542" title="All 2 branches covered.">            if(mode.isRead()) {</span>
+<span class="fc" id="L543">                mode = Mode.WRITE</span>
+
+<span class="fc" id="L545">                return buffer.compact()</span>
+            } else {
+<span class="fc" id="L547">                mode = Mode.READ</span>
+
+<span class="fc" id="L549">                return buffer.flip()</span>
+            }
+        }
+
+        /**
+         * Sets the buffer to the specified mode. If the buffer is already in the specified mode, this method does
+         * nothing, otherwise it swaps the buffer to the opposite mode.
+         */
+        fun toMode(mode: Mode) {
+<span class="fc bfc" id="L558" title="All 2 branches covered.">            if(this.mode != mode) {</span>
+<span class="fc" id="L559">                swap()</span>
+            }
+<span class="fc" id="L561">        }</span>
+    }
+
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

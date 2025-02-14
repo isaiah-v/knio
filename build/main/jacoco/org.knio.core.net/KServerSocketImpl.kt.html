@@ -48,11 +48,11 @@ import java.nio.channels.AsynchronousServerSocketChannel
     }
 
     override suspend fun getLocalPort(): Int {
-<span class="nc bnc" id="L51" title="All 2 branches missed.">        val address = channel.localAddress ?: return -1</span>
-<span class="nc bnc" id="L52" title="All 2 branches missed.">        return if(address is InetSocketAddress) {</span>
-<span class="nc" id="L53">            address.port</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        val address = channel.localAddress ?: return -1</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        return if(address is InetSocketAddress) {</span>
+<span class="fc" id="L53">            address.port</span>
         } else {
-<span class="nc" id="L55">            -1</span>
+<span class="pc" id="L55">            -1</span>
         }
     }
 
@@ -65,7 +65,7 @@ import java.nio.channels.AsynchronousServerSocketChannel
 <span class="nc" id="L65">    }</span>
 <span class="nc bnc" id="L66" title="All 2 branches missed.">    override suspend fun getAcceptTimeout(): Long = acceptTimeout ?: 0</span>
 <span class="nc bnc" id="L67" title="All 2 branches missed.">    override suspend fun isBound(): Boolean = channel.localAddress != null</span>
-<span class="fc bfc" id="L68" title="All 2 branches covered.">    override suspend fun isClosed(): Boolean = !channel.isOpen</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">    override suspend fun isClosed(): Boolean = !channel.isOpen</span>
 <span class="nc bnc" id="L69" title="All 2 branches missed.">    override suspend fun setReceiveBufferSize(size: Int): Unit = withContext(Dispatchers.IO) {</span>
 <span class="nc" id="L70">        channel.setOption(StandardSocketOptions.SO_RCVBUF, size)</span>
 <span class="nc" id="L71">    }</span>

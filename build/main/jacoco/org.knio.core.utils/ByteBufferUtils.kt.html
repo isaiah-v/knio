@@ -1,28 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteBufferUtils.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">knio-core</a> &gt; <a href="index.source.html" class="el_package">org.knio.core.utils</a> &gt; <span class="el_source">ByteBufferUtils.kt</span></div><h1>ByteBufferUtils.kt</h1><pre class="source lang-java linenums">package org.knio.core.utils
 
-import org.knio.core.context.ByteBufferPool
 import java.nio.ByteBuffer
 
-/**
- * Compacts the buffer if it has remaining bytes, otherwise increases the buffer size by the specified amount.
- *
- * @param increaseSize The amount to increase the buffer size by if it is full.
- * @param pool The pool to release the buffer to if it is increased in size.
- * @return The buffer compacted or increased in size.
- */
-<span class="nc" id="L13">internal fun ByteBuffer.compactOrIncreaseSize(increaseSize: Int, pool: ByteBufferPool?=null): ByteBuffer {</span>
-<span class="pc bpc" id="L14" title="2 of 4 branches missed.">    if (hasRemaining() || limit()!=capacity()) {</span>
-<span class="fc" id="L15">        compact()</span>
-    } else {
-<span class="nc" id="L17">        val size = capacity() + increaseSize</span>
-
-<span class="nc bnc" id="L19" title="All 4 branches missed.">        val newBuffer = pool?.acquire(size) ?:  ByteBuffer.allocate(size)</span>
-<span class="nc" id="L20">        newBuffer.put(this)</span>
-<span class="nc bnc" id="L21" title="All 2 branches missed.">        pool?.release(this)</span>
-<span class="pc" id="L22">        return newBuffer</span>
-    }
-<span class="fc" id="L24">    return this</span>
-}
 
 /**
  * Transfers as many bytes as possible from this buffer to the destination buffer.
@@ -36,14 +15,14 @@ import java.nio.ByteBuffer
  * @throws java.nio.ReadOnlyBufferException if the destination buffer is read-only
  */
 internal fun ByteBuffer.transferTo(dest: ByteBuffer): Int {
-<span class="fc" id="L39">    val read = minOf(this.remaining(), dest.remaining())</span>
-<span class="fc bfc" id="L40" title="All 2 branches covered.">    if(read == 0) return -1</span>
+<span class="fc" id="L18">    val read = minOf(this.remaining(), dest.remaining())</span>
+<span class="fc bfc" id="L19" title="All 2 branches covered.">    if(read == 0) return -1</span>
 
-<span class="fc" id="L42">    dest.put(dest.position(), this, this.position(), read)</span>
+<span class="fc" id="L21">    dest.put(dest.position(), this, this.position(), read)</span>
 
-<span class="fc" id="L44">    this.position(this.position() + read)</span>
-<span class="fc" id="L45">    dest.position(dest.position() + read)</span>
+<span class="fc" id="L23">    this.position(this.position() + read)</span>
+<span class="fc" id="L24">    dest.position(dest.position() + read)</span>
 
-<span class="fc" id="L47">    return read</span>
+<span class="fc" id="L26">    return read</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

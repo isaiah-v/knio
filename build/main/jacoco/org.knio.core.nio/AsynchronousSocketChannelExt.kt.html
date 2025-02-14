@@ -37,14 +37,14 @@ private fun &lt;T&gt; errorHandler(e: Throwable): T {
  * @throws SocketTimeoutException if the read operation times out.
  * @throws Throwable if any other error occurs during the read operation.
  */
-<span class="fc" id="L40">internal suspend fun AsynchronousSocketChannel.readSuspend(</span>
+<span class="nc" id="L40">internal suspend fun AsynchronousSocketChannel.readSuspend(</span>
     b: ByteBuffer,
-<span class="fc" id="L42">    timeout: Long? = null</span>
+<span class="nc" id="L42">    timeout: Long? = null</span>
 <span class="fc bfc" id="L43" title="All 2 branches covered.">): Int = suspendCoroutine {</span>
 <span class="fc" id="L44">    try {</span>
 
         // Call the callback version of the non-blocking read function, un-suspending the coroutine when complete.
-<span class="fc bfc" id="L47" title="All 4 branches covered.">        if (timeout != null &amp;&amp; timeout &gt; 0) {</span>
+<span class="pc bpc" id="L47" title="1 of 4 branches missed.">        if (timeout != null &amp;&amp; timeout &gt; 0) {</span>
             // with timeout
 <span class="fc" id="L49">            read(b, timeout, TimeUnit.MILLISECONDS, it, fromResult(onFail = ::errorHandler))</span>
         } else {
