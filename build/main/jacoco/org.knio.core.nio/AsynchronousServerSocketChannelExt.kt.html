@@ -17,7 +17,7 @@ import kotlin.coroutines.suspendCoroutine
  */
 <span class="nc" id="L18">suspend fun AsynchronousServerSocketChannel.acceptSuspend(</span>
 <span class="nc" id="L19">    timeout: Long? = null</span>
-<span class="fc bfc" id="L20" title="All 2 branches covered.">): AsynchronousSocketChannel = suspendCoroutine { continuation -&gt;</span>
+<span class="pc bpc" id="L20" title="1 of 2 branches missed.">): AsynchronousSocketChannel = suspendCoroutine { continuation -&gt;</span>
 
     // Create a timeout job if a timeout is specified.
 <span class="pc bpc" id="L23" title="1 of 2 branches missed.">    val timeoutJob = if(timeout != null) {</span>

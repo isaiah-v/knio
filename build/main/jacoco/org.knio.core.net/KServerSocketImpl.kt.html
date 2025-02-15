@@ -29,7 +29,7 @@ import java.nio.channels.AsynchronousServerSocketChannel
 
 <span class="pc bpc" id="L30" title="1 of 2 branches missed.">    override suspend fun bind(endpoint: SocketAddress, backlog: Int): Unit = withContext(Dispatchers.IO) {</span>
 <span class="fc" id="L31">        channel.bind(endpoint, backlog)</span>
-<span class="pc" id="L32">    }</span>
+<span class="fc" id="L32">    }</span>
 
     override suspend fun close(): Unit {
 <span class="fc" id="L35">        channel.close()</span>

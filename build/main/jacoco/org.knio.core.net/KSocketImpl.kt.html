@@ -171,7 +171,7 @@ import java.util.concurrent.atomic.AtomicBoolean
      */
     @Throws(IOException::class)
     override suspend fun shutdownOutput() {
-<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        if(!isOutputShutdown.getAndSet(true)) {</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if(!isOutputShutdown.getAndSet(true)) {</span>
             @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
 <span class="fc" id="L176">            ch.shutdownOutput()</span>
         }

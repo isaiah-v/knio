@@ -66,13 +66,13 @@ private fun &lt;T&gt; errorHandler(e: Throwable): T {
  * @throws SocketTimeoutException if the write operation times out.
  * @throws Throwable if any other error occurs during the write operation.
  */
-<span class="nc" id="L69">internal suspend fun AsynchronousSocketChannel.writeSuspend(</span>
+<span class="fc" id="L69">internal suspend fun AsynchronousSocketChannel.writeSuspend(</span>
     b: ByteBuffer,
-<span class="nc" id="L71">    timeout: Long? = null</span>
+<span class="fc" id="L71">    timeout: Long? = null</span>
 <span class="fc bfc" id="L72" title="All 2 branches covered.">): Int = suspendCoroutine {</span>
 <span class="fc" id="L73">    try {</span>
         // Call the callback version of the non-blocking write function, un-suspending the coroutine when complete.
-<span class="pc bpc" id="L75" title="1 of 4 branches missed.">        if (timeout != null &amp;&amp; timeout &gt; 0) {</span>
+<span class="fc bfc" id="L75" title="All 4 branches covered.">        if (timeout != null &amp;&amp; timeout &gt; 0) {</span>
             // with timeout
 <span class="fc" id="L77">            write(b, timeout, TimeUnit.MILLISECONDS, it, fromResult(onFail = ::errorHandler))</span>
         } else {
