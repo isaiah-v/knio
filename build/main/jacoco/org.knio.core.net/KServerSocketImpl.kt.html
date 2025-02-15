@@ -29,7 +29,7 @@ import java.nio.channels.AsynchronousServerSocketChannel
 
 <span class="pc bpc" id="L30" title="1 of 2 branches missed.">    override suspend fun bind(endpoint: SocketAddress, backlog: Int): Unit = withContext(Dispatchers.IO) {</span>
 <span class="fc" id="L31">        channel.bind(endpoint, backlog)</span>
-<span class="fc" id="L32">    }</span>
+<span class="pc" id="L32">    }</span>
 
     override suspend fun close(): Unit {
 <span class="fc" id="L35">        channel.close()</span>
@@ -65,7 +65,7 @@ import java.nio.channels.AsynchronousServerSocketChannel
 <span class="nc" id="L65">    }</span>
 <span class="nc bnc" id="L66" title="All 2 branches missed.">    override suspend fun getAcceptTimeout(): Long = acceptTimeout ?: 0</span>
 <span class="nc bnc" id="L67" title="All 2 branches missed.">    override suspend fun isBound(): Boolean = channel.localAddress != null</span>
-<span class="pc bpc" id="L68" title="1 of 2 branches missed.">    override suspend fun isClosed(): Boolean = !channel.isOpen</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">    override suspend fun isClosed(): Boolean = !channel.isOpen</span>
 <span class="nc bnc" id="L69" title="All 2 branches missed.">    override suspend fun setReceiveBufferSize(size: Int): Unit = withContext(Dispatchers.IO) {</span>
 <span class="nc" id="L70">        channel.setOption(StandardSocketOptions.SO_RCVBUF, size)</span>
 <span class="nc" id="L71">    }</span>
