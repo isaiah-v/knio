@@ -1,14 +1,11 @@
 package org.knio.core.net
 
 import org.knio.core.lang.use
-import org.knio.core.test.servers.TestServer
-import org.knio.core.test.servers.TestServerTest
-import org.knio.core.test.servers.createJavaSocket
-import org.knio.core.test.servers.createKnioSocket
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.knio.core.test.servers.*
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import kotlin.test.assertEquals
@@ -32,43 +29,23 @@ abstract class ReverseServerTest<T: TestServer>: TestServerTest<T>() {
 
         // java
         createJavaSocket().use { client ->
-            val str = StringBuilder()
-
             client.soTimeout = 1000
 
-            client.getOutputStream().apply {
-                write(text.toByteArray(Charsets.UTF_8))
-            }
-            client.shutdownOutput()
+            client.write(text)
+            val data = client.read()
 
-            client.getInputStream().apply {
-                val data = readAllBytes()
-                str.append(String(data, Charsets.UTF_8))
-            }
-            client.shutdownInput()
-
-            assertEquals(expected, str.toString())
+            assertEquals(expected, data)
         }
 
         // knio
         createKnioSocket().use { client ->
-            val str = StringBuilder()
-
             client.setReadTimeout(1000)
             client.setWriteTimeout(1000)
 
-            client.getOutputStream().apply {
-                write(text.toByteArray(Charsets.UTF_8))
-            }
-            client.shutdownOutput()
+            client.write(text)
+            val data = client.read()
 
-            client.getInputStream().apply {
-                val data = readAllBytes()
-                str.append(String(data, Charsets.UTF_8))
-            }
-            client.shutdownInput()
-
-            assertEquals(expected, str.toString())
+            assertEquals(expected, data)
         }
     }
 
@@ -84,7 +61,7 @@ abstract class ReverseServerTest<T: TestServer>: TestServerTest<T>() {
 
         // java
         createJavaSocket().use { client ->
-            client.getOutputStream().write(text.toByteArray(Charsets.UTF_8))
+            client.write(text)
             client.shutdownOutput()
 
             assertThrows<SocketException> {
@@ -94,7 +71,7 @@ abstract class ReverseServerTest<T: TestServer>: TestServerTest<T>() {
 
         // knio
         createKnioSocket().use { client ->
-            client.getOutputStream().write(text.toByteArray(Charsets.UTF_8))
+            client.write(text)
             client.shutdownOutput()
 
             assertThrows<SocketException> {
@@ -118,7 +95,7 @@ abstract class ReverseServerTest<T: TestServer>: TestServerTest<T>() {
             client.soTimeout = 1000
 
             client.getOutputStream().use { output ->
-                output.write(text.toByteArray(Charsets.UTF_8))
+                client.write(text)
 
                 // open before close
                 assertFalse(client.isClosed)
@@ -134,7 +111,7 @@ abstract class ReverseServerTest<T: TestServer>: TestServerTest<T>() {
             client.setWriteTimeout(1000)
 
             client.getOutputStream().use { output ->
-                output.write(text.toByteArray(Charsets.UTF_8))
+                client.write(text)
 
                 // open before close
                 assertFalse(client.isClosed())
@@ -154,22 +131,14 @@ abstract class ReverseServerTest<T: TestServer>: TestServerTest<T>() {
     @ValueSource(booleans = [false, true])
     fun `test closing input-stream closes connection`(isSSL: Boolean) = runServer(isSSL) {
         val text = "Hello World"
-        val expected = text.reversed()
 
         // java
         createJavaSocket().use { client ->
-            val str = StringBuilder()
-
             client.soTimeout = 1000
 
-            client.getOutputStream().apply {
-                write(text.toByteArray(Charsets.UTF_8))
-            }
-            client.shutdownOutput()
-
+            client.write(text)
             client.getInputStream().use { input ->
-                val data = input.readAllBytes()
-                str.append(String(data, Charsets.UTF_8))
+                client.read()
 
                 // before closing
                 assertFalse(client.isClosed)
@@ -186,14 +155,9 @@ abstract class ReverseServerTest<T: TestServer>: TestServerTest<T>() {
             client.setWriteTimeout(1000)
             client.setReadTimeout(1000)
 
-            client.getOutputStream().apply {
-                write(text.toByteArray(Charsets.UTF_8))
-            }
-            client.shutdownOutput()
-
+            client.write(text)
             client.getInputStream().use { input ->
-                val data = input.readAllBytes()
-                str.append(String(data, Charsets.UTF_8))
+                client.read()
 
                 // before closing
                 assertFalse(client.isClosed())

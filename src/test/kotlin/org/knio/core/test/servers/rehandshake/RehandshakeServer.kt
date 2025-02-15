@@ -1,11 +1,11 @@
 package org.knio.core.test.servers.rehandshake
 
-import org.knio.core.net.ssl.KSSLSocket
 import org.knio.core.test.servers.TestServer
-import java.io.ByteArrayOutputStream
+import org.knio.core.test.servers.read
+import org.knio.core.test.servers.readInt
+import org.knio.core.test.servers.write
 import java.io.IOException
 import java.net.SocketException
-import java.nio.ByteBuffer
 import javax.net.ssl.SSLServerSocket
 import javax.net.ssl.SSLSocket
 
@@ -30,7 +30,7 @@ class RehandshakeServer(
         client.use {
             val inputStream = client.inputStream
             try {
-                val count = client.readInt()
+                val count = client.readInt()!!
 
                 for (i in 0 until count) {
                     if(client.isClosed) {
@@ -42,7 +42,7 @@ class RehandshakeServer(
                         client.startHandshake()
                     }
 
-                    val str = client.read()
+                    val str = client.read() ?: return@use
                     client.write(str)
 
                     if(i<count-1) {
@@ -77,98 +77,5 @@ class RehandshakeServer(
 
     override fun getPort(): Int {
         return serverSocket.localPort
-    }
-
-    fun SSLSocket.write(str: String) {
-        write(str.length)
-
-        val data = str.toByteArray(Charsets.UTF_8)
-        var bytes = 0
-        val lengthMax = 1024
-
-        while(bytes<data.size) {
-            val len = lengthMax.coerceAtMost(data.size - bytes)
-            outputStream.write(data, bytes, len)
-            bytes += len
-        }
-    }
-
-    fun SSLSocket.write(value: Int) {
-        getOutputStream().write(toBytes(value))
-    }
-
-    suspend fun KSSLSocket.write(str: String) {
-        write(str.length)
-
-        val data = str.toByteArray(Charsets.UTF_8)
-        var bytes = 0
-        val lengthMax = 1024
-
-        while(bytes<data.size) {
-            val len = lengthMax.coerceAtMost(data.size - bytes)
-            getOutputStream().write(data, bytes, len)
-            bytes += len
-        }
-    }
-
-    suspend fun KSSLSocket.write(value: Int) {
-        getOutputStream().write(toBytes(value))
-    }
-
-    fun SSLSocket.read(): String {
-        val size = readInt()
-
-        val buffer = ByteArray(size)
-        getInputStream().read(buffer)
-
-        return String(buffer, Charsets.UTF_8)
-    }
-
-    fun SSLSocket.readInt(): Int {
-        val sizeBuffer = ByteArray(Int.SIZE_BYTES)
-
-        var read = 0
-        while(read<Int.SIZE_BYTES) {
-            val r = getInputStream().read(sizeBuffer, read, Int.SIZE_BYTES-read)
-            if(r==-1) {
-                throw IOException()
-            }
-            read += r
-        }
-
-        return toInt(sizeBuffer)
-    }
-
-    suspend fun KSSLSocket.read(): String {
-        val size = readInt()
-
-        val buffer = ByteArray(size)
-        getInputStream().read(buffer)
-
-        return String(buffer, Charsets.UTF_8)
-    }
-
-    suspend fun KSSLSocket.readInt(): Int {
-        val sizeBuffer = ByteArray(Int.SIZE_BYTES)
-
-        var read = 0
-        while(read<Int.SIZE_BYTES) {
-            val r = getInputStream().read(sizeBuffer, read, Int.SIZE_BYTES-read)
-            if(r==-1) {
-                throw IOException()
-            }
-            read += r
-        }
-
-        return toInt(sizeBuffer)
-    }
-
-    private fun toBytes(value: Int): ByteArray {
-        return ByteBuffer.allocate(Int.SIZE_BYTES).putInt(value).array()
-    }
-
-    private fun toInt(bytes: ByteArray): Int {
-        require(bytes.size == Int.SIZE_BYTES)
-        return ByteBuffer.wrap(bytes).int
     }
 }

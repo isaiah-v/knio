@@ -4,6 +4,7 @@ import kotlinx.coroutines.delay
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.knio.core.lang.use
 import org.knio.core.test.servers.TestServerTest
 import org.knio.core.test.servers.accept.AcceptOnlyServer
@@ -496,6 +497,57 @@ class KSSLSocketAbstractTest : TestServerTest<AcceptOnlyServer>() {
 
             sslClient.startHandshake()
             sslClient.startHandshake()
+        }
+    }
+
+    @Test
+    fun `test is input shutdown`()  = runServer(true) {
+        // java
+
+        createJavaSocket().use { client ->
+            if (client is SSLSocket) {
+                client.startHandshake()
+            }
+
+            assertFalse(client.isInputShutdown)
+            client.close()
+            assertTrue(client.isInputShutdown)
+        }
+
+        // knio
+        createKnioSocket().use { client ->
+            if (client is KSSLSocket) {
+                client.startHandshake()
+            }
+
+            assertFalse(client.isInputShutdown())
+            client.close()
+            assertTrue(client.isInputShutdown())
+        }
+    }
+
+    @Test
+    fun `test is output shutdown`()  = runServer(true) {
+        // java
+        createJavaSocket().use { client ->
+            if (client is SSLSocket) {
+                client.startHandshake()
+            }
+
+            assertFalse(client.isOutputShutdown)
+            client.shutdownOutput()
+            assertTrue(client.isOutputShutdown)
+        }
+
+        // knio
+        createKnioSocket().use { client ->
+            if (client is KSSLSocket) {
+                client.startHandshake()
+            }
+
+            assertFalse(client.isOutputShutdown())
+            client.shutdownOutput()
+            assertTrue(client.isOutputShutdown())
         }
     }
 

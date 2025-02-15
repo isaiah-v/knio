@@ -67,10 +67,19 @@ internal abstract class KSocketAbstract(
         if (!ch.isOpen) return
 
         if(isConnected()) {
-            @Suppress("BlockingMethodInNonBlockingContext")
-            ch.shutdownInput()
-            @Suppress("BlockingMethodInNonBlockingContext")
-            ch.shutdownOutput()
+            try {
+                @Suppress("BlockingMethodInNonBlockingContext")
+                this.shutdownInput()
+            } catch (e: Throwable) {
+                // ignore
+            }
+
+            try {
+                @Suppress("BlockingMethodInNonBlockingContext")
+                this.shutdownOutput()
+            } catch (e: Throwable) {
+                // ignore
+            }
         }
 
         @Suppress("BlockingMethodInNonBlockingContext")

@@ -9,6 +9,8 @@ import org.knio.core.net.KSocket
 import org.knio.core.net.ssl.KSSLServerSocket
 import org.knio.core.net.ssl.KSSLSocket
 import org.knio.core.test.servers.TestServer
+import org.knio.core.test.servers.read
+import org.knio.core.test.servers.write
 import java.net.SocketException
 import javax.net.ssl.SSLSocket
 
@@ -41,49 +43,18 @@ class KnioReverseServer(
                 client.startHandshake()
             }
 
+            val inputStream = client.getInputStream()
+
             // read the input
-            val input = readInput(client.getInputStream())
-            client.shutdownInput()
-
-            // reverse the input
+            val input = client.read() ?: return@use
             val reverse = input.reversed()
+            client.write(reverse)
 
-            // write the reversed input
-            writeOutput(reverse, client.getOutputStream())
-            client.shutdownOutput()
-        }
-    }
-
-    /**
-     * Reads the input from the given InputStream.
-     *
-     * @param input The InputStream to read from.
-     * @return The string read from the input.
-     */
-    private suspend fun readInput(input: KInputStream): String {
-        val buffer = ByteArray(1024)
-        val builder = StringBuilder()
-
-        while (true) {
-            val read = input.read(buffer)
-            if (read == -1) {
-                break
+            val read = inputStream.read()
+            if(read!=-1) {
+                throw Exception("Unexpected data received")
             }
-
-            builder.append(String(buffer, 0, read, Charsets.UTF_8))
         }
-
-        return builder.toString()
-    }
-
-    /**
-     * Writes the given string to the given OutputStream.
-     *
-     * @param str The string to write.
-     * @param output The OutputStream to write to.
-     */
-    private suspend fun writeOutput(str: String, output: KOutputStream) {
-        output.write(str.toByteArray(Charsets.UTF_8))
     }
 
     /**

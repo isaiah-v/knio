@@ -12,6 +12,7 @@ import org.knio.core.test.utils.createTestSSLContext
 import org.knio.core.test.utils.createTrustAllSSLContext
 import java.net.ServerSocket
 import java.net.Socket
+import java.nio.ByteBuffer
 import javax.net.ServerSocketFactory
 import javax.net.SocketFactory
 import javax.net.ssl.SSLServerSocket
@@ -87,3 +88,117 @@ suspend fun TestServer.createKnioSSLSocket(
     protocol: String = "TLS"
 ): KSSLSocket =
     createTrustAllSSLContext(protocol).getKnioSSLSocketFactory().createSocket("localhost", getPort())
+
+
+fun Socket.write(value: Int) {
+    getOutputStream().write(toBytes(value))
+}
+
+suspend fun KSocket.write(str: String) {
+    write(str.length)
+
+    val data = str.toByteArray(Charsets.UTF_8)
+    var bytes = 0
+    val lengthMax = 1024
+
+    while(bytes<data.size) {
+        val len = lengthMax.coerceAtMost(data.size - bytes)
+        getOutputStream().write(data, bytes, len)
+        bytes += len
+    }
+}
+
+suspend fun KSocket.write(value: Int) {
+    getOutputStream().write(toBytes(value))
+}
+
+fun Socket.write(str: String) {
+    write(str.length)
+
+    val data = str.toByteArray(Charsets.UTF_8)
+    var bytes = 0
+    val lengthMax = 1024
+
+    while(bytes<data.size) {
+        val len = lengthMax.coerceAtMost(data.size - bytes)
+        outputStream.write(data, bytes, len)
+        bytes += len
+    }
+}
+
+
+fun Socket.read(): String? {
+    val size = readInt() ?: return null
+
+    val buffer = ByteArray(size)
+
+    var read = 0
+    while(read<size) {
+        val r = getInputStream().read(buffer, read, size-read)
+        if(r==-1) {
+            return null
+        }
+
+        read += r
+    }
+
+    return String(buffer, Charsets.UTF_8)
+}
+
+
+fun Socket.readInt(): Int? {
+    val sizeBuffer = ByteArray(Int.SIZE_BYTES)
+
+    var read = 0
+    while(read<Int.SIZE_BYTES) {
+        val r = getInputStream().read(sizeBuffer, read, Int.SIZE_BYTES-read)
+        if(r==-1) {
+            return null
+        }
+        read += r
+    }
+
+    return toInt(sizeBuffer)
+}
+
+suspend fun KSocket.readInt(): Int? {
+    val sizeBuffer = ByteArray(Int.SIZE_BYTES)
+
+    var read = 0
+    while(read<Int.SIZE_BYTES) {
+        val r = getInputStream().read(sizeBuffer, read, Int.SIZE_BYTES-read)
+        if(r==-1) {
+            return null
+        }
+        read += r
+    }
+
+    return toInt(sizeBuffer)
+}
+
+suspend fun KSocket.read(): String? {
+    val size = readInt() ?: return null
+
+    val buffer = ByteArray(size)
+
+    var read = 0
+    while(read<size) {
+        val r = getInputStream().read(buffer, read, size-read)
+        if(r==-1) {
+            return null
+        }
+
+        read += r
+    }
+
+    return String(buffer, Charsets.UTF_8)
+}
+
+private fun toInt(bytes: ByteArray): Int {
+    require(bytes.size == Int.SIZE_BYTES)
+    return ByteBuffer.wrap(bytes).int
+}
+
+private fun toBytes(value: Int): ByteArray {
+    return ByteBuffer.allocate(Int.SIZE_BYTES).putInt(value).array()
+}

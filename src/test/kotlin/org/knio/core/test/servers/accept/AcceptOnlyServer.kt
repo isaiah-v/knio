@@ -24,12 +24,14 @@ class AcceptOnlyServer(
 
     private fun runClient(client: Socket) = Thread {
         client.use {
+            val inputStream = client.getInputStream()
+
             if (client is SSLSocket) {
                 client.startHandshake()
             }
 
             // block until the client closes the connection, or until the client sends data
-            val read = client.getInputStream().read()
+            val read = inputStream.read()
             if (read != -1) {
                 throw Exception("Unexpected data received")
             }

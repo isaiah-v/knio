@@ -6,10 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.knio.core.lang.use
-import org.knio.core.test.servers.TestServerTest
-import org.knio.core.test.servers.createJavaSSLServerSocket
-import org.knio.core.test.servers.createJavaSSLSocket
-import org.knio.core.test.servers.createKnioSSLSocket
+import org.knio.core.test.servers.*
 import org.knio.core.test.servers.rehandshake.RehandshakeServer
 import java.security.Security
 
@@ -59,7 +56,7 @@ class RehandshakeTest: TestServerTest<RehandshakeServer>() {
     }
 
     @ParameterizedTest
-    //@ValueSource(strings = ["TLSv1.3", "TLSv1.2", "TLSv1.1"]) // enabling TLSv1.1 for testing not always working
+    //@ValueSource(strings = ["TLSv1.3", "TLSv1.2", "TLSv1.1", ""SSLv3""])
     @ValueSource(strings = ["TLSv1.3", "TLSv1.2"])
     fun `test multiple handshakes`(protocol: String) {
         this.protocol = protocol
