@@ -29,7 +29,10 @@ class AcceptOnlyServer(
             }
 
             // block until the client closes the connection, or until the client sends data
-            client.getInputStream().read()
+            val read = client.getInputStream().read()
+            if (read != -1) {
+                throw Exception("Unexpected data received")
+            }
         }
     }.apply {
         isDaemon = true

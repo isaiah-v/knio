@@ -38,10 +38,17 @@ class ALPNServer(
             clientSocket.startHandshake()
             println("Negotiated Protocol: " + clientSocket.getApplicationProtocol())
 
+            val inputStream = clientSocket.getInputStream()
+
             // Write a response to the client
             val out: OutputStream = clientSocket.getOutputStream()
             out.write("Hello, secure world!".toByteArray())
             out.flush()
+
+            val read = inputStream.read()
+            if(read!=-1) {
+                throw Exception("Unexpected data received")
+            }
         }
     }
 

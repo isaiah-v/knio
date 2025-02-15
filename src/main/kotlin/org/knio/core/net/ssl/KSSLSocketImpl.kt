@@ -102,24 +102,27 @@ internal class KSSLSocketImpl (
      * A handshake may be initiated at any time, and may be initiated multiple times. This method will handle processing
      * the handshake until it is complete.
      */
-    private suspend fun handleHandshake0() {
+    private suspend fun handleHandshake0(force: Boolean = false) {
+        /**
+         * In rare situations, a handshake may be triggered with NEEDS_TASK, NEEDS_WRAP or NEEDS_UNWRAP but will never
+         * materialize into a full handshake session.
+         *
+         * Perform the required task then return unless a handshake session is available. If a handshake session is
+         * available, then the handshake is in progress and we should continue.
+         */
+
         if(!sslEngine.isHandshaking) {
             return
         }
 
-        var handshakeSession: SSLSession? = null
+        var handshakeSession: SSLSession? = sslEngine.handshakeSession
+        handshakeSession?.let { initBuffersForHandshake(it) }
 
-        while (sslEngine.isHandshaking) {
-            if(handshakeSession == null) {
-                val session = sslEngine.handshakeSession
-                if(session != null) {
-                    handshakeSession = session
-                    initBuffersForHandshake(session)
-                }
-            }
-
+        do {
             handshakeIteration0()
-        }
+            handshakeSession = handshakeSession ?: sslEngine.handshakeSession?.also { initBuffersForHandshake(it) }
+        } while (sslEngine.isHandshaking && (handshakeSession != null || !sslEngine.session.isValid))
+
 
         if(handshakeSession != null) {
             super.triggerHandshakeCompletion(handshakeSession)
@@ -183,7 +186,7 @@ internal class KSSLSocketImpl (
                 }
 
                 SSLEngineResult.Status.BUFFER_OVERFLOW -> {
-                    handleOverflow(dst.writeReleasable)
+                    handleOverflow(dst)
                 }
 
                 SSLEngineResult.Status.OK -> {
@@ -237,7 +240,7 @@ internal class KSSLSocketImpl (
                 }
 
                 SSLEngineResult.Status.BUFFER_OVERFLOW -> {
-                    handleOverflow(networkRead.writeReleasable)
+                    handleOverflow(networkRead)
                 }
 
                 SSLEngineResult.Status.OK -> {
@@ -253,13 +256,37 @@ internal class KSSLSocketImpl (
         }
     }
 
-    private fun handleOverflow(buffer: ReleasableBuffer<ByteBuffer>) {
+    /**
+     * Handles the BUFFER_OVERFLOW scenario when wrapping or unwrapping ssl content.
+     *
+     */
+    private fun handleOverflow(buffer: ReadWriteBuffer) {
+        /**
+         * The buffer should be in write mode.  That is, it's adding data to the buffer.
+         * The data already in the buffer, from index 0 to index `position()` is data
+         * written, waiting to be processed. The data from `position()+1` to `limit()`
+         * is the space we're allowed to write. The space from `limit()` to `capacity()`
+         * is unusable space.
+         */
+
+        require(buffer.mode.isWrite())
+
         val limit = buffer.value.limit()
         val capacity = buffer.value.capacity()
 
         if (limit == capacity) {
-            buffer.resize(capacity + sslEngine.session.packetBufferSize)
+            /**
+             * If limit is capacity, then the wrap/unwrap failed with the maximum amount of space.
+             * We need to make the buffer bigger.
+             */
+
+            buffer.releasable.resize(capacity + sslEngine.session.packetBufferSize)
         } else {
+            /**
+             * If limit is not capacity, then there's unused space. Utilize that space and try
+             * again
+             */
+
             buffer.value.limit(capacity)
         }
     }
@@ -312,7 +339,7 @@ internal class KSSLSocketImpl (
                 when (result.status!!) {
 
                     SSLEngineResult.Status.BUFFER_OVERFLOW -> {
-                        handleOverflow(networkWrite.writeReleasable)
+                        handleOverflow(networkWrite)
                     }
 
                     SSLEngineResult.Status.OK -> {
@@ -422,14 +449,19 @@ internal class KSSLSocketImpl (
 
                     when (result.status!!) {
                         SSLEngineResult.Status.BUFFER_UNDERFLOW -> {
-                            // If there's no room to read, increase buffer size
+                            // Not enough data to read for the unwrap operation.
+
+                            // If there's no more room to write, we need to expand the buffer.
+                            // Otherwise, break out and allow for more data to be written.
                             if(!net.write.hasRemaining()) {
                                 val buffer = net.releasable
                                 buffer.resize(buffer.value.capacity() + sslEngine.session.packetBufferSize)
                             }
+
+                            // TODO needs testing. Do we ever write back into this buffer?
                         }
                         SSLEngineResult.Status.BUFFER_OVERFLOW -> {
-                            handleOverflow(app.writeReleasable)
+                            handleOverflow(app)
                         }
                         SSLEngineResult.Status.OK -> {
                             break
@@ -517,20 +549,10 @@ internal class KSSLSocketImpl (
             return releasable.value
         }
 
-        val readReleasable: ReleasableBuffer<ByteBuffer> get() {
-            toMode(Mode.READ)
-            return releasable
-        }
-
         /** Returns the buffer if in write-mode, otherwise throws an exception */
         val write: ByteBuffer get() {
             toMode(Mode.WRITE)
             return releasable.value
-        }
-
-        val writeReleasable: ReleasableBuffer<ByteBuffer> get() {
-            toMode(Mode.WRITE)
-            return releasable
         }
 
         /**
