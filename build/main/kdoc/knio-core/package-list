@@ -282,6 +282,10 @@ $dokka.location:org.knio.core.nio//acceptSuspend/java.nio.channels.AsynchronousS
 $dokka.location:org.knio.core.nio//knioInputStream/java.nio.file.Path#/PointingToDeclaration/knio-core/org.knio.core.nio/knio-input-stream.html
 $dokka.location:org.knio.core.nio//knioOutputStream/java.nio.file.Path#/PointingToDeclaration/knio-core/org.knio.core.nio/knio-output-stream.html
 $dokka.location:org.knio.core.nio//md5/java.nio.file.Path#/PointingToDeclaration/knio-core/org.knio.core.nio/md5.html
+$dokka.location:org.knio.core.nio//readSuspend/java.nio.channels.AsynchronousFileChannel#java.nio.ByteBuffer#kotlin.Long/PointingToDeclaration/knio-core/org.knio.core.nio/read-suspend.html
+$dokka.location:org.knio.core.nio//readSuspend/java.nio.channels.AsynchronousSocketChannel#java.nio.ByteBuffer#kotlin.Long?/PointingToDeclaration/knio-core/org.knio.core.nio/read-suspend.html
+$dokka.location:org.knio.core.nio//writeSuspend/java.nio.channels.AsynchronousFileChannel#java.nio.ByteBuffer#kotlin.Long/PointingToDeclaration/knio-core/org.knio.core.nio/write-suspend.html
+$dokka.location:org.knio.core.nio//writeSuspend/java.nio.channels.AsynchronousSocketChannel#java.nio.ByteBuffer#kotlin.Long?/PointingToDeclaration/knio-core/org.knio.core.nio/write-suspend.html
 $dokka.location:org.knio.core.security////PointingToDeclaration/knio-core/org.knio.core.security/index.html
 $dokka.location:org.knio.core.security//update/java.security.MessageDigest#org.knio.core.io.KInputStream/PointingToDeclaration/knio-core/org.knio.core.security/update.html
 org.knio.core.context

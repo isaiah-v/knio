@@ -33,13 +33,15 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
      * @param attachment The continuation to resume.
      */
     override fun completed(result: T, attachment: Continuation&lt;R&gt;) {
-<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        timeoutJob?.cancel()</span>
-<span class="fc" id="L37">        try {</span>
-<span class="fc" id="L38">            attachment.resume(onComplete(result))</span>
-<span class="nc" id="L39">        } catch (e: Throwable) {</span>
-<span class="nc" id="L40">            attachment.resumeWithException(e)</span>
+<span class="pc bpc" id="L36" title="4 of 6 branches missed.">        if (timeoutJob?.isCompleted != true) {</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">            timeoutJob?.cancel()</span>
+<span class="fc" id="L38">            try {</span>
+<span class="fc" id="L39">                attachment.resume(onComplete(result))</span>
+<span class="nc" id="L40">            } catch (e: Throwable) {</span>
+<span class="nc" id="L41">                attachment.resumeWithException(e)</span>
+            }
         }
-<span class="fc" id="L42">    }</span>
+<span class="fc" id="L44">    }</span>
 
     /**
      * Called when the operation fails.
@@ -48,13 +50,15 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
      * @param attachment The continuation to resume with the exception.
      */
     override fun failed(exc: Throwable, attachment: Continuation&lt;R&gt;) {
-<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        timeoutJob?.cancel()</span>
-<span class="fc" id="L52">        try {</span>
-<span class="nc" id="L53">            attachment.resume(onFail(exc))</span>
-<span class="fc" id="L54">        } catch (e: Throwable) {</span>
-<span class="fc" id="L55">            attachment.resumeWithException(e)</span>
+<span class="pc bpc" id="L53" title="1 of 6 branches missed.">        if (timeoutJob?.isCompleted != true) {</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            timeoutJob?.cancel()</span>
+<span class="fc" id="L55">            try {</span>
+<span class="nc" id="L56">                attachment.resume(onFail(exc))</span>
+<span class="fc" id="L57">            } catch (e: Throwable) {</span>
+<span class="fc" id="L58">                attachment.resumeWithException(e)</span>
+            }
         }
-<span class="fc" id="L57">    }</span>
+<span class="fc" id="L61">    }</span>
 }
 
 /**
@@ -65,8 +69,8 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
  * @param onFail The block to execute on failure.
  * @return A CompletionHandler that resumes a Continuation.
  */
-<span class="fc" id="L68">internal fun &lt;R&gt; fromResult(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;R, Continuation&lt;R&gt;&gt; {</span>
-<span class="fc" id="L69">    return ContinuationCompletionHandler({ it }, onFail = onFail, timeoutJob = timeoutJob)</span>
+<span class="fc" id="L72">internal fun &lt;R&gt; fromResult(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;R, Continuation&lt;R&gt;&gt; {</span>
+<span class="fc" id="L73">    return ContinuationCompletionHandler({ it }, onFail = onFail, timeoutJob = timeoutJob)</span>
 }
 
 /**
@@ -78,8 +82,8 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
  * @param onFail The block to execute on failure.
  * @return A CompletionHandler that resumes a Continuation.
  */
-<span class="pc" id="L81">internal fun &lt;T,R&gt; R.asCompletionHandler(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {</span>
-<span class="fc" id="L82">    return ContinuationCompletionHandler({ this }, onFail = onFail ,timeoutJob = timeoutJob)</span>
+<span class="pc" id="L85">internal fun &lt;T,R&gt; R.asCompletionHandler(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {</span>
+<span class="fc" id="L86">    return ContinuationCompletionHandler({ this }, onFail = onFail ,timeoutJob = timeoutJob)</span>
 }
 
 /**
@@ -91,8 +95,8 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
  * @param onFail The block to execute on failure.
  * @return A CompletionHandler that resumes a Continuation.
  */
-<span class="nc" id="L94">internal fun &lt;T, R&gt; CompletionBlock&lt;T, R&gt;.asCompletionHandler(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {</span>
-<span class="nc" id="L95">    return ContinuationCompletionHandler(this, onFail = onFail, timeoutJob = timeoutJob)</span>
+<span class="nc" id="L98">internal fun &lt;T, R&gt; CompletionBlock&lt;T, R&gt;.asCompletionHandler(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {</span>
+<span class="nc" id="L99">    return ContinuationCompletionHandler(this, onFail = onFail, timeoutJob = timeoutJob)</span>
 }
 
 /**
@@ -104,13 +108,13 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
  * @param exc The exception to throw on timeout.
  * @return A Job representing the timeout.
  */
-<span class="nc" id="L107">@OptIn(DelicateCoroutinesApi::class)</span>
+<span class="fc" id="L111">@OptIn(DelicateCoroutinesApi::class)</span>
 internal fun &lt;R&gt; Continuation&lt;R&gt;.timeout (
     timeout: Long,
-<span class="nc" id="L110">    scope: CoroutineScope = GlobalScope,</span>
-<span class="nc" id="L111">    exc: () -&gt; Throwable = { TimeoutException() }</span>
-<span class="nc" id="L112">): Job = scope.launch {</span>
-<span class="nc" id="L113">    delay(timeout)</span>
-<span class="nc" id="L114">    resumeWithException(exc())</span>
-<span class="nc" id="L115">}</span>
+<span class="fc" id="L114">    scope: CoroutineScope = GlobalScope,</span>
+<span class="nc" id="L115">    exc: () -&gt; Throwable = { TimeoutException() }</span>
+<span class="fc" id="L116">): Job = scope.launch {</span>
+<span class="fc" id="L117">    delay(timeout)</span>
+<span class="fc" id="L118">    resumeWithException(exc())</span>
+<span class="fc" id="L119">}</span>
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

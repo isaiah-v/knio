@@ -64,7 +64,7 @@ import java.nio.channels.AsynchronousServerSocketChannel
 <span class="nc" id="L64">        channel.getOption(StandardSocketOptions.SO_REUSEADDR)</span>
 <span class="nc" id="L65">    }</span>
 <span class="nc bnc" id="L66" title="All 2 branches missed.">    override suspend fun getAcceptTimeout(): Long = acceptTimeout ?: 0</span>
-<span class="nc bnc" id="L67" title="All 2 branches missed.">    override suspend fun isBound(): Boolean = channel.localAddress != null</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">    override suspend fun isBound(): Boolean = channel.localAddress != null</span>
 <span class="fc bfc" id="L68" title="All 2 branches covered.">    override suspend fun isClosed(): Boolean = !channel.isOpen</span>
 <span class="nc bnc" id="L69" title="All 2 branches missed.">    override suspend fun setReceiveBufferSize(size: Int): Unit = withContext(Dispatchers.IO) {</span>
 <span class="nc" id="L70">        channel.setOption(StandardSocketOptions.SO_RCVBUF, size)</span>
@@ -75,8 +75,8 @@ import java.nio.channels.AsynchronousServerSocketChannel
 <span class="nc" id="L75">    }</span>
 
     override suspend fun setAcceptTimeout(timeout: Long) {
-<span class="nc bnc" id="L78" title="All 4 branches missed.">        require(timeout &gt;= 0) { &quot;timeout value is negative&quot; }</span>
-<span class="nc" id="L79">        this.acceptTimeout = timeout</span>
-<span class="nc" id="L80">    }</span>
+<span class="pc bpc" id="L78" title="2 of 4 branches missed.">        require(timeout &gt;= 0) { &quot;timeout value is negative&quot; }</span>
+<span class="fc" id="L79">        this.acceptTimeout = timeout</span>
+<span class="fc" id="L80">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

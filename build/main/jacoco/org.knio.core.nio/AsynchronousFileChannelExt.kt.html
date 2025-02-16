@@ -15,7 +15,7 @@ import kotlin.coroutines.suspendCoroutine
  * @return The number of bytes read.
  * @throws Throwable if any error occurs during the read operation.
  */
-<span class="fc bfc" id="L18" title="All 2 branches covered.">internal suspend fun AsynchronousFileChannel.readSuspend(dst: ByteBuffer, position: Long): Int = suspendCoroutine {</span>
+<span class="fc bfc" id="L18" title="All 2 branches covered.">suspend fun AsynchronousFileChannel.readSuspend(dst: ByteBuffer, position: Long): Int = suspendCoroutine {</span>
 <span class="fc" id="L19">    try {</span>
         // Call the callback version of the non-blocking read function, un-suspending the coroutine when complete.
 <span class="fc" id="L21">        read(dst, position, it, fromResult())</span>
@@ -33,7 +33,7 @@ import kotlin.coroutines.suspendCoroutine
  * @return The number of bytes written.
  * @throws Throwable if any error occurs during the write operation.
  */
-<span class="pc bpc" id="L36" title="1 of 2 branches missed.">internal suspend fun AsynchronousFileChannel.writeSuspend(src: ByteBuffer, position: Long): Int = suspendCoroutine {</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">suspend fun AsynchronousFileChannel.writeSuspend(src: ByteBuffer, position: Long): Int = suspendCoroutine {</span>
 <span class="fc" id="L37">    try {</span>
         // Call the callback version of the non-blocking write function, un-suspending the coroutine when complete.
 <span class="fc" id="L39">        write(src, position, it, fromResult())</span>

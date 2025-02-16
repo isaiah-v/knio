@@ -14,16 +14,16 @@ import java.net.InetSocketAddress
 <span class="fc" id="L14">        createServerSocket().open(port)</span>
 
     override suspend fun createServerSocket(port: Int, backlog: Int) =
-<span class="nc" id="L17">        createServerSocket().open(port, backlog)</span>
+<span class="fc" id="L17">        createServerSocket().open(port, backlog)</span>
 
     override suspend fun createServerSocket(port: Int, backlog: Int, ifAddress: InetAddress) =
-<span class="nc" id="L20">        createServerSocket().open(port, backlog, ifAddress)</span>
+<span class="fc" id="L20">        createServerSocket().open(port, backlog, ifAddress)</span>
 
 <span class="fc" id="L22">    private suspend fun KServerSocket.open(port: Int, backlog: Int = 0, bindAddress: InetAddress? = null): KServerSocket {</span>
 <span class="fc" id="L23">        try {</span>
 <span class="pc bpc" id="L24" title="3 of 6 branches missed.">            require(port in 1..0xfffe) { &quot;Port value out of range: $port&quot; }</span>
 
-<span class="pc bpc" id="L26" title="1 of 2 branches missed.">            val bkLog = if (backlog &lt; 1) 50 else backlog</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">            val bkLog = if (backlog &lt; 1) 50 else backlog</span>
 <span class="fc" id="L27">            val local = InetSocketAddress(bindAddress, port)</span>
 
 <span class="fc" id="L29">            bind(local, bkLog)</span>
