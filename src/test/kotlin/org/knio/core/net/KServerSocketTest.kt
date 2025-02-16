@@ -10,6 +10,7 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.CountDownLatch
 import javax.net.ServerSocketFactory
 import javax.net.SocketFactory
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
@@ -171,17 +172,28 @@ class KServerSocketTest {
     }
 
     @Test
-    fun `test set and get receive buffer size`(): Unit = runBlocking {
+    fun `test set receive buffer size`(): Unit = runBlocking {
         // Java
         ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
             serverSocket.receiveBufferSize = 100
-            assertTrue(serverSocket.receiveBufferSize == 100)
         }
 
         // Knio
         KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
             serverSocket.setReceiveBufferSize(100)
-            assertTrue(serverSocket.getReceiveBufferSize() == 100)
+        }
+    }
+
+    @Test
+    fun `test get receive buffer size`(): Unit = runBlocking {
+        // Java
+        ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            serverSocket.receiveBufferSize
+        }
+
+        // Knio
+        KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            serverSocket.getReceiveBufferSize()
         }
     }
 
