@@ -36,8 +36,6 @@ internal class KServerSocketImpl(
         acceptTimeout = null
     }
 
-    fun getChannel(): AsynchronousServerSocketChannel = channel
-
     override suspend fun getInetAddress(): InetAddress?  {
         val address = channel.localAddress ?: return null
         return if(address is InetSocketAddress) {

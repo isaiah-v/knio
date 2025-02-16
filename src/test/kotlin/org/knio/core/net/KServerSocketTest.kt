@@ -124,4 +124,96 @@ class KServerSocketTest {
             fail("KNIO job timed out")
         }
     }
+
+    @Test
+    fun `test get local address`(): Unit = runBlocking {
+        // Java
+        ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            assertTrue(serverSocket.localPort == 8080)
+            assertTrue(serverSocket.localSocketAddress != null)
+            assertTrue(serverSocket.inetAddress != null)
+        }
+
+        // Knio
+        KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            assertTrue(serverSocket.getLocalPort() == 8080)
+            assertTrue(serverSocket.getLocalSocketAddress() != null)
+            assertTrue(serverSocket.getInetAddress() != null)
+        }
+    }
+
+    @Test
+    fun `test get accept timeout`(): Unit = runBlocking {
+        // Java
+        ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            assertTrue(serverSocket.soTimeout == 0)
+        }
+
+        // Knio
+        KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            assertTrue(serverSocket.getAcceptTimeout() == 0L)
+        }
+    }
+
+    @Test
+    fun `test set and get accept timeout`(): Unit = runBlocking {
+        // Java
+        ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            serverSocket.soTimeout = 100
+            assertTrue(serverSocket.soTimeout == 100)
+        }
+
+        // Knio
+        KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            serverSocket.setAcceptTimeout(100)
+            assertTrue(serverSocket.getAcceptTimeout() == 100L)
+        }
+    }
+
+    @Test
+    fun `test set and get receive buffer size`(): Unit = runBlocking {
+        // Java
+        ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            serverSocket.receiveBufferSize = 100
+            assertTrue(serverSocket.receiveBufferSize == 100)
+        }
+
+        // Knio
+        KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            serverSocket.setReceiveBufferSize(100)
+            assertTrue(serverSocket.getReceiveBufferSize() == 100)
+        }
+    }
+
+    @Test
+    fun `test set and get reuse address`(): Unit = runBlocking {
+        // Java
+        ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            serverSocket.reuseAddress = true
+            assertTrue(serverSocket.reuseAddress)
+        }
+
+        // Knio
+        KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            serverSocket.setReuseAddress(true)
+            assertTrue(serverSocket.getReuseAddress())
+        }
+    }
+
+    @Test
+    fun `test is closed`() = runBlocking {
+        // Java
+        ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            assertFalse(serverSocket.isClosed)
+            serverSocket.close()
+            assertTrue(serverSocket.isClosed)
+        }
+
+        // Knio
+        KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
+            assertFalse(serverSocket.isClosed())
+            serverSocket.close()
+            assertTrue(serverSocket.isClosed())
+        }
+    }
 }
