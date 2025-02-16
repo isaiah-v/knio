@@ -37,7 +37,7 @@ private fun <T> errorHandler(e: Throwable): T {
  * @throws SocketTimeoutException if the read operation times out.
  * @throws Throwable if any other error occurs during the read operation.
  */
-internal suspend fun AsynchronousSocketChannel.readSuspend(
+suspend fun AsynchronousSocketChannel.readSuspend(
     b: ByteBuffer,
     timeout: Long? = null
 ): Int = suspendCoroutine {
@@ -66,7 +66,7 @@ internal suspend fun AsynchronousSocketChannel.readSuspend(
  * @throws SocketTimeoutException if the write operation times out.
  * @throws Throwable if any other error occurs during the write operation.
  */
-internal suspend fun AsynchronousSocketChannel.writeSuspend(
+suspend fun AsynchronousSocketChannel.writeSuspend(
     b: ByteBuffer,
     timeout: Long? = null
 ): Int = suspendCoroutine {

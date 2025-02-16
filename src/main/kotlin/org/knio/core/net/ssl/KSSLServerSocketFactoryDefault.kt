@@ -11,7 +11,6 @@ class KSSLServerSocketFactoryDefault(
 ): KSSLServerSocketFactory {
 
     override suspend fun createServerSocket(): KSSLServerSocket {
-        @Suppress("BlockingMethodInNonBlockingContext")
         return KSSLServerSocketImpl (
             sslContext = sslContext,
             context = context
@@ -19,17 +18,14 @@ class KSSLServerSocketFactoryDefault(
     }
 
     override suspend fun createServerSocket(port: Int): KSSLServerSocket {
-        @Suppress("BlockingMethodInNonBlockingContext")
         return createServerSocket().apply { bind(InetSocketAddress(port)) }
     }
 
     override suspend fun createServerSocket(port: Int, backlog: Int): KSSLServerSocket {
-        @Suppress("BlockingMethodInNonBlockingContext")
         return createServerSocket().apply { bind(InetSocketAddress(port), backlog) }
     }
 
     override suspend fun createServerSocket(port: Int, backlog: Int, ifAddress: InetAddress): KSSLServerSocket {
-        @Suppress("BlockingMethodInNonBlockingContext")
         return createServerSocket().apply { bind(InetSocketAddress(ifAddress, port), backlog) }
     }
 }

@@ -15,7 +15,7 @@ import kotlin.coroutines.suspendCoroutine
  * @return The number of bytes read.
  * @throws Throwable if any error occurs during the read operation.
  */
-internal suspend fun AsynchronousFileChannel.readSuspend(dst: ByteBuffer, position: Long): Int = suspendCoroutine {
+suspend fun AsynchronousFileChannel.readSuspend(dst: ByteBuffer, position: Long): Int = suspendCoroutine {
     try {
         // Call the callback version of the non-blocking read function, un-suspending the coroutine when complete.
         read(dst, position, it, fromResult())
@@ -33,7 +33,7 @@ internal suspend fun AsynchronousFileChannel.readSuspend(dst: ByteBuffer, positi
  * @return The number of bytes written.
  * @throws Throwable if any error occurs during the write operation.
  */
-internal suspend fun AsynchronousFileChannel.writeSuspend(src: ByteBuffer, position: Long): Int = suspendCoroutine {
+suspend fun AsynchronousFileChannel.writeSuspend(src: ByteBuffer, position: Long): Int = suspendCoroutine {
     try {
         // Call the callback version of the non-blocking write function, un-suspending the coroutine when complete.
         write(src, position, it, fromResult())

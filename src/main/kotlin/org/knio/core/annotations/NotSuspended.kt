@@ -11,4 +11,4 @@ package org.knio.core.annotations
 )
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.FUNCTION)
-internal annotation class NotSuspended()
+internal annotation class NotSuspended

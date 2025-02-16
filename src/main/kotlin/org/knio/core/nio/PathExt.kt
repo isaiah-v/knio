@@ -5,6 +5,7 @@ import org.knio.core.lang.use
 import org.knio.core.security.update
 import java.nio.file.Path
 import java.security.MessageDigest
+import kotlin.io.path.inputStream
 
 /**
  * Opens a `KInputStream` for the given `Path`.

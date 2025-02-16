@@ -33,11 +33,13 @@ private class ContinuationCompletionHandler<T, R>(
      * @param attachment The continuation to resume.
      */
     override fun completed(result: T, attachment: Continuation<R>) {
-        timeoutJob?.cancel()
-        try {
-            attachment.resume(onComplete(result))
-        } catch (e: Throwable) {
-            attachment.resumeWithException(e)
+        if (timeoutJob?.isCompleted != true) {
+            timeoutJob?.cancel()
+            try {
+                attachment.resume(onComplete(result))
+            } catch (e: Throwable) {
+                attachment.resumeWithException(e)
+            }
         }
     }
 
@@ -48,11 +50,13 @@ private class ContinuationCompletionHandler<T, R>(
      * @param attachment The continuation to resume with the exception.
      */
     override fun failed(exc: Throwable, attachment: Continuation<R>) {
-        timeoutJob?.cancel()
-        try {
-            attachment.resume(onFail(exc))
-        } catch (e: Throwable) {
-            attachment.resumeWithException(e)
+        if (timeoutJob?.isCompleted != true) {
+            timeoutJob?.cancel()
+            try {
+                attachment.resume(onFail(exc))
+            } catch (e: Throwable) {
+                attachment.resumeWithException(e)
+            }
         }
     }
 }

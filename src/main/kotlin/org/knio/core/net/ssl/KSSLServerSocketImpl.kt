@@ -20,7 +20,7 @@ internal class KSSLServerSocketImpl (
 
         return KSSLSocketImpl(
             channel = channel,
-            sslEngine = @Suppress("BlockingMethodInNonBlockingContext") createSSLEngine(),
+            sslEngine = createSSLEngine(),
             useClientMode = isUseClientMode,
             context = context
         )
