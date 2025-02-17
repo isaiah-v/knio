@@ -11,22 +11,11 @@ import kotlin.coroutines.suspendCoroutine
 /**
  * Suspends the coroutine and accepts a connection from the `AsynchronousServerSocketChannel`.
  *
- * @param timeout The timeout in milliseconds to wait for a connection. If `null`, the function will wait indefinitely.
  * @return The `AsynchronousSocketChannel` representing the accepted connection.
  * @throws SocketTimeoutException if the timeout is reached before a connection is accepted.
  */
-<span class="nc" id="L18">suspend fun AsynchronousServerSocketChannel.acceptSuspend(</span>
-<span class="nc" id="L19">    timeout: Long? = null</span>
-<span class="pc bpc" id="L20" title="1 of 2 branches missed.">): AsynchronousSocketChannel = suspendCoroutine { continuation -&gt;</span>
-
-    // Create a timeout job if a timeout is specified.
-<span class="fc bfc" id="L23" title="All 2 branches covered.">    val timeoutJob = if(timeout != null) {</span>
-<span class="fc" id="L24">        continuation.timeout(timeout) { SocketTimeoutException() }</span>
-    } else {
-<span class="fc" id="L26">        null</span>
-    }
-
+<span class="fc bfc" id="L17" title="All 2 branches covered.">suspend fun AsynchronousServerSocketChannel.acceptSuspend(): AsynchronousSocketChannel = suspendCoroutine { continuation -&gt;</span>
     // Call the callback version of the non-blocking accept function, un-suspending the coroutine when complete.
-<span class="fc" id="L30">    accept(continuation, fromResult(timeoutJob))</span>
-<span class="fc" id="L31">}</span>
+<span class="fc" id="L19">    accept(continuation, fromResult())</span>
+<span class="fc" id="L20">}</span>
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

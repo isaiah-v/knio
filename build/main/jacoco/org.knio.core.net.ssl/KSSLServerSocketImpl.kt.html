@@ -13,41 +13,26 @@ import javax.net.ssl.SSLContext
 <span class="fc" id="L13">    context.channelFactory.openServerSocketChannel()</span>
 ) {
 
-    private var acceptTimeout: Long? = null
+<span class="fc" id="L16">    override suspend fun accept(): KSSLSocket {</span>
+<span class="fc" id="L17">        val channel = serverChannel.acceptSuspend()</span>
 
-<span class="fc" id="L18">    override suspend fun accept(): KSSLSocket {</span>
-<span class="fc" id="L19">        val channel = serverChannel.acceptSuspend(acceptTimeout)</span>
-
-<span class="pc bpc" id="L21" title="1 of 2 branches missed.">        return KSSLSocketImpl(</span>
-<span class="fc" id="L22">            channel = channel,</span>
-<span class="fc" id="L23">            sslEngine = createSSLEngine(),</span>
-<span class="fc" id="L24">            useClientMode = isUseClientMode,</span>
-<span class="fc" id="L25">            context = context</span>
+<span class="pc bpc" id="L19" title="1 of 2 branches missed.">        return KSSLSocketImpl(</span>
+<span class="fc" id="L20">            channel = channel,</span>
+<span class="fc" id="L21">            sslEngine = createSSLEngine(),</span>
+<span class="fc" id="L22">            useClientMode = isUseClientMode,</span>
+<span class="fc" id="L23">            context = context</span>
         )
     }
 
     override suspend fun bind(endpoint: SocketAddress, backlog: Int) {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L31">        serverChannel.bind(endpoint, backlog)</span>
-<span class="fc" id="L32">    }</span>
+<span class="fc" id="L29">        serverChannel.bind(endpoint, backlog)</span>
+<span class="fc" id="L30">    }</span>
 
     override suspend fun close() {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L36">        serverChannel.close()</span>
-<span class="fc" id="L37">    }</span>
+<span class="fc" id="L34">        serverChannel.close()</span>
+<span class="fc" id="L35">    }</span>
 
-    override suspend fun setAcceptTimeout(timeout: Long) {
-<span class="nc bnc" id="L40" title="All 2 branches missed.">        acceptTimeout = if (timeout &lt; 0) {</span>
-<span class="nc" id="L41">            throw IllegalArgumentException(&quot;timeout value is negative&quot;)</span>
-<span class="nc bnc" id="L42" title="All 2 branches missed.">        } else if (timeout == 0L) {</span>
-<span class="nc" id="L43">            null</span>
-        } else {
-<span class="nc" id="L45">            timeout</span>
-        }
-<span class="nc" id="L47">    }</span>
-
-    override suspend fun getAcceptTimeout(): Long {
-<span class="nc bnc" id="L50" title="All 2 branches missed.">        return acceptTimeout ?: 0</span>
-    }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

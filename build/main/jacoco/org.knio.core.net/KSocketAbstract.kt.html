@@ -94,184 +94,177 @@ internal const val UNDEFINED_LOCAL_PORT = -1
 <span class="fc" id="L94">        setProperties()</span>
 <span class="fc" id="L95">    }</span>
 
-<span class="fc bfc" id="L97" title="All 2 branches covered.">    private suspend fun connect0(endpoint: SocketAddress, timeout: Long) = suspendCoroutine {</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">    private suspend fun connect0(endpoint: SocketAddress, timeout: Long) = suspendCoroutine {</span>
 <span class="fc" id="L98">        try {</span>
-<span class="pc bpc" id="L99" title="1 of 2 branches missed.">            val timoutJob = if (timeout &gt; 0) {</span>
-<span class="nc" id="L100">                it.timeout(timeout) { SocketTimeoutException(&quot;Connection timed out&quot;) }</span>
-<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            } else if (timeout&lt;0) {</span>
-<span class="nc" id="L102">                throw IllegalArgumentException(&quot;Timeout must be greater than or equal to 0&quot;)</span>
-            } else {
-<span class="fc" id="L104">                null</span>
-            }
             // returns &quot;this&quot; upon completion
-<span class="fc" id="L107">            ch.connect(endpoint, it, Unit.asCompletionHandler (timoutJob))</span>
-<span class="nc" id="L108">        } catch (e: Throwable) {</span>
-<span class="nc" id="L109">            it.resumeWithException(e)</span>
+<span class="fc" id="L100">            ch.connect(endpoint, it, Unit.asCompletionHandler ())</span>
+<span class="nc" id="L101">        } catch (e: Throwable) {</span>
+<span class="nc" id="L102">            it.resumeWithException(e)</span>
         }
-<span class="fc" id="L111">    }</span>
+<span class="pc" id="L104">    }</span>
 
 
     override suspend fun getInetAddress(): java.net.InetAddress {
-<span class="pc bpc" id="L115" title="2 of 4 branches missed.">        return this.remoteAddress?.address ?: ANY_LOCAL_ADDRESS</span>
+<span class="pc bpc" id="L108" title="2 of 4 branches missed.">        return this.remoteAddress?.address ?: ANY_LOCAL_ADDRESS</span>
     }
 
     @NotSuspended
     private fun getRemoteInetSocketAddress(): InetSocketAddress? {
-<span class="fc bfc" id="L120" title="All 2 branches covered.">        val address = ch.remoteAddress ?: return null</span>
-<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        return if(address is java.net.InetSocketAddress) {</span>
-<span class="fc" id="L122">            address</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        val address = ch.remoteAddress ?: return null</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">        return if(address is java.net.InetSocketAddress) {</span>
+<span class="fc" id="L115">            address</span>
         } else {
-<span class="nc" id="L124">            null</span>
+<span class="nc" id="L117">            null</span>
         }
     }
 
 
     override suspend fun getKeepAlive(): Boolean {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L131">        return ch.getOption(java.net.StandardSocketOptions.SO_KEEPALIVE)</span>
+<span class="fc" id="L124">        return ch.getOption(java.net.StandardSocketOptions.SO_KEEPALIVE)</span>
     }
 
 
     override suspend fun getLocalAddress(): InetAddress {
-<span class="fc bfc" id="L136" title="All 2 branches covered.">        if(!ch.isOpen) {</span>
-<span class="fc" id="L137">            return ANY_LOCAL_ADDRESS</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if(!ch.isOpen) {</span>
+<span class="fc" id="L130">            return ANY_LOCAL_ADDRESS</span>
         }
-<span class="pc bpc" id="L139" title="2 of 4 branches missed.">        return this.localAddress?.address ?: InetAddress.getLoopbackAddress()</span>
+<span class="pc bpc" id="L132" title="2 of 4 branches missed.">        return this.localAddress?.address ?: InetAddress.getLoopbackAddress()</span>
     }
 
     @NotSuspended
     private fun getLocalInetSocketAddress(): InetSocketAddress? {
-<span class="fc bfc" id="L144" title="All 2 branches covered.">        val address = ch.localAddress ?: null</span>
-<span class="fc bfc" id="L145" title="All 2 branches covered.">        return if(address is InetSocketAddress) {</span>
-<span class="fc" id="L146">            address</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        val address = ch.localAddress ?: null</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        return if(address is InetSocketAddress) {</span>
+<span class="fc" id="L139">            address</span>
         } else {
-<span class="fc" id="L148">            null</span>
+<span class="fc" id="L141">            null</span>
         }
     }
 
 
     override suspend fun getLocalPort(): Int {
-<span class="fc bfc" id="L154" title="All 2 branches covered.">        return this.localAddress?.port ?: UNDEFINED_LOCAL_PORT</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        return this.localAddress?.port ?: UNDEFINED_LOCAL_PORT</span>
     }
 
 
     override suspend fun getLocalSocketAddress(): SocketAddress? {
-<span class="fc bfc" id="L159" title="All 2 branches covered.">        if(!ch.isOpen) {</span>
-<span class="pc bpc" id="L160" title="2 of 4 branches missed.">            assert(ANY_LOCAL_ADDRESS.isAnyLocalAddress)</span>
-<span class="fc" id="L161">            return InetSocketAddress(getLocalAddress(), getLocalPort())</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        if(!ch.isOpen) {</span>
+<span class="pc bpc" id="L153" title="2 of 4 branches missed.">            assert(ANY_LOCAL_ADDRESS.isAnyLocalAddress)</span>
+<span class="fc" id="L154">            return InetSocketAddress(getLocalAddress(), getLocalPort())</span>
         }
-<span class="fc" id="L163">        return this.localAddress</span>
+<span class="fc" id="L156">        return this.localAddress</span>
     }
 
 
     override suspend fun getPort(): Int {
-<span class="fc bfc" id="L168" title="All 2 branches covered.">        return this.remoteAddress?.port ?: UNDEFINED_PORT</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        return this.remoteAddress?.port ?: UNDEFINED_PORT</span>
     }
 
 
     override suspend fun getReceiveBufferSize(): Int {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L174">        return ch.getOption(java.net.StandardSocketOptions.SO_RCVBUF)</span>
+<span class="fc" id="L167">        return ch.getOption(java.net.StandardSocketOptions.SO_RCVBUF)</span>
     }
 
 
-<span class="fc" id="L178">    override suspend fun getRemoteSocketAddress(): SocketAddress? = this.remoteAddress</span>
+<span class="fc" id="L171">    override suspend fun getRemoteSocketAddress(): SocketAddress? = this.remoteAddress</span>
 
 
     override suspend fun getReuseAddress(): Boolean {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L183">        return ch.getOption(java.net.StandardSocketOptions.SO_REUSEADDR)</span>
+<span class="fc" id="L176">        return ch.getOption(java.net.StandardSocketOptions.SO_REUSEADDR)</span>
     }
 
     override suspend fun getSendBufferSize(): Int{
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L188">        return ch.getOption(java.net.StandardSocketOptions.SO_SNDBUF)</span>
+<span class="fc" id="L181">        return ch.getOption(java.net.StandardSocketOptions.SO_SNDBUF)</span>
     }
 
     override suspend fun getReadTimeout(): Long =
-<span class="fc bfc" id="L192" title="All 2 branches covered.">        this.rTimeout ?: 0</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        this.rTimeout ?: 0</span>
 
 
     override suspend fun getWriteTimeout(): Long =
-<span class="fc bfc" id="L196" title="All 2 branches covered.">        this.wTimeout ?: 0</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        this.wTimeout ?: 0</span>
 
 
     override suspend fun getTcpNoDelay(): Boolean {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L201">        return ch.getOption(java.net.StandardSocketOptions.TCP_NODELAY)</span>
+<span class="fc" id="L194">        return ch.getOption(java.net.StandardSocketOptions.TCP_NODELAY)</span>
     }
 
     override suspend fun isBound(): Boolean {
-<span class="fc bfc" id="L205" title="All 2 branches covered.">        return if(ch.isOpen) {</span>
-<span class="fc bfc" id="L206" title="All 2 branches covered.">            ch.localAddress != null</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        return if(ch.isOpen) {</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">            ch.localAddress != null</span>
         } else {
-<span class="pc bpc" id="L208" title="1 of 2 branches missed.">            localAddress != null</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">            localAddress != null</span>
         }
     }
 
 
     override suspend fun isClosed(): Boolean =
-<span class="fc bfc" id="L214" title="All 2 branches covered.">        !ch.isOpen</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">        !ch.isOpen</span>
 
 
     override suspend fun isConnected(): Boolean {
-<span class="fc bfc" id="L218" title="All 2 branches covered.">        return if(ch.isOpen) {</span>
-<span class="fc bfc" id="L219" title="All 2 branches covered.">            ch.remoteAddress != null</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        return if(ch.isOpen) {</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">            ch.remoteAddress != null</span>
         } else {
-<span class="pc bpc" id="L221" title="1 of 2 branches missed.">            remoteAddress != null</span>
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">            remoteAddress != null</span>
         }
     }
 
 
     override suspend fun setKeepAlive(keepAlive: Boolean) {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L228">        ch.setOption(java.net.StandardSocketOptions.SO_KEEPALIVE, keepAlive)</span>
-<span class="fc" id="L229">    }</span>
+<span class="fc" id="L221">        ch.setOption(java.net.StandardSocketOptions.SO_KEEPALIVE, keepAlive)</span>
+<span class="fc" id="L222">    }</span>
 
 
     override suspend fun setReceiveBufferSize(size: Int) {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L234">        ch.setOption(java.net.StandardSocketOptions.SO_RCVBUF, size)</span>
-<span class="fc" id="L235">    }</span>
+<span class="fc" id="L227">        ch.setOption(java.net.StandardSocketOptions.SO_RCVBUF, size)</span>
+<span class="fc" id="L228">    }</span>
 
 
     override suspend fun setReuseAddress(reuse: Boolean) {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L240">        ch.setOption(java.net.StandardSocketOptions.SO_REUSEADDR, reuse)</span>
-<span class="fc" id="L241">    }</span>
+<span class="fc" id="L233">        ch.setOption(java.net.StandardSocketOptions.SO_REUSEADDR, reuse)</span>
+<span class="fc" id="L234">    }</span>
 
 
     override suspend fun setSendBufferSize(size: Int) {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L246">        ch.setOption(java.net.StandardSocketOptions.SO_SNDBUF, size)</span>
-<span class="fc" id="L247">    }</span>
+<span class="fc" id="L239">        ch.setOption(java.net.StandardSocketOptions.SO_SNDBUF, size)</span>
+<span class="fc" id="L240">    }</span>
 
 
     override suspend fun setReadTimeout(timeout: Long?) {
-<span class="fc bfc" id="L251" title="All 4 branches covered.">        if(timeout==null || timeout==0L) {</span>
-<span class="fc" id="L252">            this.rTimeout = null</span>
-<span class="fc bfc" id="L253" title="All 2 branches covered.">        } else if(timeout&lt;0) {</span>
-<span class="fc" id="L254">            throw IllegalArgumentException(&quot;Timeout must be greater than or equal to 0&quot;)</span>
+<span class="fc bfc" id="L244" title="All 4 branches covered.">        if(timeout==null || timeout==0L) {</span>
+<span class="fc" id="L245">            this.rTimeout = null</span>
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        } else if(timeout&lt;0) {</span>
+<span class="fc" id="L247">            throw IllegalArgumentException(&quot;Timeout must be greater than or equal to 0&quot;)</span>
         } else {
-<span class="fc" id="L256">            this.rTimeout = timeout</span>
+<span class="fc" id="L249">            this.rTimeout = timeout</span>
         }
-<span class="fc" id="L258">    }</span>
+<span class="fc" id="L251">    }</span>
 
 
     override suspend fun setWriteTimeout(timeout: Long?) {
-<span class="fc bfc" id="L262" title="All 4 branches covered.">        if(timeout==null || timeout==0L) {</span>
-<span class="fc" id="L263">            this.wTimeout = null</span>
-<span class="fc bfc" id="L264" title="All 2 branches covered.">        } else if(timeout&lt;0) {</span>
-<span class="fc" id="L265">            throw IllegalArgumentException(&quot;Timeout must be greater than or equal to 0&quot;)</span>
+<span class="fc bfc" id="L255" title="All 4 branches covered.">        if(timeout==null || timeout==0L) {</span>
+<span class="fc" id="L256">            this.wTimeout = null</span>
+<span class="fc bfc" id="L257" title="All 2 branches covered.">        } else if(timeout&lt;0) {</span>
+<span class="fc" id="L258">            throw IllegalArgumentException(&quot;Timeout must be greater than or equal to 0&quot;)</span>
         } else {
-<span class="fc" id="L267">            this.wTimeout = timeout</span>
+<span class="fc" id="L260">            this.wTimeout = timeout</span>
         }
-<span class="fc" id="L269">    }</span>
+<span class="fc" id="L262">    }</span>
 
 
     override suspend fun setTcpNoDelay(on: Boolean) {
         @Suppress(&quot;BlockingMethodInNonBlockingContext&quot;)
-<span class="fc" id="L274">        ch.setOption(java.net.StandardSocketOptions.TCP_NODELAY, on)</span>
-<span class="fc" id="L275">    }</span>
+<span class="fc" id="L267">        ch.setOption(java.net.StandardSocketOptions.TCP_NODELAY, on)</span>
+<span class="fc" id="L268">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

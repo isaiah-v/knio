@@ -18,12 +18,10 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
  * @param R The type of the continuation result.
  * @property onComplete The block to execute on completion.
  * @property onFail The block to execute on failure.
- * @property timeoutJob The job to cancel on completion or failure.
  */
-<span class="fc" id="L23">private class ContinuationCompletionHandler&lt;T, R&gt;(</span>
-<span class="pc" id="L24">    val onComplete: CompletionBlock&lt;T, R&gt;,</span>
-<span class="pc" id="L25">    val onFail: (Throwable) -&gt; R,</span>
-<span class="pc" id="L26">    val timeoutJob: Job?</span>
+<span class="fc" id="L22">private class ContinuationCompletionHandler&lt;T, R&gt;(</span>
+<span class="pc" id="L23">    val onComplete: CompletionBlock&lt;T, R&gt;,</span>
+<span class="pc" id="L24">    val onFail: (Throwable) -&gt; R</span>
 ): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {
 
     /**
@@ -33,15 +31,12 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
      * @param attachment The continuation to resume.
      */
     override fun completed(result: T, attachment: Continuation&lt;R&gt;) {
-<span class="pc bpc" id="L36" title="4 of 6 branches missed.">        if (timeoutJob?.isCompleted != true) {</span>
-<span class="pc bpc" id="L37" title="1 of 2 branches missed.">            timeoutJob?.cancel()</span>
-<span class="fc" id="L38">            try {</span>
-<span class="fc" id="L39">                attachment.resume(onComplete(result))</span>
-<span class="nc" id="L40">            } catch (e: Throwable) {</span>
-<span class="nc" id="L41">                attachment.resumeWithException(e)</span>
-            }
+<span class="fc" id="L34">        try {</span>
+<span class="fc" id="L35">            attachment.resume(onComplete(result))</span>
+<span class="nc" id="L36">        } catch (e: Throwable) {</span>
+<span class="nc" id="L37">            attachment.resumeWithException(e)</span>
         }
-<span class="fc" id="L44">    }</span>
+<span class="fc" id="L39">    }</span>
 
     /**
      * Called when the operation fails.
@@ -50,27 +45,23 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
      * @param attachment The continuation to resume with the exception.
      */
     override fun failed(exc: Throwable, attachment: Continuation&lt;R&gt;) {
-<span class="pc bpc" id="L53" title="1 of 6 branches missed.">        if (timeoutJob?.isCompleted != true) {</span>
-<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            timeoutJob?.cancel()</span>
-<span class="fc" id="L55">            try {</span>
-<span class="nc" id="L56">                attachment.resume(onFail(exc))</span>
-<span class="fc" id="L57">            } catch (e: Throwable) {</span>
-<span class="fc" id="L58">                attachment.resumeWithException(e)</span>
-            }
+<span class="fc" id="L48">        try {</span>
+<span class="nc" id="L49">            attachment.resume(onFail(exc))</span>
+<span class="fc" id="L50">        } catch (e: Throwable) {</span>
+<span class="fc" id="L51">            attachment.resumeWithException(e)</span>
         }
-<span class="fc" id="L61">    }</span>
+<span class="fc" id="L53">    }</span>
 }
 
 /**
  * Creates a CompletionHandler that resumes a Continuation with the result or exception.
  *
  * @param R The type of the continuation result.
- * @param timeoutJob The job to cancel on completion or failure.
  * @param onFail The block to execute on failure.
  * @return A CompletionHandler that resumes a Continuation.
  */
-<span class="fc" id="L72">internal fun &lt;R&gt; fromResult(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;R, Continuation&lt;R&gt;&gt; {</span>
-<span class="fc" id="L73">    return ContinuationCompletionHandler({ it }, onFail = onFail, timeoutJob = timeoutJob)</span>
+<span class="fc" id="L63">internal fun &lt;R&gt; fromResult(onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;R, Continuation&lt;R&gt;&gt; {</span>
+<span class="fc" id="L64">    return ContinuationCompletionHandler({ it }, onFail = onFail)</span>
 }
 
 /**
@@ -82,8 +73,8 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
  * @param onFail The block to execute on failure.
  * @return A CompletionHandler that resumes a Continuation.
  */
-<span class="pc" id="L85">internal fun &lt;T,R&gt; R.asCompletionHandler(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {</span>
-<span class="fc" id="L86">    return ContinuationCompletionHandler({ this }, onFail = onFail ,timeoutJob = timeoutJob)</span>
+<span class="fc" id="L76">internal fun &lt;T,R&gt; R.asCompletionHandler(onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {</span>
+<span class="fc" id="L77">    return ContinuationCompletionHandler({ this }, onFail = onFail)</span>
 }
 
 /**
@@ -95,8 +86,8 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
  * @param onFail The block to execute on failure.
  * @return A CompletionHandler that resumes a Continuation.
  */
-<span class="nc" id="L98">internal fun &lt;T, R&gt; CompletionBlock&lt;T, R&gt;.asCompletionHandler(timeoutJob: Job? = null, onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {</span>
-<span class="nc" id="L99">    return ContinuationCompletionHandler(this, onFail = onFail, timeoutJob = timeoutJob)</span>
+<span class="nc" id="L89">internal fun &lt;T, R&gt; CompletionBlock&lt;T, R&gt;.asCompletionHandler(onFail: (Throwable) -&gt; R = DEFAULT_ON_FAIL): CompletionHandler&lt;T, Continuation&lt;R&gt;&gt; {</span>
+<span class="nc" id="L90">    return ContinuationCompletionHandler(this, onFail = onFail)</span>
 }
 
 /**
@@ -108,13 +99,13 @@ internal typealias CompletionBlock&lt;T, R&gt; = (T) -&gt; R
  * @param exc The exception to throw on timeout.
  * @return A Job representing the timeout.
  */
-<span class="fc" id="L111">@OptIn(DelicateCoroutinesApi::class)</span>
+<span class="nc" id="L102">@OptIn(DelicateCoroutinesApi::class)</span>
 internal fun &lt;R&gt; Continuation&lt;R&gt;.timeout (
     timeout: Long,
-<span class="fc" id="L114">    scope: CoroutineScope = GlobalScope,</span>
-<span class="nc" id="L115">    exc: () -&gt; Throwable = { TimeoutException() }</span>
-<span class="fc" id="L116">): Job = scope.launch {</span>
-<span class="fc" id="L117">    delay(timeout)</span>
-<span class="fc" id="L118">    resumeWithException(exc())</span>
-<span class="fc" id="L119">}</span>
+<span class="nc" id="L105">    scope: CoroutineScope = GlobalScope,</span>
+<span class="nc" id="L106">    exc: () -&gt; Throwable = { TimeoutException() }</span>
+<span class="nc" id="L107">): Job = scope.launch {</span>
+<span class="nc" id="L108">    delay(timeout)</span>
+<span class="nc" id="L109">    resumeWithException(exc())</span>
+<span class="nc" id="L110">}</span>
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

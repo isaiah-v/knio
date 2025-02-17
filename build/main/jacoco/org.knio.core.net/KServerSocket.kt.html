@@ -123,32 +123,6 @@ interface KServerSocket: KAutoCloseable {
     suspend fun getLocalSocketAddress(): SocketAddress?
 
     /**
-     * Sets the maximum amount of time this socket will wait for a connection to be accepted before throwing a
-     * `SocketTimeoutException`.
-     *
-     * A timeout of 0 means that the accept will wait indefinitely.
-     *
-     * @param timeout The timeout in milliseconds.
-     *
-     * @see java.net.ServerSocket.setSoTimeout
-     * @see acceptSuspend
-     */
-    suspend fun setAcceptTimeout(timeout: Long)
-
-    /**
-     * Returns the maximum amount of time this socket will wait for a connection to be accepted before throwing a
-     * `SocketTimeoutException`.
-     *
-     * A timeout of 0 means that the accept will wait indefinitely.
-     *
-     * @return The timeout in milliseconds. A value of 0 means that the accept will wait indefinitely.
-     *
-     * @see java.net.ServerSocket.getSoTimeout
-     * @see acceptSuspend
-     */
-    suspend fun getAcceptTimeout(): Long
-
-    /**
      * Enable/disable the [SO_REUSEADDR] socket option.
      *
      * When a TCP connection is closed the connection may remain in a timeout state for a period of time after the

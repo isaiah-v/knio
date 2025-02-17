@@ -14,67 +14,58 @@ import java.nio.channels.AsynchronousServerSocketChannel
 ): KServerSocket {
 <span class="fc" id="L15">    private val acceptMutex = Mutex()</span>
 
-    private var acceptTimeout: Long? = null
-
     override suspend fun accept(): KSocket {
-<span class="fc" id="L20">        acceptMutex.withLock {</span>
-<span class="fc" id="L21">            return accept0()</span>
+<span class="fc" id="L18">        acceptMutex.withLock {</span>
+<span class="fc" id="L19">            return accept0()</span>
         }
     }
 
-<span class="fc" id="L25">    private suspend fun accept0(): KSocket {</span>
-<span class="fc" id="L26">        val acceptChannel = channel.acceptSuspend(acceptTimeout)</span>
-<span class="fc" id="L27">        return KSocketImpl(acceptChannel, getKnioContext())</span>
+<span class="fc" id="L23">    private suspend fun accept0(): KSocket {</span>
+<span class="fc" id="L24">        val acceptChannel = channel.acceptSuspend()</span>
+<span class="fc" id="L25">        return KSocketImpl(acceptChannel, getKnioContext())</span>
     }
 
-<span class="pc bpc" id="L30" title="1 of 2 branches missed.">    override suspend fun bind(endpoint: SocketAddress, backlog: Int): Unit = withContext(Dispatchers.IO) {</span>
-<span class="fc" id="L31">        channel.bind(endpoint, backlog)</span>
-<span class="fc" id="L32">    }</span>
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">    override suspend fun bind(endpoint: SocketAddress, backlog: Int): Unit = withContext(Dispatchers.IO) {</span>
+<span class="fc" id="L29">        channel.bind(endpoint, backlog)</span>
+<span class="fc" id="L30">    }</span>
 
     override suspend fun close(): Unit {
-<span class="fc" id="L35">        channel.close()</span>
-<span class="fc" id="L36">        acceptTimeout = null</span>
-<span class="fc" id="L37">    }</span>
+<span class="fc" id="L33">        channel.close()</span>
+<span class="fc" id="L34">    }</span>
 
     override suspend fun getInetAddress(): InetAddress?  {
-<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        val address = channel.localAddress ?: return null</span>
-<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        return if(address is InetSocketAddress) {</span>
-<span class="fc" id="L42">            address.address</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        val address = channel.localAddress ?: return null</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        return if(address is InetSocketAddress) {</span>
+<span class="fc" id="L39">            address.address</span>
         } else {
-<span class="nc" id="L44">            null</span>
+<span class="nc" id="L41">            null</span>
         }
     }
 
     override suspend fun getLocalPort(): Int {
-<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        val address = channel.localAddress ?: return -1</span>
-<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        return if(address is InetSocketAddress) {</span>
-<span class="fc" id="L51">            address.port</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        val address = channel.localAddress ?: return -1</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        return if(address is InetSocketAddress) {</span>
+<span class="fc" id="L48">            address.port</span>
         } else {
-<span class="pc" id="L53">            -1</span>
+<span class="pc" id="L50">            -1</span>
         }
     }
 
-<span class="fc" id="L57">    override suspend fun getLocalSocketAddress(): SocketAddress? = channel.localAddress</span>
-<span class="pc bpc" id="L58" title="1 of 2 branches missed.">    override suspend fun getReceiveBufferSize(): Int = withContext(Dispatchers.IO) {</span>
-<span class="fc" id="L59">        channel.getOption(StandardSocketOptions.SO_RCVBUF)</span>
+<span class="fc" id="L54">    override suspend fun getLocalSocketAddress(): SocketAddress? = channel.localAddress</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">    override suspend fun getReceiveBufferSize(): Int = withContext(Dispatchers.IO) {</span>
+<span class="fc" id="L56">        channel.getOption(StandardSocketOptions.SO_RCVBUF)</span>
+<span class="fc" id="L57">    }</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">    override suspend fun getReuseAddress(): Boolean = withContext(Dispatchers.IO) {</span>
+<span class="fc" id="L59">        channel.getOption(StandardSocketOptions.SO_REUSEADDR)</span>
 <span class="fc" id="L60">    }</span>
-<span class="pc bpc" id="L61" title="1 of 2 branches missed.">    override suspend fun getReuseAddress(): Boolean = withContext(Dispatchers.IO) {</span>
-<span class="fc" id="L62">        channel.getOption(StandardSocketOptions.SO_REUSEADDR)</span>
-<span class="fc" id="L63">    }</span>
-<span class="fc bfc" id="L64" title="All 2 branches covered.">    override suspend fun getAcceptTimeout(): Long = acceptTimeout ?: 0</span>
-<span class="fc bfc" id="L65" title="All 2 branches covered.">    override suspend fun isBound(): Boolean = channel.localAddress != null</span>
-<span class="fc bfc" id="L66" title="All 2 branches covered.">    override suspend fun isClosed(): Boolean = !channel.isOpen</span>
-<span class="pc bpc" id="L67" title="1 of 2 branches missed.">    override suspend fun setReceiveBufferSize(size: Int): Unit = withContext(Dispatchers.IO) {</span>
-<span class="fc" id="L68">        channel.setOption(StandardSocketOptions.SO_RCVBUF, size)</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">    override suspend fun isBound(): Boolean = channel.localAddress != null</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">    override suspend fun isClosed(): Boolean = !channel.isOpen</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">    override suspend fun setReceiveBufferSize(size: Int): Unit = withContext(Dispatchers.IO) {</span>
+<span class="fc" id="L64">        channel.setOption(StandardSocketOptions.SO_RCVBUF, size)</span>
+<span class="fc" id="L65">    }</span>
+
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">    override suspend fun setReuseAddress(on: Boolean): Unit = withContext(Dispatchers.IO) {</span>
+<span class="fc" id="L68">        channel.setOption(StandardSocketOptions.SO_REUSEADDR, on)</span>
 <span class="pc" id="L69">    }</span>
-
-<span class="pc bpc" id="L71" title="1 of 2 branches missed.">    override suspend fun setReuseAddress(on: Boolean): Unit = withContext(Dispatchers.IO) {</span>
-<span class="fc" id="L72">        channel.setOption(StandardSocketOptions.SO_REUSEADDR, on)</span>
-<span class="pc" id="L73">    }</span>
-
-    override suspend fun setAcceptTimeout(timeout: Long) {
-<span class="pc bpc" id="L76" title="2 of 4 branches missed.">        require(timeout &gt;= 0) { &quot;timeout value is negative&quot; }</span>
-<span class="fc" id="L77">        this.acceptTimeout = timeout</span>
-<span class="fc" id="L78">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
