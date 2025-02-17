@@ -96,15 +96,8 @@ internal abstract class KSocketAbstract(
 
     private suspend fun connect0(endpoint: SocketAddress, timeout: Long) = suspendCoroutine {
         try {
-            val timoutJob = if (timeout > 0) {
-                it.timeout(timeout) { SocketTimeoutException("Connection timed out") }
-            } else if (timeout<0) {
-                throw IllegalArgumentException("Timeout must be greater than or equal to 0")
-            } else {
-                null
-            }
             // returns "this" upon completion
-            ch.connect(endpoint, it, Unit.asCompletionHandler (timoutJob))
+            ch.connect(endpoint, it, Unit.asCompletionHandler ())
         } catch (e: Throwable) {
             it.resumeWithException(e)
         }

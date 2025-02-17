@@ -14,8 +14,6 @@ internal class KServerSocketImpl(
 ): KServerSocket {
     private val acceptMutex = Mutex()
 
-    private var acceptTimeout: Long? = null
-
     override suspend fun accept(): KSocket {
         acceptMutex.withLock {
             return accept0()
@@ -23,7 +21,7 @@ internal class KServerSocketImpl(
     }
 
     private suspend fun accept0(): KSocket {
-        val acceptChannel = channel.acceptSuspend(acceptTimeout)
+        val acceptChannel = channel.acceptSuspend()
         return KSocketImpl(acceptChannel, getKnioContext())
     }
 
@@ -33,7 +31,6 @@ internal class KServerSocketImpl(
 
     override suspend fun close(): Unit {
         channel.close()
-        acceptTimeout = null
     }
 
     override suspend fun getInetAddress(): InetAddress?  {
@@ -61,7 +58,6 @@ internal class KServerSocketImpl(
     override suspend fun getReuseAddress(): Boolean = withContext(Dispatchers.IO) {
         channel.getOption(StandardSocketOptions.SO_REUSEADDR)
     }
-    override suspend fun getAcceptTimeout(): Long = acceptTimeout ?: 0
     override suspend fun isBound(): Boolean = channel.localAddress != null
     override suspend fun isClosed(): Boolean = !channel.isOpen
     override suspend fun setReceiveBufferSize(size: Int): Unit = withContext(Dispatchers.IO) {
@@ -70,10 +66,5 @@ internal class KServerSocketImpl(
 
     override suspend fun setReuseAddress(on: Boolean): Unit = withContext(Dispatchers.IO) {
         channel.setOption(StandardSocketOptions.SO_REUSEADDR, on)
-    }
-
-    override suspend fun setAcceptTimeout(timeout: Long) {
-        require(timeout >= 0) { "timeout value is negative" }
-        this.acceptTimeout = timeout
     }
 }

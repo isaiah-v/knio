@@ -95,38 +95,6 @@ class KServerSocketTest {
     }
 
     @Test
-    fun `test accept timeout`(): Unit = runBlocking {
-
-        // Java
-        try {
-            withTimeout(500) {
-                ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
-                    serverSocket.soTimeout = 200
-                    assertThrows<SocketTimeoutException> {
-                        serverSocket.accept()
-                    }
-                }
-            }
-        } catch (e: TimeoutCancellationException) {
-            fail("JAVA job timed out")
-        }
-
-        // Knio
-        try {
-            withTimeout(500) {
-                KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
-                    serverSocket.setAcceptTimeout(200)
-                    assertThrows<SocketTimeoutException> {
-                        serverSocket.accept()
-                    }
-                }
-            }
-        } catch (e: TimeoutCancellationException) {
-            fail("KNIO job timed out")
-        }
-    }
-
-    @Test
     fun `test get local address`(): Unit = runBlocking {
         // Java
         ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
@@ -140,34 +108,6 @@ class KServerSocketTest {
             assertTrue(serverSocket.getLocalPort() == 8080)
             assertTrue(serverSocket.getLocalSocketAddress() != null)
             assertTrue(serverSocket.getInetAddress() != null)
-        }
-    }
-
-    @Test
-    fun `test get accept timeout`(): Unit = runBlocking {
-        // Java
-        ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
-            assertTrue(serverSocket.soTimeout == 0)
-        }
-
-        // Knio
-        KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
-            assertTrue(serverSocket.getAcceptTimeout() == 0L)
-        }
-    }
-
-    @Test
-    fun `test set and get accept timeout`(): Unit = runBlocking {
-        // Java
-        ServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
-            serverSocket.soTimeout = 100
-            assertTrue(serverSocket.soTimeout == 100)
-        }
-
-        // Knio
-        KServerSocketFactory.getDefault().createServerSocket(8080).use { serverSocket ->
-            serverSocket.setAcceptTimeout(100)
-            assertTrue(serverSocket.getAcceptTimeout() == 100L)
         }
     }
 

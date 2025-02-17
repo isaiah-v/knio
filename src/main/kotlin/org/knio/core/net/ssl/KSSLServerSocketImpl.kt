@@ -13,10 +13,8 @@ internal class KSSLServerSocketImpl (
     context.channelFactory.openServerSocketChannel()
 ) {
 
-    private var acceptTimeout: Long? = null
-
     override suspend fun accept(): KSSLSocket {
-        val channel = serverChannel.acceptSuspend(acceptTimeout)
+        val channel = serverChannel.acceptSuspend()
 
         return KSSLSocketImpl(
             channel = channel,
@@ -36,17 +34,4 @@ internal class KSSLServerSocketImpl (
         serverChannel.close()
     }
 
-    override suspend fun setAcceptTimeout(timeout: Long) {
-        acceptTimeout = if (timeout < 0) {
-            throw IllegalArgumentException("timeout value is negative")
-        } else if (timeout == 0L) {
-            null
-        } else {
-            timeout
-        }
-    }
-
-    override suspend fun getAcceptTimeout(): Long {
-        return acceptTimeout ?: 0
-    }
 }

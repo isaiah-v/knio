@@ -18,12 +18,10 @@ internal typealias CompletionBlock<T, R> = (T) -> R
  * @param R The type of the continuation result.
  * @property onComplete The block to execute on completion.
  * @property onFail The block to execute on failure.
- * @property timeoutJob The job to cancel on completion or failure.
  */
 private class ContinuationCompletionHandler<T, R>(
     val onComplete: CompletionBlock<T, R>,
-    val onFail: (Throwable) -> R,
-    val timeoutJob: Job?
+    val onFail: (Throwable) -> R
 ): CompletionHandler<T, Continuation<R>> {
 
     /**
@@ -33,13 +31,10 @@ private class ContinuationCompletionHandler<T, R>(
      * @param attachment The continuation to resume.
      */
     override fun completed(result: T, attachment: Continuation<R>) {
-        if (timeoutJob?.isCompleted != true) {
-            timeoutJob?.cancel()
-            try {
-                attachment.resume(onComplete(result))
-            } catch (e: Throwable) {
-                attachment.resumeWithException(e)
-            }
+        try {
+            attachment.resume(onComplete(result))
+        } catch (e: Throwable) {
+            attachment.resumeWithException(e)
         }
     }
 
@@ -50,13 +45,10 @@ private class ContinuationCompletionHandler<T, R>(
      * @param attachment The continuation to resume with the exception.
      */
     override fun failed(exc: Throwable, attachment: Continuation<R>) {
-        if (timeoutJob?.isCompleted != true) {
-            timeoutJob?.cancel()
-            try {
-                attachment.resume(onFail(exc))
-            } catch (e: Throwable) {
-                attachment.resumeWithException(e)
-            }
+        try {
+            attachment.resume(onFail(exc))
+        } catch (e: Throwable) {
+            attachment.resumeWithException(e)
         }
     }
 }
@@ -65,12 +57,11 @@ private class ContinuationCompletionHandler<T, R>(
  * Creates a CompletionHandler that resumes a Continuation with the result or exception.
  *
  * @param R The type of the continuation result.
- * @param timeoutJob The job to cancel on completion or failure.
  * @param onFail The block to execute on failure.
  * @return A CompletionHandler that resumes a Continuation.
  */
-internal fun <R> fromResult(timeoutJob: Job? = null, onFail: (Throwable) -> R = DEFAULT_ON_FAIL): CompletionHandler<R, Continuation<R>> {
-    return ContinuationCompletionHandler({ it }, onFail = onFail, timeoutJob = timeoutJob)
+internal fun <R> fromResult(onFail: (Throwable) -> R = DEFAULT_ON_FAIL): CompletionHandler<R, Continuation<R>> {
+    return ContinuationCompletionHandler({ it }, onFail = onFail)
 }
 
 /**
@@ -82,8 +73,8 @@ internal fun <R> fromResult(timeoutJob: Job? = null, onFail: (Throwable) -> R = 
  * @param onFail The block to execute on failure.
  * @return A CompletionHandler that resumes a Continuation.
  */
-internal fun <T,R> R.asCompletionHandler(timeoutJob: Job? = null, onFail: (Throwable) -> R = DEFAULT_ON_FAIL): CompletionHandler<T, Continuation<R>> {
-    return ContinuationCompletionHandler({ this }, onFail = onFail ,timeoutJob = timeoutJob)
+internal fun <T,R> R.asCompletionHandler(onFail: (Throwable) -> R = DEFAULT_ON_FAIL): CompletionHandler<T, Continuation<R>> {
+    return ContinuationCompletionHandler({ this }, onFail = onFail)
 }
 
 /**
@@ -95,8 +86,8 @@ internal fun <T,R> R.asCompletionHandler(timeoutJob: Job? = null, onFail: (Throw
  * @param onFail The block to execute on failure.
  * @return A CompletionHandler that resumes a Continuation.
  */
-internal fun <T, R> CompletionBlock<T, R>.asCompletionHandler(timeoutJob: Job? = null, onFail: (Throwable) -> R = DEFAULT_ON_FAIL): CompletionHandler<T, Continuation<R>> {
-    return ContinuationCompletionHandler(this, onFail = onFail, timeoutJob = timeoutJob)
+internal fun <T, R> CompletionBlock<T, R>.asCompletionHandler(onFail: (Throwable) -> R = DEFAULT_ON_FAIL): CompletionHandler<T, Continuation<R>> {
+    return ContinuationCompletionHandler(this, onFail = onFail)
 }
 
 /**
