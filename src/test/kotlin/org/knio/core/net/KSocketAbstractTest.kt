@@ -7,7 +7,6 @@ import org.knio.core.test.servers.accept.AcceptOnlyServer
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.SocketException
@@ -18,6 +17,93 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class KSocketAbstractTest: TestServerTest<AcceptOnlyServer>() {
+
+    @Test
+    fun `test create socket`(): Unit = runBlocking {
+        // java
+        val javaSocket = SocketFactory.getDefault().createSocket()
+        assertNotNull(javaSocket)
+        assertFalse(javaSocket.isBound)
+
+        // knio
+        val knioSocket = KSocketFactory.getDefault().createSocket()
+        assertNotNull(knioSocket)
+        assertFalse(knioSocket.isBound())
+    }
+
+    @Test
+    fun `test create socket with address without server`(): Unit = runBlocking {
+        // java
+        assertThrows<SocketException> {
+            SocketFactory.getDefault().createSocket("localhost", 8080)
+        }
+
+        // knio
+        assertThrows<SocketException>() {
+            KSocketFactory.getDefault().createSocket("localhost", 8080)
+        }
+    }
+
+    @Test
+    fun `test create socket with address`(): Unit = runServer(false) {
+        // java
+        val javaSocket = SocketFactory.getDefault().createSocket("localhost", getPort())
+        assertNotNull(javaSocket)
+        assertTrue(javaSocket.isBound)
+
+        // knio
+        val knioSocket = KSocketFactory.getDefault().createSocket("localhost", getPort())
+        assertNotNull(knioSocket)
+        assertTrue(knioSocket.isBound())
+    }
+
+    @Test
+    fun  `test create socket with address and local address`(): Unit = runServer(false) {
+        // java
+        SocketFactory.getDefault().createSocket("localhost", getPort(), InetAddress.getLoopbackAddress(), 0).use { socket ->
+            assertNotNull(socket)
+            assertTrue(socket.isBound)
+        }
+
+        // knio
+        KSocketFactory.getDefault().createSocket("localhost", getPort(), InetAddress.getLoopbackAddress(), 0).use { socket ->
+            assertNotNull(socket)
+            assertTrue(socket.isBound())
+        }
+    }
+
+    @Test
+    fun `test create socket with inet address`(): Unit = runServer(false) {
+        // java
+        val address = InetAddress.getLoopbackAddress()
+        SocketFactory.getDefault().createSocket(address, getPort()).use { socket ->
+            assertNotNull(socket)
+            assertTrue(socket.isBound)
+        }
+
+        // knio
+        KSocketFactory.getDefault().createSocket(address, getPort()).use { socket ->
+            assertNotNull(socket)
+            assertTrue(socket.isBound())
+        }
+    }
+
+    @Test
+    fun `test create socket with inet address and local address`(): Unit = runServer(false) {
+        // java
+        val address = InetAddress.getLoopbackAddress()
+        SocketFactory.getDefault().createSocket(address, getPort(), InetAddress.getLoopbackAddress(), 0).use { socket ->
+            assertNotNull(socket)
+            assertTrue(socket.isBound)
+        }
+
+        // knio
+        KSocketFactory.getDefault().createSocket(address, getPort(), InetAddress.getLoopbackAddress(), 0).use { socket ->
+            assertNotNull(socket)
+            assertTrue(socket.isBound())
+        }
+    }
+
 
     @Test
     fun `set no-delay`(): Unit = runBlocking {
@@ -448,7 +534,7 @@ class KSocketAbstractTest: TestServerTest<AcceptOnlyServer>() {
 
 
     @Test
-    fun `get local address before binding`() = runBlocking {
+    fun `get local address before binding`(): Unit = runBlocking {
 
         // java
         SocketFactory.getDefault().createSocket().use { socket ->

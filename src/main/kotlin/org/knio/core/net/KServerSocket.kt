@@ -1,7 +1,6 @@
 package org.knio.core.net
 
 import org.knio.core.lang.KAutoCloseable
-import org.knio.core.nio.acceptSuspend
 import java.io.IOException
 import java.net.InetAddress
 import java.net.SocketAddress

@@ -24,6 +24,7 @@ suspend fun Path.knioInputStream(): KInputStream {
  * @return A `KOutputStream` for the given `Path`.
  */
 suspend fun Path.knioOutputStream(): KOutputStream {
+    this.inputStream()
     return KFileOutputStream.open(this)
 }
 

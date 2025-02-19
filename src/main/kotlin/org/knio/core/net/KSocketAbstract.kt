@@ -2,11 +2,11 @@ package org.knio.core.net
 
 import org.knio.core.annotations.NotSuspended
 import org.knio.core.utils.asCompletionHandler
-import org.knio.core.utils.timeout
+import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.SocketAddress
-import java.net.SocketTimeoutException
+import java.net.SocketException
 import java.nio.channels.AsynchronousSocketChannel
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -18,8 +18,6 @@ internal const val UNDEFINED_LOCAL_PORT = -1
 internal abstract class KSocketAbstract(
     protected val ch: AsynchronousSocketChannel
 ): KSocket {
-
-
 
     /** The read timeout in milliseconds. */
     private var rTimeout: Long? = null
@@ -87,17 +85,24 @@ internal abstract class KSocketAbstract(
     }
 
 
-    override suspend fun connect(endpoint: SocketAddress, timeout: Long) {
-        connect0(endpoint, timeout)
+    override suspend fun connect(endpoint: SocketAddress) {
+        connect0(endpoint)
 
         @OptIn(NotSuspended::class)
         setProperties()
     }
 
-    private suspend fun connect0(endpoint: SocketAddress, timeout: Long) = suspendCoroutine {
+    private suspend fun connect0(endpoint: SocketAddress) = suspendCoroutine {
         try {
             // returns "this" upon completion
-            ch.connect(endpoint, it, Unit.asCompletionHandler ())
+            ch.connect(endpoint, it, Unit.asCompletionHandler (onFail = { e ->
+                if(e is IOException) {
+                    throw SocketException(e.message, e)
+                } else {
+                    throw e
+                }
+
+            }))
         } catch (e: Throwable) {
             it.resumeWithException(e)
         }

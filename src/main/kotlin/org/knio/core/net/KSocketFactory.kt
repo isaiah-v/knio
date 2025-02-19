@@ -41,8 +41,8 @@ interface KSocketFactory {
             createSocket().apply { connect(InetSocketAddress(host, port)) }
 
         override suspend fun createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int) = createSocket().apply {
-            connect(InetSocketAddress(host, port))
             bind(InetSocketAddress(localHost, localPort))
+            connect(InetSocketAddress(host, port))
         }
 
         override suspend fun createSocket(host: InetAddress, port: Int) = createSocket().apply {
@@ -50,8 +50,8 @@ interface KSocketFactory {
         }
 
         override suspend fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int) = createSocket().apply {
-            connect(InetSocketAddress(address, port))
             bind(InetSocketAddress(localAddress, localPort))
+            connect(InetSocketAddress(address, port))
         }
     }
 }

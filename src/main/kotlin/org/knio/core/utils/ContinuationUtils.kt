@@ -1,8 +1,6 @@
 package org.knio.core.utils
 
-import kotlinx.coroutines.*
 import java.nio.channels.CompletionHandler
-import java.util.concurrent.TimeoutException
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -69,7 +67,6 @@ internal fun <R> fromResult(onFail: (Throwable) -> R = DEFAULT_ON_FAIL): Complet
  *
  * @param T The type of the result.
  * @param R The type of the continuation result.
- * @param timeoutJob The job to cancel on completion or failure.
  * @param onFail The block to execute on failure.
  * @return A CompletionHandler that resumes a Continuation.
  */
@@ -82,29 +79,9 @@ internal fun <T,R> R.asCompletionHandler(onFail: (Throwable) -> R = DEFAULT_ON_F
  *
  * @param T The type of the result.
  * @param R The type of the continuation result.
- * @param timeoutJob The job to cancel on completion or failure.
  * @param onFail The block to execute on failure.
  * @return A CompletionHandler that resumes a Continuation.
  */
 internal fun <T, R> CompletionBlock<T, R>.asCompletionHandler(onFail: (Throwable) -> R = DEFAULT_ON_FAIL): CompletionHandler<T, Continuation<R>> {
     return ContinuationCompletionHandler(this, onFail = onFail)
-}
-
-/**
- * Sets a timeout for a Continuation.
- *
- * @param R The type of the continuation result.
- * @param timeout The timeout duration in milliseconds.
- * @param scope The CoroutineScope to launch the timeout job in.
- * @param exc The exception to throw on timeout.
- * @return A Job representing the timeout.
- */
-@OptIn(DelicateCoroutinesApi::class)
-internal fun <R> Continuation<R>.timeout (
-    timeout: Long,
-    scope: CoroutineScope = GlobalScope,
-    exc: () -> Throwable = { TimeoutException() }
-): Job = scope.launch {
-    delay(timeout)
-    resumeWithException(exc())
 }

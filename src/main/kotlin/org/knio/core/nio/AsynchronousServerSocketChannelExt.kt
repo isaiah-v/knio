@@ -1,7 +1,6 @@
 package org.knio.core.nio
 
 import org.knio.core.utils.fromResult
-import org.knio.core.utils.timeout
 import java.net.SocketTimeoutException
 import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel

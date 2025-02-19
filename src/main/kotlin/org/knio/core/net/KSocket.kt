@@ -3,7 +3,9 @@ package org.knio.core.net
 import org.knio.core.io.KInputStream
 import org.knio.core.io.KOutputStream
 import org.knio.core.lang.KAutoCloseable
+import java.nio.channels.AsynchronousSocketChannel
 import java.io.IOException
+import java.net.Socket
 import java.net.SocketAddress
 import java.net.SocketException
 import java.net.SocketTimeoutException
@@ -14,7 +16,8 @@ import java.net.SocketOptions.*
  * This class implements client sockets (also called just "sockets"). A socket is an endpoint for communication between
  * two machines.
  *
- * This is a non-block equivalent to [java.net.Socket], backed by an [java.nio.channels.AsynchronousSocketChannel].
+ * @see Socket
+ * @see AsynchronousSocketChannel
  */
 interface KSocket: KAutoCloseable {
 
@@ -27,6 +30,9 @@ interface KSocket: KAutoCloseable {
      * @throws IOException if an I/O error occurs
      * @throws IllegalArgumentException if the address is a SocketAddress subclass not supported by this socket
      * @throws IllegalStateException if the socket is already bound
+     *
+     * @see Socket.bind
+     * @see AsynchronousSocketChannel.bind
      */
     @Throws(IOException::class, IllegalArgumentException::class, IllegalStateException::class)
     suspend fun bind(local: SocketAddress?)
@@ -42,6 +48,9 @@ interface KSocket: KAutoCloseable {
      * Closing this socket will also close the socket's KInputStream and KOutputStream.
      *
      * @throws IOException if an I/O error occurs
+     *
+     * @see Socket.close
+     * @see AsynchronousSocketChannel.close
      */
     @Throws(IOException::class)
     override suspend fun close()
@@ -51,14 +60,15 @@ interface KSocket: KAutoCloseable {
      * infinite timeout. The connection will then suspend until established or an error occurs.
      *
      * @param endpoint The address to connect to
-     * @param timeout The timeout in milliseconds, or 0 for no timeout
      *
      * @throws IOException if an I/O error occurs
-     * @throws SocketTimeoutException if the connection times out
      * @throws IllegalArgumentException if the endpoint is a SocketAddress subclass not supported by this socket
+     *
+     * @see java.net.Socket.connect
+     * @see AsynchronousSocketChannel.connect
      */
-    @Throws(IOException::class, SocketTimeoutException::class, IllegalArgumentException::class)
-    suspend fun connect(endpoint: SocketAddress, timeout: Long = 0)
+    @Throws(IOException::class, IllegalArgumentException::class)
+    suspend fun connect(endpoint: SocketAddress)
 
     /**
      * Returns the address to which the socket is connected.
@@ -67,6 +77,9 @@ interface KSocket: KAutoCloseable {
      * after the socket is closed.
      *
      * @return The remote InetAddress, or null if not connected.
+     *
+     * @see Socket.getInetAddress
+     * @see AsynchronousSocketChannel.getRemoteAddress
      */
     suspend fun getInetAddress(): java.net.InetAddress?
 
@@ -79,6 +92,8 @@ interface KSocket: KAutoCloseable {
      *
      * @throws IOException if an I/O error occurs when creating the input stream, the socket is closed, the socket is
      * not connected, or the socket input has been shutdown using shutdownInput()
+     *
+     * @see Socket.getInputStream
      */
     @Throws(IOException::class)
     suspend fun getInputStream(): KInputStream
@@ -89,6 +104,10 @@ interface KSocket: KAutoCloseable {
      * @return a boolean indicating whether [SO_KEEPALIVE] is enabled.
      *
      * @throws SocketException if there is an error in the underlying protocol, such as a TCP error.
+     *
+     * @see Socket.getKeepAlive
+     * @see AsynchronousSocketChannel.getOption
+     * @see SO_KEEPALIVE
      */
     @Throws(SocketException::class)
     suspend fun getKeepAlive(): Boolean
@@ -101,6 +120,9 @@ interface KSocket: KAutoCloseable {
      *
      * @return the local address to which the socket is bound, the loopback address if denied by the security manager,
      * or the wildcard address if the socket is closed or not bound yet
+     *
+     * @see Socket.getLocalAddress
+     * @see AsynchronousSocketChannel.getLocalAddress
      */
     suspend fun getLocalAddress(): java.net.InetAddress
 
@@ -111,6 +133,9 @@ interface KSocket: KAutoCloseable {
      * after the socket is closed.
      *
      * @return The local port number, or -1 if not bound.
+     *
+     * @see Socket.getLocalPort
+     * @see AsynchronousSocketChannel.getLocalAddress
      */
     suspend fun getLocalPort(): Int
 
@@ -126,6 +151,9 @@ interface KSocket: KAutoCloseable {
      * loopback address and the local port to which this socket is bound is returned.
      *
      * @return The local SocketAddress.
+     *
+     * @see Socket.getLocalSocketAddress
+     * @see AsynchronousSocketChannel.getLocalAddress
      */
     suspend fun getLocalSocketAddress(): SocketAddress?
 
@@ -137,6 +165,8 @@ interface KSocket: KAutoCloseable {
      * @return an output stream for writing bytes to this socket.
      *
      * @throws IOException if an I/O error occurs when creating the output stream or if the socket is not connected.
+     *
+     * @see Socket.getOutputStream
      */
     @Throws(IOException::class)
     suspend fun getOutputStream(): KOutputStream
@@ -148,6 +178,9 @@ interface KSocket: KAutoCloseable {
      * number after the socket is closed.
      *
      * @return The remote port number, or -1 if not connected.
+     *
+     * @see Socket.getLocalPort
+     * @see AsynchronousSocketChannel.getRemoteAddress
      */
     suspend fun getPort(): Int
 
@@ -158,6 +191,10 @@ interface KSocket: KAutoCloseable {
      * @return the value of the [SO_RCVBUF] option for this Socket.
      *
      * @throws SocketException if there is an error in the underlying protocol, such as a TCP error.
+     *
+     * @see Socket.getReceiveBufferSize
+     * @see AsynchronousSocketChannel.getOption
+     * @see SO_RCVBUF
      */
     @Throws(SocketException::class)
     suspend fun getReceiveBufferSize(): Int

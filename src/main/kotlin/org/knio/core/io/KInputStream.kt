@@ -4,15 +4,15 @@ import org.knio.core.context.KnioContext
 import org.knio.core.lang.KAutoCloseable
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.nio.ByteBuffer
-import kotlin.Throws
 
 /**
- * This abstract class is the superclass of all classes representing an input stream of bytes.
-
- * Applications that need to define a subclass of InputStream must always provide a method that performs a bulk read.
+ * This abstract class is the superclass of all classes representing non-blocking input stream of bytes.
  *
- * This class is equivalent to the [java.io.InputStream].
+ * Applications that need to define a subclass of [KInputStream] must always provide a method that performs a bulk read.
+ *
+ * @see InputStream
  */
 abstract class KInputStream(
     protected val context: KnioContext
@@ -26,10 +26,24 @@ abstract class KInputStream(
      * suspending for an I/O operation, which may be 0, or 0 when end of stream is detected.
      *
      * @return The number of bytes that can be read from this input stream without suspending.
+     * @throws IOException if an I/ O error occurs.
+     * @see InputStream.available
      */
     @Throws(IOException::class)
     open suspend fun available(): Int = 0
 
+    /**
+     * Skips over and discards `n` bytes of data from this input stream. The `skip` method may, for a variety of
+     * reasons, end up skipping over some smaller number of bytes, possibly `0`. This may result from any of a number of
+     * conditions; reaching end of file before `n` bytes have been skipped is only one possibility. The actual number of
+     * bytes skipped is returned. If `n` is negative, the skip method for class `InputStream` always returns `0`, and no
+     * bytes are skipped. Subclasses may handle the negative value differently.
+     *
+     * @param n The number of bytes to be skipped.
+     * @return The actual number of bytes skipped.
+     * @throws IOException If an I/O error occurs.
+     * @see InputStream.skip
+     */
     @Throws(IOException::class)
     open suspend fun skip(n: Long): Long {
         var remaining = n
@@ -63,6 +77,7 @@ abstract class KInputStream(
      *
      * @return The next byte of data, or -1 if the end of the stream is reached.
      * @throws IOException If an I/O error occurs.
+     * @see InputStream.read
      */
     @Throws(IOException::class)
     open suspend fun read(): Int {
@@ -84,6 +99,13 @@ abstract class KInputStream(
      * elements b[0] through b[k-1], leaving elements b[k] through b[b.length-1] unaffected.
      *
      * @param b The buffer into which the data is read.
+     *
+     * @return The total number of bytes read into the buffer, or -1 if there is no more data because the end of the
+     * stream has been reached.
+     *
+     * @throws IOException If an I/O error occurs.
+     *
+     * @see InputStream.read
      */
     @Throws(IOException::class)
     open suspend fun read(b: ByteArray): Int {
@@ -110,6 +132,7 @@ abstract class KInputStream(
      * @param off The start offset in the destination array b.
      * @param len The maximum number of bytes read.
      * @return The total number of bytes read into the buffer, or -1 if there is no more data because the end of the
+     * @see InputStream.read
      */
     @Throws(IOException::class)
     open suspend fun read(b: ByteArray, off: Int, len: Int): Int {
@@ -155,6 +178,8 @@ abstract class KInputStream(
      * @throws IOException If an I/O error occurs.
      * @throws NullPointerException if b is null.
      * @throws IndexOutOfBoundsException if off is negative, len is negative, or len is greater than b.length - off
+     *
+     * @see InputStream.read
      */
     @Throws(IOException::class)
     open suspend fun readNBytes(b: ByteArray, off: Int, len: Int): Int {
@@ -201,6 +226,11 @@ abstract class KInputStream(
      *
      * @param len The maximum number of bytes to read.
      * @return A byte array containing the bytes read from the stream.
+     *
+     * @throws IOException If an I/O error occurs.
+     * @throws IllegalArgumentException if len is negative.
+     *
+     * @see InputStream.readNBytes
      */
     @Throws(IOException::class)
     open suspend fun readNBytes(len: Int): ByteArray {
