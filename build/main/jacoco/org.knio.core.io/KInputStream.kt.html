@@ -4,15 +4,15 @@ import org.knio.core.context.KnioContext
 import org.knio.core.lang.KAutoCloseable
 import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.nio.ByteBuffer
-import kotlin.Throws
 
 /**
- * This abstract class is the superclass of all classes representing an input stream of bytes.
-
- * Applications that need to define a subclass of InputStream must always provide a method that performs a bulk read.
+ * This abstract class is the superclass of all classes representing non-blocking input stream of bytes.
  *
- * This class is equivalent to the [java.io.InputStream].
+ * Applications that need to define a subclass of [KInputStream] must always provide a method that performs a bulk read.
+ *
+ * @see InputStream
  */
 <span class="fc" id="L17">abstract class KInputStream(</span>
 <span class="pc" id="L18">    protected val context: KnioContext</span>
@@ -26,34 +26,48 @@ import kotlin.Throws
      * suspending for an I/O operation, which may be 0, or 0 when end of stream is detected.
      *
      * @return The number of bytes that can be read from this input stream without suspending.
+     * @throws IOException if an I/ O error occurs.
+     * @see InputStream.available
      */
     @Throws(IOException::class)
-<span class="nc" id="L31">    open suspend fun available(): Int = 0</span>
+<span class="nc" id="L33">    open suspend fun available(): Int = 0</span>
 
+    /**
+     * Skips over and discards `n` bytes of data from this input stream. The `skip` method may, for a variety of
+     * reasons, end up skipping over some smaller number of bytes, possibly `0`. This may result from any of a number of
+     * conditions; reaching end of file before `n` bytes have been skipped is only one possibility. The actual number of
+     * bytes skipped is returned. If `n` is negative, the skip method for class `InputStream` always returns `0`, and no
+     * bytes are skipped. Subclasses may handle the negative value differently.
+     *
+     * @param n The number of bytes to be skipped.
+     * @return The actual number of bytes skipped.
+     * @throws IOException If an I/O error occurs.
+     * @see InputStream.skip
+     */
     @Throws(IOException::class)
     open suspend fun skip(n: Long): Long {
-<span class="fc" id="L35">        var remaining = n</span>
+<span class="fc" id="L49">        var remaining = n</span>
 
-<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (n &lt;= 0) {</span>
-<span class="fc" id="L38">            return 0</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (n &lt;= 0) {</span>
+<span class="fc" id="L52">            return 0</span>
         }
 
-<span class="fc" id="L41">        val bufferSize = minOf(context.maxTaskBufferSize.toLong(), n).toInt()</span>
-<span class="fc" id="L42">        val buffer = context.byteBufferPool.acquire(bufferSize)</span>
+<span class="fc" id="L55">        val bufferSize = minOf(context.maxTaskBufferSize.toLong(), n).toInt()</span>
+<span class="fc" id="L56">        val buffer = context.byteBufferPool.acquire(bufferSize)</span>
 
-<span class="fc" id="L44">        try {</span>
-<span class="fc bfc" id="L45" title="All 2 branches covered.">            while (remaining &gt; 0) {</span>
-<span class="fc" id="L46">                val nr = read(buffer)</span>
-<span class="fc bfc" id="L47" title="All 2 branches covered.">                if (nr &lt; 0) {</span>
-<span class="fc" id="L48">                    break</span>
+<span class="fc" id="L58">        try {</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            while (remaining &gt; 0) {</span>
+<span class="fc" id="L60">                val nr = read(buffer)</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                if (nr &lt; 0) {</span>
+<span class="fc" id="L62">                    break</span>
                 }
-<span class="fc" id="L50">                remaining -= nr.toLong()</span>
+<span class="fc" id="L64">                remaining -= nr.toLong()</span>
             }
         } finally {
-<span class="fc" id="L53">            context.byteBufferPool.release(buffer)</span>
+<span class="fc" id="L67">            context.byteBufferPool.release(buffer)</span>
         }
 
-<span class="fc" id="L56">        return n - remaining</span>
+<span class="fc" id="L70">        return n - remaining</span>
     }
 
     /**
@@ -63,11 +77,12 @@ import kotlin.Throws
      *
      * @return The next byte of data, or -1 if the end of the stream is reached.
      * @throws IOException If an I/O error occurs.
+     * @see InputStream.read
      */
     @Throws(IOException::class)
     open suspend fun read(): Int {
-<span class="fc" id="L69">        val buffer = ByteArray(1)</span>
-<span class="fc bfc" id="L70" title="All 6 branches covered.">        return read(buffer).takeIf { it != -1 }?.let { buffer[0].toInt() and 0xFF } ?: -1</span>
+<span class="fc" id="L84">        val buffer = ByteArray(1)</span>
+<span class="fc bfc" id="L85" title="All 6 branches covered.">        return read(buffer).takeIf { it != -1 }?.let { buffer[0].toInt() and 0xFF } ?: -1</span>
     }
 
     /**
@@ -84,10 +99,17 @@ import kotlin.Throws
      * elements b[0] through b[k-1], leaving elements b[k] through b[b.length-1] unaffected.
      *
      * @param b The buffer into which the data is read.
+     *
+     * @return The total number of bytes read into the buffer, or -1 if there is no more data because the end of the
+     * stream has been reached.
+     *
+     * @throws IOException If an I/O error occurs.
+     *
+     * @see InputStream.read
      */
     @Throws(IOException::class)
     open suspend fun read(b: ByteArray): Int {
-<span class="fc" id="L90">        return read(b, 0, b.size)</span>
+<span class="fc" id="L112">        return read(b, 0, b.size)</span>
     }
 
     /**
@@ -110,18 +132,19 @@ import kotlin.Throws
      * @param off The start offset in the destination array b.
      * @param len The maximum number of bytes read.
      * @return The total number of bytes read into the buffer, or -1 if there is no more data because the end of the
+     * @see InputStream.read
      */
     @Throws(IOException::class)
     open suspend fun read(b: ByteArray, off: Int, len: Int): Int {
-<span class="pc bpc" id="L116" title="3 of 6 branches missed.">        if(off &lt; 0 || len &lt; 0 || len &gt; b.size - off) {</span>
-<span class="nc" id="L117">            throw IndexOutOfBoundsException()</span>
+<span class="pc bpc" id="L139" title="3 of 6 branches missed.">        if(off &lt; 0 || len &lt; 0 || len &gt; b.size - off) {</span>
+<span class="nc" id="L140">            throw IndexOutOfBoundsException()</span>
         }
-<span class="pc bpc" id="L119" title="1 of 2 branches missed.">        if (len == 0) {</span>
-<span class="nc" id="L120">            return 0</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        if (len == 0) {</span>
+<span class="nc" id="L143">            return 0</span>
         }
 
-<span class="fc" id="L123">        val buffer = ByteBuffer.wrap(b, off, len)</span>
-<span class="fc" id="L124">        return read(buffer)</span>
+<span class="fc" id="L146">        val buffer = ByteBuffer.wrap(b, off, len)</span>
+<span class="fc" id="L147">        return read(buffer)</span>
     }
 
 
@@ -155,25 +178,27 @@ import kotlin.Throws
      * @throws IOException If an I/O error occurs.
      * @throws NullPointerException if b is null.
      * @throws IndexOutOfBoundsException if off is negative, len is negative, or len is greater than b.length - off
+     *
+     * @see InputStream.read
      */
     @Throws(IOException::class)
     open suspend fun readNBytes(b: ByteArray, off: Int, len: Int): Int {
-<span class="pc bpc" id="L161" title="3 of 6 branches missed.">        if(off &lt; 0 || len &lt; 0 || len &gt; b.size - off) {</span>
-<span class="nc" id="L162">            throw IndexOutOfBoundsException()</span>
+<span class="pc bpc" id="L186" title="3 of 6 branches missed.">        if(off &lt; 0 || len &lt; 0 || len &gt; b.size - off) {</span>
+<span class="nc" id="L187">            throw IndexOutOfBoundsException()</span>
         }
-<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if (len == 0) {</span>
-<span class="nc" id="L165">            return 0</span>
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">        if (len == 0) {</span>
+<span class="nc" id="L190">            return 0</span>
         }
 
-<span class="fc" id="L168">        var total = 0</span>
-<span class="fc bfc" id="L169" title="All 2 branches covered.">        while (total &lt; len) {</span>
-<span class="fc" id="L170">            val bytes = read(b, off + total, len - total)</span>
-<span class="pc bpc" id="L171" title="1 of 2 branches missed.">            if (bytes &lt; 0) {</span>
-<span class="nc" id="L172">                break</span>
+<span class="fc" id="L193">        var total = 0</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">        while (total &lt; len) {</span>
+<span class="fc" id="L195">            val bytes = read(b, off + total, len - total)</span>
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">            if (bytes &lt; 0) {</span>
+<span class="nc" id="L197">                break</span>
             }
-<span class="fc" id="L174">            total += bytes</span>
+<span class="fc" id="L199">            total += bytes</span>
         }
-<span class="fc" id="L176">        return total</span>
+<span class="fc" id="L201">        return total</span>
     }
 
     /**
@@ -201,12 +226,17 @@ import kotlin.Throws
      *
      * @param len The maximum number of bytes to read.
      * @return A byte array containing the bytes read from the stream.
+     *
+     * @throws IOException If an I/O error occurs.
+     * @throws IllegalArgumentException if len is negative.
+     *
+     * @see InputStream.readNBytes
      */
     @Throws(IOException::class)
     open suspend fun readNBytes(len: Int): ByteArray {
-<span class="fc" id="L207">        val b = ByteArray(len)</span>
-<span class="fc" id="L208">        val bytesRead = readNBytes(b, 0, len)</span>
-<span class="fc" id="L209">        return b.copyOf(bytesRead)</span>
+<span class="fc" id="L237">        val b = ByteArray(len)</span>
+<span class="fc" id="L238">        val bytesRead = readNBytes(b, 0, len)</span>
+<span class="fc" id="L239">        return b.copyOf(bytesRead)</span>
     }
 
     /**
@@ -229,20 +259,20 @@ import kotlin.Throws
      */
     @Throws(IOException::class)
     open suspend fun readAllBytes(): ByteArray {
-<span class="fc" id="L232">        val buffer = context.byteBufferPool.acquire(context.maxTaskBufferSize)</span>
-<span class="fc" id="L233">        try {</span>
-<span class="fc" id="L234">            val out = ByteArrayOutputStream()</span>
-<span class="fc" id="L235">            var bytesRead = read(buffer)</span>
-<span class="fc bfc" id="L236" title="All 2 branches covered.">            while (bytesRead &gt;= 0) {</span>
-<span class="fc" id="L237">                buffer.flip()</span>
-<span class="fc" id="L238">                out.write(buffer.array(), buffer.position(), buffer.remaining())</span>
-<span class="fc" id="L239">                buffer.clear()</span>
-<span class="fc" id="L240">                bytesRead = read(buffer)</span>
+<span class="fc" id="L262">        val buffer = context.byteBufferPool.acquire(context.maxTaskBufferSize)</span>
+<span class="fc" id="L263">        try {</span>
+<span class="fc" id="L264">            val out = ByteArrayOutputStream()</span>
+<span class="fc" id="L265">            var bytesRead = read(buffer)</span>
+<span class="fc bfc" id="L266" title="All 2 branches covered.">            while (bytesRead &gt;= 0) {</span>
+<span class="fc" id="L267">                buffer.flip()</span>
+<span class="fc" id="L268">                out.write(buffer.array(), buffer.position(), buffer.remaining())</span>
+<span class="fc" id="L269">                buffer.clear()</span>
+<span class="fc" id="L270">                bytesRead = read(buffer)</span>
             }
 
-<span class="fc" id="L243">            return out.toByteArray()</span>
+<span class="fc" id="L273">            return out.toByteArray()</span>
         } finally {
-<span class="fc" id="L245">            context.byteBufferPool.release(buffer)</span>
+<span class="fc" id="L275">            context.byteBufferPool.release(buffer)</span>
         }
     }
 
@@ -253,7 +283,7 @@ import kotlin.Throws
      *
      * @return True if this stream supports the mark and reset methods, false otherwise.
      */
-<span class="fc" id="L256">    open suspend fun markSupported(): Boolean = false</span>
+<span class="fc" id="L286">    open suspend fun markSupported(): Boolean = false</span>
 
     /**
      * Repositions this stream to the position at the time the mark method was last called on this input stream.
@@ -273,7 +303,7 @@ import kotlin.Throws
      *    - If an IOException is not thrown, then the stream is reset to a fixed state that depends on the particular type of the input stream and how it was created. The bytes that will be supplied to subsequent callers of the read method depend on the particular type of the input stream.
      */
     @Throws(IOException::class)
-<span class="fc" id="L276">    open suspend fun reset(): Unit = throw IOException(&quot;Mark not supported&quot;)</span>
+<span class="fc" id="L306">    open suspend fun reset(): Unit = throw IOException(&quot;Mark not supported&quot;)</span>
 
     /**
      * Marks the current position in the input stream.
@@ -283,9 +313,9 @@ import kotlin.Throws
      * @param readLimit The maximum limit of bytes that can be read before the mark position becomes invalid.
      * @throws IOException if some other I/O error occurs.
      */
-<span class="fc" id="L286">    open suspend fun mark(readLimit: Int) {}</span>
+<span class="fc" id="L316">    open suspend fun mark(readLimit: Int) {}</span>
 
     @Throws(IOException::class)
-<span class="fc" id="L289">    override suspend fun close() {}</span>
+<span class="fc" id="L319">    override suspend fun close() {}</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

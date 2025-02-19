@@ -24,7 +24,8 @@ suspend fun Path.knioInputStream(): KInputStream {
  * @return A `KOutputStream` for the given `Path`.
  */
 suspend fun Path.knioOutputStream(): KOutputStream {
-<span class="fc" id="L27">    return KFileOutputStream.open(this)</span>
+<span class="fc" id="L27">    this.inputStream()</span>
+<span class="fc" id="L28">    return KFileOutputStream.open(this)</span>
 }
 
 /**
@@ -33,14 +34,14 @@ suspend fun Path.knioOutputStream(): KOutputStream {
  * @receiver The `Path` of the file to compute the MD5 hash for.
  * @return The MD5 hash of the file as a hexadecimal string.
  */
-<span class="fc" id="L36">suspend fun Path.md5(): String {</span>
-<span class="fc" id="L37">    val digest = MessageDigest.getInstance(&quot;MD5&quot;)</span>
+<span class="fc" id="L37">suspend fun Path.md5(): String {</span>
+<span class="fc" id="L38">    val digest = MessageDigest.getInstance(&quot;MD5&quot;)</span>
 
-<span class="fc" id="L39">    knioInputStream().use { fis -&gt;</span>
-<span class="fc" id="L40">        digest.update(fis)</span>
-<span class="fc" id="L41">    }</span>
+<span class="fc" id="L40">    knioInputStream().use { fis -&gt;</span>
+<span class="fc" id="L41">        digest.update(fis)</span>
+<span class="fc" id="L42">    }</span>
 
-<span class="fc" id="L43">    val bytes = digest.digest()</span>
-<span class="fc" id="L44">    return bytes.joinToString(&quot;&quot;) { &quot;%02x&quot;.format(it) }</span>
+<span class="fc" id="L44">    val bytes = digest.digest()</span>
+<span class="fc" id="L45">    return bytes.joinToString(&quot;&quot;) { &quot;%02x&quot;.format(it) }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -62,7 +62,7 @@ import java.nio.channels.AsynchronousServerSocketChannel
 <span class="fc bfc" id="L62" title="All 2 branches covered.">    override suspend fun isClosed(): Boolean = !channel.isOpen</span>
 <span class="pc bpc" id="L63" title="1 of 2 branches missed.">    override suspend fun setReceiveBufferSize(size: Int): Unit = withContext(Dispatchers.IO) {</span>
 <span class="fc" id="L64">        channel.setOption(StandardSocketOptions.SO_RCVBUF, size)</span>
-<span class="fc" id="L65">    }</span>
+<span class="pc" id="L65">    }</span>
 
 <span class="pc bpc" id="L67" title="1 of 2 branches missed.">    override suspend fun setReuseAddress(on: Boolean): Unit = withContext(Dispatchers.IO) {</span>
 <span class="fc" id="L68">        channel.setOption(StandardSocketOptions.SO_REUSEADDR, on)</span>

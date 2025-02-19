@@ -40,19 +40,19 @@ interface KSocketFactory {
 <span class="fc" id="L40">        override suspend fun createSocket(host: String, port: Int) =</span>
 <span class="fc" id="L41">            createSocket().apply { connect(InetSocketAddress(host, port)) }</span>
 
-<span class="nc" id="L43">        override suspend fun createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int) = createSocket().apply {</span>
-<span class="nc" id="L44">            connect(InetSocketAddress(host, port))</span>
-<span class="nc" id="L45">            bind(InetSocketAddress(localHost, localPort))</span>
-<span class="nc" id="L46">        }</span>
+<span class="fc" id="L43">        override suspend fun createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int) = createSocket().apply {</span>
+<span class="fc" id="L44">            bind(InetSocketAddress(localHost, localPort))</span>
+<span class="fc" id="L45">            connect(InetSocketAddress(host, port))</span>
+<span class="fc" id="L46">        }</span>
 
-<span class="nc" id="L48">        override suspend fun createSocket(host: InetAddress, port: Int) = createSocket().apply {</span>
-<span class="nc" id="L49">            connect(InetSocketAddress(host, port))</span>
-<span class="nc" id="L50">        }</span>
+<span class="fc" id="L48">        override suspend fun createSocket(host: InetAddress, port: Int) = createSocket().apply {</span>
+<span class="fc" id="L49">            connect(InetSocketAddress(host, port))</span>
+<span class="fc" id="L50">        }</span>
 
-<span class="nc" id="L52">        override suspend fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int) = createSocket().apply {</span>
-<span class="nc" id="L53">            connect(InetSocketAddress(address, port))</span>
-<span class="nc" id="L54">            bind(InetSocketAddress(localAddress, localPort))</span>
-<span class="nc" id="L55">        }</span>
+<span class="fc" id="L52">        override suspend fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int) = createSocket().apply {</span>
+<span class="fc" id="L53">            bind(InetSocketAddress(localAddress, localPort))</span>
+<span class="fc" id="L54">            connect(InetSocketAddress(address, port))</span>
+<span class="fc" id="L55">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

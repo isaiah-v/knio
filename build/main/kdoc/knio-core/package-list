@@ -237,7 +237,7 @@ $dokka.location:org.knio.core.net/KServerSocketFactory/createServerSocket/#kotli
 $dokka.location:org.knio.core.net/KSocket///PointingToDeclaration/knio-core/org.knio.core.net/-k-socket/index.html
 $dokka.location:org.knio.core.net/KSocket/bind/#java.net.SocketAddress?/PointingToDeclaration/knio-core/org.knio.core.net/-k-socket/bind.html
 $dokka.location:org.knio.core.net/KSocket/close/#/PointingToDeclaration/knio-core/org.knio.core.net/-k-socket/close.html
-$dokka.location:org.knio.core.net/KSocket/connect/#java.net.SocketAddress#kotlin.Long/PointingToDeclaration/knio-core/org.knio.core.net/-k-socket/connect.html
+$dokka.location:org.knio.core.net/KSocket/connect/#java.net.SocketAddress/PointingToDeclaration/knio-core/org.knio.core.net/-k-socket/connect.html
 $dokka.location:org.knio.core.net/KSocket/getInetAddress/#/PointingToDeclaration/knio-core/org.knio.core.net/-k-socket/get-inet-address.html
 $dokka.location:org.knio.core.net/KSocket/getInputStream/#/PointingToDeclaration/knio-core/org.knio.core.net/-k-socket/get-input-stream.html
 $dokka.location:org.knio.core.net/KSocket/getKeepAlive/#/PointingToDeclaration/knio-core/org.knio.core.net/-k-socket/get-keep-alive.html
