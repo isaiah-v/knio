@@ -140,7 +140,7 @@ import javax.net.ssl.SSLParameters
     }
 
     override suspend fun isBound(): Boolean {
-<span class="nc bnc" id="L143" title="All 2 branches missed.">        return serverChannel.localAddress != null</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        return serverChannel.localAddress != null</span>
     }
 
     override suspend fun isClosed(): Boolean {

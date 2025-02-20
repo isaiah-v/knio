@@ -21,12 +21,12 @@ import javax.net.ssl.SSLContext
 <span class="fc" id="L21">        return createServerSocket().apply { bind(InetSocketAddress(port)) }</span>
     }
 
-<span class="nc" id="L24">    override suspend fun createServerSocket(port: Int, backlog: Int): KSSLServerSocket {</span>
-<span class="nc" id="L25">        return createServerSocket().apply { bind(InetSocketAddress(port), backlog) }</span>
+<span class="fc" id="L24">    override suspend fun createServerSocket(port: Int, backlog: Int): KSSLServerSocket {</span>
+<span class="fc" id="L25">        return createServerSocket().apply { bind(InetSocketAddress(port), backlog) }</span>
     }
 
-<span class="nc" id="L28">    override suspend fun createServerSocket(port: Int, backlog: Int, ifAddress: InetAddress): KSSLServerSocket {</span>
-<span class="nc" id="L29">        return createServerSocket().apply { bind(InetSocketAddress(ifAddress, port), backlog) }</span>
+<span class="fc" id="L28">    override suspend fun createServerSocket(port: Int, backlog: Int, ifAddress: InetAddress): KSSLServerSocket {</span>
+<span class="fc" id="L29">        return createServerSocket().apply { bind(InetSocketAddress(ifAddress, port), backlog) }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

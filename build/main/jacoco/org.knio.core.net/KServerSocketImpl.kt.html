@@ -66,6 +66,6 @@ import java.nio.channels.AsynchronousServerSocketChannel
 
 <span class="pc bpc" id="L67" title="1 of 2 branches missed.">    override suspend fun setReuseAddress(on: Boolean): Unit = withContext(Dispatchers.IO) {</span>
 <span class="fc" id="L68">        channel.setOption(StandardSocketOptions.SO_REUSEADDR, on)</span>
-<span class="pc" id="L69">    }</span>
+<span class="fc" id="L69">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
