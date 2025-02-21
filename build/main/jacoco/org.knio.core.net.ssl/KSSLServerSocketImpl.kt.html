@@ -19,7 +19,7 @@ import javax.net.ssl.SSLContext
 <span class="pc bpc" id="L19" title="1 of 2 branches missed.">        return KSSLSocketImpl(</span>
 <span class="fc" id="L20">            channel = channel,</span>
 <span class="fc" id="L21">            sslEngine = createSSLEngine(),</span>
-<span class="fc" id="L22">            useClientMode = isUseClientMode,</span>
+<span class="fc" id="L22">            useClientMode = getUseClientMode(),</span>
 <span class="fc" id="L23">            context = context</span>
         )
     }

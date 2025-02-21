@@ -13,7 +13,7 @@ import kotlin.coroutines.suspendCoroutine
  * @return The `AsynchronousSocketChannel` representing the accepted connection.
  * @throws SocketTimeoutException if the timeout is reached before a connection is accepted.
  */
-<span class="fc bfc" id="L16" title="All 2 branches covered.">suspend fun AsynchronousServerSocketChannel.acceptSuspend(): AsynchronousSocketChannel = suspendCoroutine { continuation -&gt;</span>
+<span class="pc bpc" id="L16" title="1 of 2 branches missed.">suspend fun AsynchronousServerSocketChannel.acceptSuspend(): AsynchronousSocketChannel = suspendCoroutine { continuation -&gt;</span>
     // Call the callback version of the non-blocking accept function, un-suspending the coroutine when complete.
 <span class="fc" id="L18">    accept(continuation, fromResult())</span>
 <span class="fc" id="L19">}</span>
