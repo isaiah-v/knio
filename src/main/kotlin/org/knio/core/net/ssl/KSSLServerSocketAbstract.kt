@@ -12,11 +12,16 @@ internal abstract class KSSLServerSocketAbstract(
     protected val serverChannel: AsynchronousServerSocketChannel
 ): KSSLServerSocket {
 
-    protected var isEnableSessionCreation: Boolean = true
-    protected var isUseClientMode: Boolean = false
+    private val sslParameters: SSLParameters = sslContext.defaultSSLParameters
+
+    private var isEnableSessionCreation: Boolean = true
+    private var isUseClientMode: Boolean = false
 
     protected suspend fun createSSLEngine(): SSLEngine {
         val engine = sslContext.createSSLEngine()
+
+        // note: The documentation states that an SNIMatcher is set. No logic exists in JDK 21
+        engine.sslParameters = sslParameters
 
         engine.enableSessionCreation = isEnableSessionCreation
         engine.useClientMode = isUseClientMode
@@ -25,11 +30,11 @@ internal abstract class KSSLServerSocketAbstract(
     }
 
     override suspend fun getEnabledCipherSuites(): Array<String> {
-        return sslContext.defaultSSLParameters.cipherSuites
+        return sslParameters.cipherSuites
     }
 
     override suspend fun getEnabledProtocols(): Array<String> {
-        return sslContext.defaultSSLParameters.protocols
+        return sslParameters.protocols
     }
 
     override suspend fun getEnableSessionCreation(): Boolean {
@@ -37,11 +42,11 @@ internal abstract class KSSLServerSocketAbstract(
     }
 
     override suspend fun getNeedClientAuth(): Boolean {
-        return sslContext.defaultSSLParameters.needClientAuth
+        return sslParameters.needClientAuth
     }
 
     override suspend fun getSSLParameters(): SSLParameters {
-        return sslContext.defaultSSLParameters
+        return sslParameters
     }
 
     override suspend fun getSupportedCipherSuites(): Array<String> {
@@ -57,7 +62,7 @@ internal abstract class KSSLServerSocketAbstract(
     }
 
     override suspend fun getWantClientAuth(): Boolean {
-        return sslContext.defaultSSLParameters.wantClientAuth
+        return sslParameters.wantClientAuth
     }
 
     override suspend fun setEnableSessionCreation(flag: Boolean) {
@@ -65,28 +70,39 @@ internal abstract class KSSLServerSocketAbstract(
     }
 
     override suspend fun setEnabledCipherSuites(suites: Array<String>) {
-        sslContext.defaultSSLParameters.cipherSuites = suites
+        sslParameters.cipherSuites = suites
     }
 
     override suspend fun setEnabledProtocols(protocols: Array<String>) {
-        sslContext.defaultSSLParameters.protocols = protocols
+        sslParameters.protocols = protocols
     }
 
     override suspend fun setNeedClientAuth(need: Boolean) {
-        sslContext.defaultSSLParameters.needClientAuth = need
+        sslParameters.needClientAuth = need
     }
 
     override suspend fun setSSLParameters(params: SSLParameters) {
-        sslContext.defaultSSLParameters.algorithmConstraints = params.algorithmConstraints
-        sslContext.defaultSSLParameters.applicationProtocols = params.applicationProtocols
-        sslContext.defaultSSLParameters.cipherSuites = params.cipherSuites
-        sslContext.defaultSSLParameters.endpointIdentificationAlgorithm = params.endpointIdentificationAlgorithm
-        sslContext.defaultSSLParameters.maximumPacketSize = params.maximumPacketSize
-        sslContext.defaultSSLParameters.needClientAuth = params.needClientAuth
-        sslContext.defaultSSLParameters.protocols = params.protocols
-        sslContext.defaultSSLParameters.serverNames = params.serverNames
-        sslContext.defaultSSLParameters.useCipherSuitesOrder = params.useCipherSuitesOrder
-        sslContext.defaultSSLParameters.wantClientAuth = params.wantClientAuth
+        if(params.cipherSuites != null) {
+            sslParameters.cipherSuites = params.cipherSuites
+        }
+
+        if(params.protocols != null) {
+            sslParameters.protocols = params.protocols
+        }
+
+        if (params.needClientAuth) {
+            sslParameters.needClientAuth = true
+        } else {
+            sslParameters.wantClientAuth = params.wantClientAuth
+        }
+
+        if (params.serverNames != null) {
+            sslParameters.serverNames = params.serverNames
+        }
+
+        if (params.sniMatchers != null) {
+            sslParameters.sniMatchers = params.sniMatchers
+        }
     }
 
     override suspend fun setUseClientMode(mode: Boolean) {
@@ -94,7 +110,7 @@ internal abstract class KSSLServerSocketAbstract(
     }
 
     override suspend fun setWantClientAuth(want: Boolean) {
-        sslContext.defaultSSLParameters.wantClientAuth = want
+        sslParameters.wantClientAuth = want
     }
 
     override suspend fun getInetAddress(): InetAddress? {

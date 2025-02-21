@@ -19,7 +19,7 @@ internal class KSSLServerSocketImpl (
         return KSSLSocketImpl(
             channel = channel,
             sslEngine = createSSLEngine(),
-            useClientMode = isUseClientMode,
+            useClientMode = getUseClientMode(),
             context = context
         )
     }
